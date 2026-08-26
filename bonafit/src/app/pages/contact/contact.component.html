@@ -1,0 +1,13 @@
+<div class="contact">
+    <h1>Contacto</h1>
+
+    <p>¿Tienes alguna pregunta? Escríbenos.</p>
+
+    <app-text-field label="Nombre" placeholder="Introduce tu nombre" (valueChange)="name = $event" />
+
+    <app-text-field label="Email" placeholder="Introduce tu email" type="email" (valueChange)="email = $event" />
+
+    <app-text-field label="Mensaje" placeholder="Escribe tu mensaje" (valueChange)="message = $event" />
+
+    <app-button text="Enviar mensaje" (clicked)="sendMessage()" />
+</div>
