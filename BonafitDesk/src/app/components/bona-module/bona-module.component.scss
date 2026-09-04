@@ -1,0 +1,63 @@
+.module-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  width: 220px;
+  min-height: 180px;
+  padding: var(--bona-space-5);
+
+  background: var(--bona-color-surface);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-lg);
+
+  cursor: pointer;
+  font-family: var(--bona-font-family);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: var(--bona-shadow-card);
+  }
+}
+
+.module-icon {
+  width: 64px;
+  height: 64px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: var(--bona-space-4);
+
+  font-size: 40px;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.module-content {
+  text-align: center;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--bona-color-text);
+  }
+
+  p {
+    margin: var(--bona-space-2) 0 0;
+    font-size: 14px;
+    color: var(--bona-color-text-muted);
+  }
+}

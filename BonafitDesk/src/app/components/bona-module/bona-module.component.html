@@ -1,0 +1,23 @@
+<div
+  class="module-card"
+  role="button"
+  tabindex="0"
+  (click)="onClick()"
+  (keydown)="onKeydown($event)">
+
+  <div class="module-icon">
+    @if (image) {
+      <img [src]="image" [alt]="title">
+    } @else {
+      <span>{{ icon }}</span>
+    }
+  </div>
+
+  <div class="module-content">
+    <h3>{{ title }}</h3>
+
+    @if (description) {
+      <p>{{ description }}</p>
+    }
+  </div>
+</div>

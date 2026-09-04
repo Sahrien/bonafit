@@ -1,0 +1,15 @@
+export const PROFILE_LITERALS = {
+  title: 'Datos personales',
+  subtitle: 'Consulta y edita tu ficha',
+  save: 'Guardar',
+  loading: 'Cargando tu ficha…',
+  loadError: 'No se pudo cargar tu ficha.',
+  noSession: 'No hay un cliente asociado a esta sesión.',
+  saved: 'Cambios guardados.',
+  saveError: 'No se pudieron guardar los cambios.',
+  firstName: 'Nombre',
+  lastName: 'Apellidos',
+  email: 'Correo',
+  phone: 'Teléfono',
+  notes: 'Notas',
+} as const;

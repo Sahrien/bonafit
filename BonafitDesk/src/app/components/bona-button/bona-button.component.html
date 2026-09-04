@@ -1,0 +1,17 @@
+@if (variant === 'secondary') {
+  <button
+    mat-stroked-button
+    [type]="type"
+    [disabled]="disabled"
+    (click)="onClick()">
+    {{ text }}
+  </button>
+} @else {
+  <button
+    mat-flat-button
+    [type]="type"
+    [disabled]="disabled"
+    (click)="onClick()">
+    {{ text }}
+  </button>
+}

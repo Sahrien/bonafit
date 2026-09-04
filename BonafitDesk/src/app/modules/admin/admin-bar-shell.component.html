@@ -1,0 +1,9 @@
+<app-bona-shell-admin
+  mode="bar"
+  [userName]="userName()"
+  [backLabel]="literals.back"
+  [logoutLabel]="literals.logout"
+  (back)="onBack()"
+  (logout)="onLogout()">
+  <router-outlet />
+</app-bona-shell-admin>

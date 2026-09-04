@@ -1,0 +1,20 @@
+<div class="login">
+  <header class="login__header">
+    <h1>{{ literals.title }}</h1>
+    <p>{{ literals.subtitle }}</p>
+  </header>
+
+  <app-bona-input-text-field
+    [label]="literals.search"
+    [placeholder]="literals.searchPlaceholder"
+    [value]="filter()"
+    (valueChange)="filter.set($event)" />
+
+  <ul class="login__accounts">
+    @for (account of filteredAccounts(); track account.id) {
+      <li>
+        <app-bona-button [text]="accountAction(account)" (action)="onSelect(account)" />
+      </li>
+    }
+  </ul>
+</div>

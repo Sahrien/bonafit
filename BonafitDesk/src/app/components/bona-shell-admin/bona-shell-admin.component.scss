@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  min-height: 100%;
+}
+
+.bona-shell-admin {
+  min-height: 100%;
+  background: var(--bona-color-bg);
+  color: var(--bona-color-text);
+  font-family: var(--bona-font-family);
+}
+
+.bona-shell-admin__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bona-space-4);
+  min-height: var(--bona-header-height);
+  padding: var(--bona-space-2) var(--bona-space-5);
+  background: var(--bona-color-surface);
+  border-bottom: 1px solid var(--bona-color-border);
+}
+
+.bona-shell-admin__user {
+  display: flex;
+  align-items: center;
+  gap: var(--bona-space-4);
+}
+
+.bona-shell-admin__user-name {
+  font-weight: 600;
+}
+
+.bona-shell-admin__content {
+  padding: var(--bona-space-6);
+}
+
+.bona-shell-admin--bar .bona-shell-admin__content {
+  padding-top: var(--bona-space-5);
+}

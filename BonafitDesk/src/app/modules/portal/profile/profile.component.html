@@ -1,0 +1,24 @@
+<div class="portal-page">
+  <header class="portal-page__header">
+    <h1>{{ literals.title }}</h1>
+    <p>{{ literals.subtitle }}</p>
+  </header>
+
+  @if (loading()) {
+    <p class="portal-page__status">{{ literals.loading }}</p>
+  } @else if (error()) {
+    <p class="portal-page__status portal-page__status--error">{{ error() }}</p>
+  } @else {
+    <app-bona-form
+      [fields]="fields"
+      [value]="formValue()"
+      [submitText]="literals.save"
+      [disabled]="saving()"
+      (valueChange)="formValue.set($event)"
+      (submitted)="onSave($event)" />
+  }
+
+  @if (feedback()) {
+    <p class="portal-page__status">{{ feedback() }}</p>
+  }
+</div>

@@ -1,0 +1,14 @@
+<form class="bona-form" (submit)="onSubmit($event)">
+  <div class="bona-form__fields">
+    @for (field of fields(); track field.key) {
+      <app-bona-field
+        [definition]="field"
+        [value]="fieldValue(field.key)"
+        (valueChange)="onFieldValue(field.key, $event)" />
+    }
+  </div>
+
+  <div class="bona-form__actions">
+    <app-bona-button [text]="submitText()" type="submit" [disabled]="disabled()" />
+  </div>
+</form>

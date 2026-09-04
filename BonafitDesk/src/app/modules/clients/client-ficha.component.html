@@ -1,0 +1,33 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>{{ title() }}</h1>
+      <p>{{ literals.subtitle }}</p>
+    </div>
+    <app-bona-button
+      [text]="literals.back"
+      variant="secondary"
+      (action)="onBack()" />
+  </header>
+
+  @if (error()) {
+    <p class="page-error">{{ error() }}</p>
+  }
+
+  <app-bona-form
+    [fields]="fields"
+    [value]="formValue()"
+    [submitText]="literals.save"
+    [disabled]="saving()"
+    (valueChange)="onFormChange($event)"
+    (submitted)="onSubmit($event)" />
+
+  @if (!isNew()) {
+    <div class="page-actions">
+      <app-bona-button
+        [text]="literals.delete"
+        variant="secondary"
+        (action)="onDelete()" />
+    </div>
+  }
+</div>

@@ -1,0 +1,17 @@
+export const CATALOGO_LITERALS = {
+  title: 'Catálogo',
+  subtitle: 'Servicios y bonos disponibles para contratar',
+  loading: 'Cargando el catálogo…',
+  loadError: 'No se pudo cargar el catálogo.',
+  noSession: 'No hay un cliente asociado a esta sesión.',
+  empty: 'No hay ofertas disponibles.',
+  service: 'Servicio',
+  offer: 'Oferta',
+  sessions: 'Sesiones',
+  price: 'Precio',
+  contract: 'Contratar',
+  contracted: 'Bono contratado.',
+  contractError: 'No se pudo completar la contratación.',
+  singleSession: 'Sesión suelta',
+  singleSessionMock: 'Sesión suelta contratada (mock, sin pasarela).',
+} as const;

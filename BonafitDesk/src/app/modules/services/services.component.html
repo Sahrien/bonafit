@@ -1,0 +1,71 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>{{ literals.title }}</h1>
+      <p>{{ literals.subtitle }}</p>
+    </div>
+    <app-bona-button [text]="literals.newService" (action)="onCreateService()" />
+  </header>
+
+  @if (error()) {
+    <p class="page-error">{{ error() }}</p>
+  }
+
+  <app-bona-grid
+    [data]="serviceRows()"
+    [columns]="serviceColumns"
+    [actions]="serviceActions"
+    [emptyMessage]="literals.emptyServices"
+    (action)="onServiceAction($event)"
+    (rowClick)="onServiceRowClick($event)" />
+
+  @if (showDetail()) {
+    <section class="page-editor">
+      <h2>{{ literals.serviceEditor }}</h2>
+      <app-bona-form
+        [fields]="serviceFields()"
+        [value]="serviceForm()"
+        [submitText]="literals.save"
+        (valueChange)="onServiceFormChange($event)"
+        (submitted)="onSaveService($event)" />
+      <div class="page-editor__extra">
+        <app-bona-button
+          [text]="literals.cancel"
+          variant="secondary"
+          (action)="onCancelService()" />
+      </div>
+
+      @if (!isNewService()) {
+        <div class="page-nested">
+          <header class="page-nested__header">
+            <h3>{{ literals.bonosTitle }}</h3>
+            <app-bona-button [text]="literals.newBono" (action)="onCreateBono()" />
+          </header>
+
+          <app-bona-grid
+            [data]="selectedBonos()"
+            [columns]="bonoColumns"
+            [actions]="bonoActions"
+            [emptyMessage]="literals.emptyBonos"
+            (action)="onBonoAction($event)" />
+
+          @if (bonoFormOpen()) {
+            <div class="page-nested__form">
+              <h4>{{ literals.bonoEditor }}</h4>
+              <app-bona-form
+                [fields]="bonoFields"
+                [value]="bonoForm()"
+                [submitText]="literals.save"
+                (valueChange)="onBonoFormChange($event)"
+                (submitted)="onSaveBono($event)" />
+              <app-bona-button
+                [text]="literals.cancel"
+                variant="secondary"
+                (action)="onCancelBono()" />
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

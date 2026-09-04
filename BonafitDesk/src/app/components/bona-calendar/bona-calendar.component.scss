@@ -1,0 +1,12 @@
+:host {
+  display: block;
+}
+
+.bona-calendar {
+  min-height: 480px;
+  padding: var(--bona-space-4);
+  background: var(--bona-color-surface);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-lg);
+  font-family: var(--bona-font-family);
+}

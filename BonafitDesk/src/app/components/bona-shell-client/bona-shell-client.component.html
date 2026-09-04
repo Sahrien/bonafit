@@ -1,0 +1,28 @@
+<div class="bona-shell-client">
+  <header class="bona-shell-client__header">
+    <span class="bona-shell-client__brand">{{ brand() }}</span>
+
+    <nav class="bona-shell-client__nav" aria-label="Menú principal">
+      @for (item of navItems(); track item.id) {
+        <app-bona-button
+          [text]="item.label"
+          variant="secondary"
+          (action)="onNav(item)" />
+      }
+    </nav>
+
+    <div class="bona-shell-client__user">
+      @if (userName()) {
+        <span class="bona-shell-client__user-name">{{ userName() }}</span>
+      }
+      <app-bona-button
+        [text]="logoutLabel()"
+        variant="secondary"
+        (action)="logout.emit()" />
+    </div>
+  </header>
+
+  <div class="bona-shell-client__content">
+    <ng-content />
+  </div>
+</div>

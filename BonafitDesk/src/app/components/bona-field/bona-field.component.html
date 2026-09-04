@@ -1,0 +1,34 @@
+@if (isTextInput(definition().type)) {
+  <app-bona-input-text-field
+    [label]="definition().label"
+    [placeholder]="definition().placeholder ?? ''"
+    [type]="textInputType(definition().type)"
+    [value]="value()"
+    [disabled]="definition().disabled ?? false"
+    (valueChange)="onValueChange($event)" />
+} @else if (definition().type === 'textarea') {
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bona-field">
+    <mat-label>{{ definition().label }}</mat-label>
+    <textarea
+      matInput
+      rows="4"
+      [value]="value()"
+      [placeholder]="definition().placeholder ?? ''"
+      [disabled]="definition().disabled ?? false"
+      [required]="definition().required ?? false"
+      (input)="onTextareaInput($event)"></textarea>
+  </mat-form-field>
+} @else {
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bona-field">
+    <mat-label>{{ definition().label }}</mat-label>
+    <mat-select
+      [value]="value()"
+      [disabled]="definition().disabled ?? false"
+      [required]="definition().required ?? false"
+      (valueChange)="onSelectChange($event)">
+      @for (option of definition().options ?? []; track option.value) {
+        <mat-option [value]="option.value">{{ option.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+}

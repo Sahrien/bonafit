@@ -1,0 +1,55 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>{{ literals.title }}</h1>
+      <p>{{ literals.subtitle }}</p>
+      @if (userName()) {
+        <p class="page-user">{{ literals.loggedAs }}: {{ userName() }}</p>
+      }
+    </div>
+    <div class="page-header__actions">
+      <app-bona-button
+        [text]="literals.week"
+        [variant]="view() === 'week' ? 'primary' : 'secondary'"
+        (action)="onView('week')" />
+      <app-bona-button
+        [text]="literals.day"
+        [variant]="view() === 'day' ? 'primary' : 'secondary'"
+        (action)="onView('day')" />
+      <app-bona-button [text]="literals.newAppointment" (action)="onCreate()" />
+    </div>
+  </header>
+
+  <app-bona-calendar
+    [view]="view()"
+    [events]="events()"
+    (eventClick)="onEventClick($event)"
+    (slotSelect)="onSlotSelect($event)" />
+
+  @if (formOpen()) {
+    <section class="page-editor">
+      <h2>{{ editorTitle() }}</h2>
+      @if (error()) {
+        <p class="page-error">{{ error() }}</p>
+      }
+      <app-bona-form
+        [fields]="appointmentFields()"
+        [value]="formValue()"
+        [submitText]="literals.save"
+        (valueChange)="onFormChange($event)"
+        (submitted)="onSubmit($event)" />
+      <div class="page-editor__extra">
+        <app-bona-button
+          [text]="literals.cancel"
+          variant="secondary"
+          (action)="onCancel()" />
+        @if (editingId()) {
+          <app-bona-button
+            [text]="literals.delete"
+            variant="secondary"
+            (action)="onDelete()" />
+        }
+      </div>
+    </section>
+  }
+</div>

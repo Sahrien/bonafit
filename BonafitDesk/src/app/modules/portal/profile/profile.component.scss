@@ -1,0 +1,32 @@
+:host {
+  display: block;
+}
+
+.portal-page {
+  max-width: 40rem;
+  font-family: var(--bona-font-family);
+  color: var(--bona-color-text);
+}
+
+.portal-page__header {
+  margin-bottom: var(--bona-space-5);
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: var(--bona-space-2) 0 0;
+    color: var(--bona-color-text-muted);
+  }
+}
+
+.portal-page__status {
+  margin: var(--bona-space-4) 0 0;
+  color: var(--bona-color-text-muted);
+}
+
+.portal-page__status--error {
+  color: var(--bona-color-danger);
+}

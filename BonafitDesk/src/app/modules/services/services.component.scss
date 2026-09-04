@@ -1,0 +1,72 @@
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--bona-space-4);
+  margin-bottom: var(--bona-space-5);
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: var(--bona-space-2) 0 0;
+    color: var(--bona-color-text-muted);
+  }
+}
+
+.page-error {
+  margin: 0 0 var(--bona-space-4);
+  color: var(--bona-color-danger);
+}
+
+.page-editor {
+  margin-top: var(--bona-space-6);
+  padding: var(--bona-space-5);
+  background: var(--bona-color-surface);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-lg);
+
+  h2,
+  h3,
+  h4 {
+    margin: 0 0 var(--bona-space-4);
+  }
+
+  h2 {
+    font-size: 1.125rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
+}
+
+.page-editor__extra {
+  display: flex;
+  gap: var(--bona-space-2);
+  margin-top: var(--bona-space-4);
+}
+
+.page-nested {
+  margin-top: var(--bona-space-6);
+  padding-top: var(--bona-space-5);
+  border-top: 1px solid var(--bona-color-border);
+}
+
+.page-nested__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bona-space-4);
+  margin-bottom: var(--bona-space-4);
+
+  h3 {
+    margin: 0;
+  }
+}
+
+.page-nested__form {
+  margin-top: var(--bona-space-5);
+}

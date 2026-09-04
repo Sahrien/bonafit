@@ -1,0 +1,31 @@
+:host {
+  display: block;
+}
+
+.bona-grid {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--bona-color-surface);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-lg);
+}
+
+.bona-grid__table {
+  width: 100%;
+}
+
+.bona-grid__row {
+  cursor: pointer;
+}
+
+.bona-grid__actions {
+  display: flex;
+  gap: var(--bona-space-2);
+  align-items: center;
+}
+
+.bona-grid__empty {
+  padding: var(--bona-space-5);
+  text-align: center;
+  color: var(--bona-color-text-muted);
+}

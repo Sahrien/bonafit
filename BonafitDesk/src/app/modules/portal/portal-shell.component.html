@@ -1,0 +1,8 @@
+<app-bona-shell-client
+  [brand]="literals.brand"
+  [userName]="userName()"
+  [navItems]="navItems"
+  [logoutLabel]="literals.logout"
+  (logout)="onLogout()">
+  <router-outlet />
+</app-bona-shell-client>

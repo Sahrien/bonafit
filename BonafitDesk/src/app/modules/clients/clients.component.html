@@ -1,0 +1,25 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>{{ literals.title }}</h1>
+      <p>{{ literals.subtitle }}</p>
+    </div>
+    <app-bona-button [text]="literals.newClient" (action)="onCreate()" />
+  </header>
+
+  <div class="page-toolbar">
+    <app-bona-input-text-field
+      [label]="literals.search"
+      [placeholder]="literals.searchPlaceholder"
+      [value]="search()"
+      (valueChange)="onSearch($event)" />
+  </div>
+
+  <app-bona-grid
+    [data]="rows()"
+    [columns]="columns"
+    [actions]="actions"
+    [emptyMessage]="literals.empty"
+    (action)="onRowAction($event)"
+    (rowClick)="onRowClick($event)" />
+</div>

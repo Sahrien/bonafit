@@ -1,0 +1,22 @@
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--bona-space-4);
+  margin-bottom: var(--bona-space-5);
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: var(--bona-space-2) 0 0;
+    color: var(--bona-color-text-muted);
+  }
+}
+
+.page-toolbar {
+  margin-bottom: var(--bona-space-5);
+  max-width: 22rem;
+}

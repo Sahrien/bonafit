@@ -1,0 +1,22 @@
+<div class="bona-shell-admin" [class.bona-shell-admin--bar]="mode() === 'bar'">
+  @if (mode() === 'bar') {
+    <header class="bona-shell-admin__bar">
+      <app-bona-button
+        [text]="backLabel()"
+        variant="secondary"
+        (action)="back.emit()" />
+
+      <div class="bona-shell-admin__user">
+        <span class="bona-shell-admin__user-name">{{ userName() }}</span>
+        <app-bona-button
+          [text]="logoutLabel()"
+          variant="secondary"
+          (action)="logout.emit()" />
+      </div>
+    </header>
+  }
+
+  <div class="bona-shell-admin__content">
+    <ng-content />
+  </div>
+</div>

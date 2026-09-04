@@ -1,0 +1,24 @@
+<app-bona-shell-admin mode="menu">
+  <div class="admin-home">
+    <header class="admin-home__header">
+      <div>
+        <h1>{{ literals.homeTitle }}</h1>
+        <p>{{ literals.homeSubtitle }}</p>
+      </div>
+      <app-bona-button
+        [text]="literals.logout"
+        variant="secondary"
+        (action)="onLogout()" />
+    </header>
+
+    <div class="admin-home__modules">
+      @for (mod of modules; track mod.id) {
+        <app-bona-module
+          [title]="mod.title"
+          [description]="mod.description"
+          [icon]="mod.icon"
+          (clicked)="onOpen(mod.path)" />
+      }
+    </div>
+  </div>
+</app-bona-shell-admin>

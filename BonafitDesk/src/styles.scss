@@ -1,0 +1,74 @@
+@use '@angular/material' as mat;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap');
+
+:root {
+  --bona-font-family: Inter, 'Segoe UI', Roboto, sans-serif;
+  --bona-color-bg: #f6f4f1;
+  --bona-color-surface: #ffffff;
+  --bona-color-text: #1c1917;
+  --bona-color-text-muted: #78716c;
+  --bona-color-border: #e7e5e4;
+  --bona-color-primary: #1c1917;
+  --bona-color-primary-contrast: #ffffff;
+  --bona-color-secondary: #ffffff;
+  --bona-color-secondary-contrast: #1c1917;
+  --bona-color-accent: #0f766e;
+  --bona-color-accent-contrast: #ffffff;
+  --bona-color-danger: #b91c1c;
+  --bona-radius-sm: 6px;
+  --bona-radius-md: 8px;
+  --bona-radius-lg: 16px;
+  --bona-space-1: 0.25rem;
+  --bona-space-2: 0.5rem;
+  --bona-space-3: 0.75rem;
+  --bona-space-4: 1rem;
+  --bona-space-5: 1.5rem;
+  --bona-space-6: 2rem;
+  --bona-shadow-card: 0 8px 24px rgba(28, 25, 23, 0.08);
+  --bona-header-height: 3.5rem;
+  --bona-focus-ring: 0 0 0 3px color-mix(in srgb, var(--bona-color-accent) 35%, transparent);
+}
+
+html {
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$cyan-palette,
+      tertiary: mat.$orange-palette,
+    ),
+    typography: Inter,
+    density: 0,
+  ));
+
+  @include mat.button-overrides((
+    filled-container-shape: var(--bona-radius-md),
+    outlined-container-shape: var(--bona-radius-md),
+    protected-container-shape: var(--bona-radius-md),
+  ));
+
+  @include mat.form-field-overrides((
+    outlined-container-shape: var(--bona-radius-md),
+  ));
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--bona-font-family);
+  background: var(--bona-color-bg);
+  color: var(--bona-color-text);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: var(--bona-focus-ring);
+}
