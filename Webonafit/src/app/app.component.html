@@ -1,0 +1,61 @@
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<header class="site-header">
+  <div class="wrap header-bar">
+    <a routerLink="/" class="brand" aria-label="BONAFIT, inicio" (click)="closeMenu()">
+      <app-logo size="sm" [showTagline]="false" />
+    </a>
+
+    <button
+      class="menu-toggle"
+      type="button"
+      [attr.aria-expanded]="menuOpen()"
+      aria-controls="site-nav"
+      (click)="toggleMenu()"
+    >
+      {{ menuOpen() ? 'Cerrar' : 'Menú' }}
+    </button>
+
+    <nav
+      id="site-nav"
+      class="nav"
+      [class.nav--open]="menuOpen()"
+      aria-label="Principal"
+    >
+      @for (item of nav; track item.fragment) {
+        <a
+          routerLink="/"
+          [fragment]="item.fragment"
+          (click)="closeMenu()"
+        >
+          {{ item.label }}
+        </a>
+      }
+      <app-button text="Reservar sesión" (clicked)="goToContact()" />
+    </nav>
+  </div>
+</header>
+
+<main id="contenido">
+  <router-outlet />
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <app-logo size="sm" [showTagline]="true" [inverted]="true" />
+      <p class="footer-claim">Más fuerza. Más movilidad. Más vida.</p>
+    </div>
+    <div>
+      <p class="eyebrow">Contacto</p>
+      <p><a href="tel:+34965123456">+34 965 12 34 56</a></p>
+      <p>
+        <a href="https://wa.me/34622184709" target="_blank" rel="noopener noreferrer">WhatsApp +34 622 18 47 09</a>
+      </p>
+      <p><a [href]="'mailto:' + email">{{ email }}</a></p>
+      <p>Urbanización Bonalba Golf, 03110 Mutxamel, Alicante</p>
+      <p>Lunes a viernes 8:00–20:00 · Sábados 9:00–13:00</p>
+    </div>
+  </div>
+  <p class="legal">© 2026 BONAFIT Wellness &amp; Longevity. Todos los derechos reservados.</p>
+</footer>

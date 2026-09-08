@@ -1,0 +1,34 @@
+<div class="field">
+  @if (label()) {
+    <label class="field__label" [for]="fieldId">
+      {{ label() }}
+      @if (required()) {
+        <span class="field__required" aria-hidden="true">*</span>
+      }
+    </label>
+  }
+
+  @if (multiline()) {
+    <textarea
+      class="field__control"
+      [id]="fieldId"
+      [placeholder]="placeholder()"
+      [value]="value()"
+      [rows]="rows()"
+      [required]="required()"
+      [attr.autocomplete]="autocomplete() || null"
+      (input)="onInput($event)"
+    ></textarea>
+  } @else {
+    <input
+      class="field__control"
+      [id]="fieldId"
+      [type]="type()"
+      [placeholder]="placeholder()"
+      [value]="value()"
+      [required]="required()"
+      [attr.autocomplete]="autocomplete() || null"
+      (input)="onInput($event)"
+    />
+  }
+</div>
