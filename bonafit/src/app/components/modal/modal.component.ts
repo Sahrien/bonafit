@@ -30,8 +30,20 @@ export class ModalComponent {
   constructor() {
     const destroyRef = inject(DestroyRef);
 
-    effect(() => {
-      this.document.body.style.overflow = this.open() ? 'hidden' : '';
+    effect((onCleanup) => {
+      if (!this.open()) {
+        this.document.body.style.overflow = '';
+        return;
+      }
+
+      this.document.body.style.overflow = 'hidden';
+      const onKey = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          this.close();
+        }
+      };
+      this.document.addEventListener('keydown', onKey);
+      onCleanup(() => this.document.removeEventListener('keydown', onKey));
     });
 
     destroyRef.onDestroy(() => {

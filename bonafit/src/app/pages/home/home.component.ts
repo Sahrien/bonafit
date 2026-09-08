@@ -63,6 +63,8 @@ export class HomeComponent {
   }
 
   goToContact() {
-    document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' });
+    void this.router.navigate(['/'], { fragment: 'contacto' }).then(() => {
+      document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' });
+    });
   }
 }
