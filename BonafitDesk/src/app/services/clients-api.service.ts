@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ClientsApi } from '../core/clients-api';
 import { environment } from '../../environments/environment';
-import { ClientBonoDto, ContractBonoDto } from '../models/client-bono.dto';
+import { ClientBonoDto, ClientBonoPatchDto, ContractBonoDto } from '../models/client-bono.dto';
 import { ClientDto, ClientWriteDto } from '../models/client.dto';
 import { ClientsHttpApi } from './clients-http.service';
 import { ClientsMockApi } from './clients-mock.service';
@@ -39,6 +39,10 @@ export class ClientsApiService implements ClientsApi {
 
   contractBono(payload: ContractBonoDto): Observable<ClientBonoDto> {
     return this.impl.contractBono(payload);
+  }
+
+  updateClientBono(id: string, payload: ClientBonoPatchDto): Observable<ClientBonoDto> {
+    return this.impl.updateClientBono(id, payload);
   }
 }
 

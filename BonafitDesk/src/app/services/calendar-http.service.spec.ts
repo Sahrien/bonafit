@@ -93,4 +93,32 @@ describe('CalendarHttpApi', () => {
     req.flush(null);
     expect(await pending).toBeNull();
   });
+
+  it('GET /appointments/availability', async () => {
+    const pending = firstValueFrom(
+      api.getAvailability({
+        serviceId: 'svc-ep',
+        from: '2026-09-09T00:00:00.000Z',
+        to: '2026-09-10T00:00:00.000Z',
+      }),
+    );
+    const req = http.expectOne(
+      (request) =>
+        request.method === 'GET' &&
+        request.url === apiUrl(API_PATHS.availability) &&
+        request.params.get('serviceId') === 'svc-ep',
+    );
+    req.flush([]);
+    expect(await pending).toEqual([]);
+  });
+
+  it('GET /booking-settings', async () => {
+    const pending = firstValueFrom(api.getBookingSettings());
+    http.expectOne({ method: 'GET', url: apiUrl(API_PATHS.bookingSettings) }).flush({
+      id: 'booking-settings',
+      nextDayCutoffTime: '18:00',
+      defaultLocation: 'studio-1',
+    });
+    expect((await pending).nextDayCutoffTime).toBe('18:00');
+  });
 });

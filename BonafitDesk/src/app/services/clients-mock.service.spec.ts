@@ -36,6 +36,7 @@ describe('ClientsMockApi', () => {
       email: 'nia.costa@example.com',
       phone: '+34000000009',
       notes: '',
+      instantConfirm: false,
     };
     const created = await firstValueFrom(api.createClient(payload));
     expect(created.id).toBeTruthy();
@@ -64,5 +65,16 @@ describe('ClientsMockApi', () => {
     expect(contracted.clientId).toBe('client-1');
     const all = await firstValueFrom(api.getClientBonos('client-1'));
     expect(all).toHaveSize(2);
+  });
+
+  it('updates remaining sessions and expiry', async () => {
+    const updated = await firstValueFrom(
+      api.updateClientBono('cb-1', {
+        remainingSessions: 4,
+        expiresAt: '2027-01-01T00:00:00.000Z',
+      }),
+    );
+    expect(updated.remainingSessions).toBe(4);
+    expect(updated.expiresAt).toBe('2027-01-01T00:00:00.000Z');
   });
 });

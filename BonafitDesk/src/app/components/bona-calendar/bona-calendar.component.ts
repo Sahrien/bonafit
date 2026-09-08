@@ -24,6 +24,7 @@ export interface BonaCalendarEvent {
   client?: string;
   location?: string;
   resourceId?: string;
+  color?: string;
 }
 
 export interface BonaCalendarSlotSelect {
@@ -41,6 +42,8 @@ export function toFullCalendarEvent(event: BonaCalendarEvent): EventInput {
     title: titleParts.join(' · '),
     start: event.start,
     end: event.end,
+    backgroundColor: event.color,
+    borderColor: event.color,
     extendedProps: {
       trainer: event.trainer,
       client: event.client,
@@ -96,6 +99,7 @@ export class BonaCalendarComponent {
   readonly view = input<BonaCalendarView>('week');
   readonly events = input<BonaCalendarEvent[]>([]);
   readonly locale = input('es');
+  readonly selectable = input(true);
 
   readonly eventClick = output<BonaCalendarEvent>();
   readonly slotSelect = output<BonaCalendarSlotSelect>();
@@ -110,7 +114,7 @@ export class BonaCalendarComponent {
       right: '',
     },
     events: this.events().map(toFullCalendarEvent),
-    selectable: true,
+    selectable: this.selectable(),
     selectMirror: true,
     allDaySlot: false,
     slotMinTime: '07:00:00',

@@ -83,5 +83,7 @@ describe('BonaGridComponent', () => {
 
     expect(actionSpy).toHaveBeenCalledWith({ action: 'edit', item: row });
     expect(rowSpy).not.toHaveBeenCalled();
+    expect(actionButton.closest('td')?.classList.contains('bona-grid__actions')).toBeFalse();
+    expect(actionButton.closest('.bona-grid__actions')?.tagName).toBe('DIV');
   });
 });

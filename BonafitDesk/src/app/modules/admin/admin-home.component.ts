@@ -49,6 +49,13 @@ export class AdminHomeComponent {
       icon: 'S',
       path: '/admin/services',
     },
+    {
+      id: 'forms',
+      title: ADMIN_LITERALS.formsTitle,
+      description: ADMIN_LITERALS.formsDescription,
+      icon: 'F',
+      path: '/admin/forms',
+    },
   ];
 
   onOpen(path: string): void {

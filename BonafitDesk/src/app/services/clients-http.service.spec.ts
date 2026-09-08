@@ -44,6 +44,7 @@ describe('ClientsHttpApi', () => {
       email: 'nia.costa@example.com',
       phone: '+34000000009',
       notes: '',
+      instantConfirm: false,
     };
     const created = { ...payload, id: 'client-9' };
     const pending = firstValueFrom(api.createClient(payload));
@@ -60,6 +61,7 @@ describe('ClientsHttpApi', () => {
       email: 'marina.lopez@example.com',
       phone: '+34000000001',
       notes: 'updated',
+      instantConfirm: true,
     };
     const pending = firstValueFrom(api.updateClient('client-1', payload));
     const req = http.expectOne({
@@ -110,5 +112,17 @@ describe('ClientsHttpApi', () => {
       expiresAt: null,
     });
     expect((await pending).remainingSessions).toBe(5);
+  });
+
+  it('PUT /client-bonos/:id', async () => {
+    const payload = { remainingSessions: 4, expiresAt: '2026-12-01T10:00:00.000Z' };
+    const pending = firstValueFrom(api.updateClientBono('cb-1', payload));
+    const req = http.expectOne({
+      method: 'PUT',
+      url: apiUrl(API_PATHS.clientBonos, 'cb-1'),
+    });
+    expect(req.request.body).toEqual(payload);
+    req.flush({ ...MOCK_CLIENT_BONOS[0], remainingSessions: 4 });
+    expect((await pending).remainingSessions).toBe(4);
   });
 });

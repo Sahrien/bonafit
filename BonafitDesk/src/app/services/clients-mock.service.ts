@@ -3,7 +3,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { ApiNotFoundError } from '../core/api-not-found.error';
 import { ClientsApi } from '../core/clients-api';
 import { MockStore } from '../core/mock-store.service';
-import { ClientBonoDto, ContractBonoDto } from '../models/client-bono.dto';
+import { ClientBonoDto, ClientBonoPatchDto, ContractBonoDto } from '../models/client-bono.dto';
 import { ClientDto, ClientWriteDto } from '../models/client.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -74,5 +74,20 @@ export class ClientsMockApi implements ClientsApi {
     };
     this.store.clientBonos.push(created);
     return of(structuredClone(created));
+  }
+
+  updateClientBono(id: string, payload: ClientBonoPatchDto): Observable<ClientBonoDto> {
+    const index = this.store.clientBonos.findIndex((row) => row.id === id);
+    if (index < 0) {
+      return throwError(() => new ApiNotFoundError('client-bono', id));
+    }
+    const current = this.store.clientBonos[index];
+    const updated: ClientBonoDto = {
+      ...current,
+      remainingSessions: payload.remainingSessions,
+      expiresAt: payload.expiresAt,
+    };
+    this.store.clientBonos[index] = updated;
+    return of(structuredClone(updated));
   }
 }

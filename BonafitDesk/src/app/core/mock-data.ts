@@ -1,9 +1,12 @@
 import { AppointmentDto } from '../models/appointment.dto';
 import { AuthSessionDto, AuthUserDto } from '../models/auth-session.dto';
 import { BonoDto } from '../models/bono.dto';
+import { BookingSettingsDto } from '../models/booking-settings.dto';
 import { ClientBonoDto } from '../models/client-bono.dto';
 import { ClientDto } from '../models/client.dto';
+import { FormAssignmentDto, FormDto, FormQuestionDto } from '../models/form.dto';
 import { ServiceDto } from '../models/service.dto';
+import { TrainerScheduleDto } from '../models/trainer-schedule.dto';
 import { TrainerDto } from '../models/trainer.dto';
 
 export interface MockDatabase {
@@ -13,6 +16,10 @@ export interface MockDatabase {
   bonos: BonoDto[];
   clientBonos: ClientBonoDto[];
   appointments: AppointmentDto[];
+  trainerSchedules: TrainerScheduleDto[];
+  bookingSettings: BookingSettingsDto;
+  forms: FormDto[];
+  formAssignments: FormAssignmentDto[];
   accounts: AuthUserDto[];
 }
 
@@ -29,6 +36,7 @@ export const MOCK_CLIENTS: ClientDto[] = [
     email: 'marina.lopez@example.com',
     phone: '+34000000001',
     notes: '',
+    instantConfirm: true,
   },
   {
     id: 'client-2',
@@ -37,6 +45,7 @@ export const MOCK_CLIENTS: ClientDto[] = [
     email: 'pablo.nieto@example.com',
     phone: '+34000000002',
     notes: 'knee',
+    instantConfirm: false,
   },
   {
     id: 'client-3',
@@ -45,6 +54,7 @@ export const MOCK_CLIENTS: ClientDto[] = [
     email: 'iris.vega@example.com',
     phone: '+34000000003',
     notes: '',
+    instantConfirm: false,
   },
 ];
 
@@ -54,12 +64,16 @@ export const MOCK_SERVICES: ServiceDto[] = [
     category: 'entrenamiento-personal',
     name: 'entrenamiento-personal',
     allowsSingleSession: false,
+    durationMinutes: 60,
+    bookableByClient: true,
   },
   {
     id: 'svc-hipo',
     category: 'hipopresivos',
     name: 'hipopresivos',
     allowsSingleSession: false,
+    durationMinutes: 45,
+    bookableByClient: true,
   },
   {
     id: 'svc-masaje',
@@ -67,6 +81,8 @@ export const MOCK_SERVICES: ServiceDto[] = [
     name: 'masaje',
     allowsSingleSession: true,
     singleSessionPrice: 45,
+    durationMinutes: 60,
+    bookableByClient: false,
   },
 ];
 
@@ -134,6 +150,7 @@ export const MOCK_APPOINTMENTS: AppointmentDto[] = [
     startsAt: '2026-09-07T08:00:00.000Z',
     endsAt: '2026-09-07T09:00:00.000Z',
     location: 'studio-1',
+    status: 'completed',
   },
   {
     id: 'apt-2',
@@ -144,6 +161,7 @@ export const MOCK_APPOINTMENTS: AppointmentDto[] = [
     startsAt: '2026-09-07T09:30:00.000Z',
     endsAt: '2026-09-07T10:15:00.000Z',
     location: 'studio-2',
+    status: 'completed',
   },
   {
     id: 'apt-3',
@@ -153,6 +171,95 @@ export const MOCK_APPOINTMENTS: AppointmentDto[] = [
     startsAt: '2026-09-08T16:00:00.000Z',
     endsAt: '2026-09-08T17:00:00.000Z',
     location: 'studio-1',
+    status: 'confirmed',
+  },
+];
+
+function weekdaySchedules(trainerId: string, prefix: string): TrainerScheduleDto[] {
+  return [1, 2, 3, 4, 5].map((weekday) => ({
+    id: `${prefix}-${weekday}`,
+    trainerId,
+    weekday,
+    startTime: '08:00',
+    endTime: '18:00',
+  }));
+}
+
+export const MOCK_TRAINER_SCHEDULES: TrainerScheduleDto[] = [
+  ...weekdaySchedules('trainer-1', 'sch-1'),
+  ...weekdaySchedules('trainer-2', 'sch-2'),
+];
+
+export const MOCK_BOOKING_SETTINGS: BookingSettingsDto = {
+  id: 'booking-settings',
+  nextDayCutoffTime: '18:00',
+  defaultLocation: 'studio-1',
+};
+
+const MOCK_FORM_QUESTIONS: FormQuestionDto[] = [
+  {
+    id: 'q-1',
+    prompt: '¿Tienes alguna lesión o molestia actual?',
+    type: 'yesno',
+    required: true,
+    sortOrder: 0,
+  },
+  {
+    id: 'q-2',
+    prompt: 'Describe la lesión o indica ninguna',
+    type: 'text',
+    required: false,
+    sortOrder: 1,
+  },
+  {
+    id: 'q-3',
+    prompt: '¿Cuál es tu objetivo principal?',
+    type: 'singleChoice',
+    required: true,
+    sortOrder: 2,
+    options: [
+      { id: 'opt-strength', label: 'Fuerza', sortOrder: 0 },
+      { id: 'opt-weight', label: 'Pérdida de peso', sortOrder: 1 },
+      { id: 'opt-health', label: 'Salud general', sortOrder: 2 },
+    ],
+  },
+];
+
+export const MOCK_FORMS: FormDto[] = [
+  {
+    id: 'form-1',
+    title: 'Cuestionario inicial',
+    description: 'Datos de salud y objetivos para el primer mes.',
+    questions: MOCK_FORM_QUESTIONS,
+  },
+];
+
+export const MOCK_FORM_ASSIGNMENTS: FormAssignmentDto[] = [
+  {
+    id: 'fa-1',
+    formId: 'form-1',
+    clientId: 'client-1',
+    title: 'Cuestionario inicial',
+    questions: MOCK_FORM_QUESTIONS,
+    status: 'pending',
+    assignedAt: '2026-09-01T10:00:00.000Z',
+    submittedAt: null,
+    answers: [],
+  },
+  {
+    id: 'fa-2',
+    formId: 'form-1',
+    clientId: 'client-2',
+    title: 'Cuestionario inicial',
+    questions: MOCK_FORM_QUESTIONS,
+    status: 'completed',
+    assignedAt: '2026-08-20T10:00:00.000Z',
+    submittedAt: '2026-08-21T09:15:00.000Z',
+    answers: [
+      { questionId: 'q-1', value: 'yes' },
+      { questionId: 'q-2', value: 'Molestia de rodilla' },
+      { questionId: 'q-3', value: 'opt-health' },
+    ],
   },
 ];
 
@@ -185,6 +292,10 @@ export function createMockDatabase(): MockDatabase {
     bonos: MOCK_BONOS,
     clientBonos: MOCK_CLIENT_BONOS,
     appointments: MOCK_APPOINTMENTS,
+    trainerSchedules: MOCK_TRAINER_SCHEDULES,
+    bookingSettings: MOCK_BOOKING_SETTINGS,
+    forms: MOCK_FORMS,
+    formAssignments: MOCK_FORM_ASSIGNMENTS,
     accounts: MOCK_ACCOUNTS,
   });
 }

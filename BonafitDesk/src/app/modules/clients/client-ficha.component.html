@@ -23,6 +23,29 @@
     (submitted)="onSubmit($event)" />
 
   @if (!isNew()) {
+    <section class="page-nested">
+      <h2>{{ literals.bonosTitle }}</h2>
+      <app-bona-grid
+        [data]="bonoRows()"
+        [columns]="bonoColumns"
+        [actions]="bonoActions"
+        [emptyMessage]="literals.emptyBonos"
+        (action)="onBonoAction($event)" />
+      @if (bonoFormOpen()) {
+        <div class="page-nested__form">
+          <app-bona-form
+            [fields]="bonoFields"
+            [value]="bonoForm()"
+            [submitText]="literals.save"
+            (valueChange)="onBonoFormChange($event)"
+            (submitted)="onSaveBono($event)" />
+          <app-bona-button
+            [text]="literals.back"
+            variant="secondary"
+            (action)="onCancelBono()" />
+        </div>
+      }
+    </section>
     <div class="page-actions">
       <app-bona-button
         [text]="literals.delete"

@@ -33,6 +33,8 @@ describe('CatalogoComponent', () => {
       category: 'entrenamiento-personal',
       name: 'entrenamiento-personal',
       allowsSingleSession: false,
+      durationMinutes: 60,
+      bookableByClient: true,
     },
     {
       id: 'svc-masaje',
@@ -40,6 +42,8 @@ describe('CatalogoComponent', () => {
       name: 'masaje',
       allowsSingleSession: true,
       singleSessionPrice: 45,
+      durationMinutes: 60,
+      bookableByClient: false,
     },
   ];
 

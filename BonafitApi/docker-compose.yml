@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: bonafit
+      POSTGRES_PASSWORD: bonafit
+      POSTGRES_DB: bonafit
+    ports:
+      - "5432:5432"
+    volumes:
+      - bonafit_pg:/var/lib/postgresql/data
+
+volumes:
+  bonafit_pg:

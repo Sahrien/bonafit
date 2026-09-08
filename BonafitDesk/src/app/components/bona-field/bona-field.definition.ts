@@ -5,6 +5,8 @@ export type BonaFieldControlType =
   | 'number'
   | 'password'
   | 'datetime-local'
+  | 'date'
+  | 'time'
   | 'textarea'
   | 'select';
 

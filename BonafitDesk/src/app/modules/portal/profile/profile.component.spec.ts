@@ -30,6 +30,7 @@ describe('ProfileComponent', () => {
     email: 'marina.lopez@example.com',
     phone: '+34000000001',
     notes: '',
+    instantConfirm: true,
   };
 
   beforeEach(async () => {
@@ -91,6 +92,7 @@ describe('ProfileComponent', () => {
       email: 'marina.lopez@example.com',
       phone: '+34000000001',
       notes: '',
+      instantConfirm: true,
     });
     expect(fixture.nativeElement.textContent).toContain(PROFILE_LITERALS.saved);
   });

@@ -21,6 +21,8 @@ const EMPTY_SERVICE: BonaFormValue = {
   name: '',
   category: 'entrenamiento-personal',
   allowsSingleSession: 'false',
+  bookableByClient: 'true',
+  durationMinutes: '60',
   singleSessionPrice: '',
 };
 
@@ -57,6 +59,7 @@ export class ServicesComponent {
   readonly serviceColumns: BonaGridColumn[] = [
     { field: 'name', header: SERVICES_LITERALS.name },
     { field: 'categoryLabel', header: SERVICES_LITERALS.category },
+    { field: 'durationMinutes', header: SERVICES_LITERALS.durationMinutes, type: 'number' },
     { field: 'allowsSingleSessionLabel', header: SERVICES_LITERALS.allowsSingleSession },
     { field: 'singleSessionPriceLabel', header: SERVICES_LITERALS.singleSessionPrice },
   ];
@@ -120,6 +123,21 @@ export class ServicesComponent {
             label: SERVICE_CATEGORY_LABELS[category],
           }),
         ),
+      },
+      {
+        key: 'durationMinutes',
+        label: this.literals.durationMinutes,
+        type: 'number',
+        required: true,
+      },
+      {
+        key: 'bookableByClient',
+        label: this.literals.bookableByClient,
+        type: 'select',
+        options: [
+          { value: 'true', label: this.literals.yes },
+          { value: 'false', label: this.literals.no },
+        ],
       },
       {
         key: 'allowsSingleSession',
@@ -316,6 +334,8 @@ export class ServicesComponent {
       name: service.name,
       category: service.category,
       allowsSingleSession: service.allowsSingleSession ? 'true' : 'false',
+      bookableByClient: service.bookableByClient ? 'true' : 'false',
+      durationMinutes: String(service.durationMinutes),
       singleSessionPrice:
         service.singleSessionPrice != null ? String(service.singleSessionPrice) : '',
     };
@@ -333,7 +353,8 @@ export class ServicesComponent {
   private toServiceWrite(value: BonaFormValue): ServiceWriteDto | null {
     const name = (value['name'] ?? '').trim();
     const category = value['category'] as ServiceCategory;
-    if (!name || !category) {
+    const durationMinutes = Number(value['durationMinutes']);
+    if (!name || !category || Number.isNaN(durationMinutes) || durationMinutes <= 0) {
       this.error.set(this.literals.errorRequired);
       return null;
     }
@@ -342,6 +363,8 @@ export class ServicesComponent {
       name,
       category,
       allowsSingleSession,
+      bookableByClient: value['bookableByClient'] === 'true',
+      durationMinutes,
     };
     if (allowsSingleSession) {
       const price = Number(value['singleSessionPrice']);

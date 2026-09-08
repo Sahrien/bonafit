@@ -44,6 +44,7 @@ describe('ServicesComponent', () => {
     expect(text).toContain(SERVICES_LITERALS.title);
     expect(text).toContain(SERVICES_LITERALS.name);
     expect(text).toContain(SERVICES_LITERALS.category);
+    expect(text).toContain(SERVICES_LITERALS.durationMinutes);
     expect(text).toContain(SERVICES_LITERALS.allowsSingleSession);
     expect(text).toContain(SERVICES_LITERALS.singleSessionPrice);
     expect(text).toContain(SERVICE_CATEGORY_LABELS.masaje);

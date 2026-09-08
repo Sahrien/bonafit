@@ -22,7 +22,9 @@ export class PortalShellComponent {
   readonly navItems: BonaShellNavItem[] = [
     { id: 'profile', label: CLIENT_LITERALS.profile, link: '/app/profile' },
     { id: 'bonos', label: CLIENT_LITERALS.bonos, link: '/app/bonos' },
+    { id: 'agenda', label: CLIENT_LITERALS.agenda, link: '/app/agenda' },
     { id: 'catalog', label: CLIENT_LITERALS.catalog, link: '/app/catalogo' },
+    { id: 'forms', label: CLIENT_LITERALS.forms, link: '/app/formularios' },
   ];
 
   onLogout(): void {

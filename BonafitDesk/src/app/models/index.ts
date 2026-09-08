@@ -5,13 +5,19 @@ export type { BonoDto, BonoWriteDto } from './bono.dto';
 export type {
   ClientBonoDto,
   ClientBonoWriteDto,
+  ClientBonoPatchDto,
   ContractBonoDto,
 } from './client-bono.dto';
 export type {
   AppointmentDto,
   AppointmentWriteDto,
   AppointmentQuery,
+  AppointmentStatus,
+  AvailabilityQuery,
+  AvailabilitySlotDto,
 } from './appointment.dto';
+export type { BookingSettingsDto, BookingSettingsWriteDto } from './booking-settings.dto';
+export type { TrainerScheduleDto, TrainerScheduleWriteDto } from './trainer-schedule.dto';
 export type {
   UserRole,
   AuthUserDto,

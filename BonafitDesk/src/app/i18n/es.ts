@@ -19,6 +19,8 @@ export const ADMIN_LITERALS = {
   clientsDescription: 'Fichas y seguimiento uno a uno',
   servicesTitle: 'Servicios y bonos',
   servicesDescription: 'Catálogo comercial del estudio',
+  formsTitle: 'Formularios y encuestas',
+  formsDescription: 'Preguntas para clientes y sus respuestas',
 } as const;
 
 export const CLIENT_LITERALS = {
@@ -27,4 +29,6 @@ export const CLIENT_LITERALS = {
   profile: 'Datos personales',
   bonos: 'Bonos contratados',
   catalog: 'Catálogo',
+  agenda: 'Agenda',
+  forms: 'Formularios',
 } as const;

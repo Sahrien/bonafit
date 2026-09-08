@@ -43,6 +43,16 @@
           [text]="literals.cancel"
           variant="secondary"
           (action)="onCancel()" />
+        @if (editingId() && currentStatus() === 'pending') {
+          <app-bona-button [text]="literals.confirm" (action)="onConfirm()" />
+        }
+        @if (editingId() && (currentStatus() === 'pending' || currentStatus() === 'confirmed')) {
+          <app-bona-button [text]="literals.complete" (action)="onComplete()" />
+          <app-bona-button
+            [text]="literals.cancelAppointment"
+            variant="secondary"
+            (action)="onCancelAppointment()" />
+        }
         @if (editingId()) {
           <app-bona-button
             [text]="literals.delete"
@@ -52,4 +62,41 @@
       </div>
     </section>
   }
+
+  <section class="page-editor">
+    <h2>{{ literals.settingsTitle }}</h2>
+    <app-bona-form
+      [fields]="settingsFields"
+      [value]="settingsForm()"
+      [submitText]="literals.save"
+      (valueChange)="onSettingsChange($event)"
+      (submitted)="onSaveSettings($event)" />
+  </section>
+
+  <section class="page-editor">
+    <header class="page-nested__header">
+      <h2>{{ literals.schedulesTitle }}</h2>
+      <app-bona-button [text]="literals.newSchedule" (action)="onCreateSchedule()" />
+    </header>
+    <app-bona-grid
+      [data]="scheduleRows()"
+      [columns]="scheduleColumns"
+      [actions]="scheduleActions"
+      [emptyMessage]="literals.emptySchedules"
+      (action)="onScheduleAction($event)" />
+    @if (scheduleFormOpen()) {
+      <div class="page-nested__form">
+        <app-bona-form
+          [fields]="scheduleFields()"
+          [value]="scheduleForm()"
+          [submitText]="literals.save"
+          (valueChange)="onScheduleFormChange($event)"
+          (submitted)="onSaveSchedule($event)" />
+        <app-bona-button
+          [text]="literals.cancel"
+          variant="secondary"
+          (action)="onCancelSchedule()" />
+      </div>
+    }
+  </section>
 </div>

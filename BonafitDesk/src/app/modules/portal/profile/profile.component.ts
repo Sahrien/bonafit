@@ -36,6 +36,7 @@ export class ProfileComponent {
   ];
 
   private clientId = '';
+  private instantConfirm = false;
 
   constructor() {
     this.auth
@@ -57,6 +58,7 @@ export class ProfileComponent {
       .subscribe({
         next: (client) => {
           this.formValue.set(this.toFormValue(client));
+          this.instantConfirm = client.instantConfirm;
           this.loading.set(false);
         },
         error: () => {
@@ -102,6 +104,7 @@ export class ProfileComponent {
       email: value['email'] ?? '',
       phone: value['phone'] ?? '',
       notes: value['notes'] ?? '',
+      instantConfirm: this.instantConfirm,
     };
   }
 }

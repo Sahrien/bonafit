@@ -50,6 +50,10 @@ describe('app routes', () => {
       jasmine.objectContaining({ path: 'admin/clients/:id', name: 'ClientFichaComponent' }),
     );
     expect(loaded).toContain(jasmine.objectContaining({ path: 'admin/services', name: 'ServicesComponent' }));
+    expect(loaded).toContain(jasmine.objectContaining({ path: 'admin/forms', name: 'FormsComponent' }));
+    expect(loaded).toContain(
+      jasmine.objectContaining({ path: 'admin/forms/:id', name: 'FormFichaComponent' }),
+    );
   });
 
   it('wires the client portal shell and pages', () => {
@@ -57,5 +61,12 @@ describe('app routes', () => {
     expect(loaded).toContain(jasmine.objectContaining({ path: 'app/profile', name: 'ProfileComponent' }));
     expect(loaded).toContain(jasmine.objectContaining({ path: 'app/bonos', name: 'BonosComponent' }));
     expect(loaded).toContain(jasmine.objectContaining({ path: 'app/catalogo', name: 'CatalogoComponent' }));
+    expect(loaded).toContain(jasmine.objectContaining({ path: 'app/agenda', name: 'PortalAgendaComponent' }));
+    expect(loaded).toContain(
+      jasmine.objectContaining({ path: 'app/formularios', name: 'PortalFormsComponent' }),
+    );
+    expect(loaded).toContain(
+      jasmine.objectContaining({ path: 'app/formularios/:id', name: 'PortalFormFillComponent' }),
+    );
   });
 });

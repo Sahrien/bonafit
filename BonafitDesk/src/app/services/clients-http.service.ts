@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { API_PATHS, apiUrl } from '../core/api-url';
 import { ClientsApi } from '../core/clients-api';
 import { toHttpParams } from '../core/http-params';
-import { ClientBonoDto, ContractBonoDto } from '../models/client-bono.dto';
+import { ClientBonoDto, ClientBonoPatchDto, ContractBonoDto } from '../models/client-bono.dto';
 import { ClientDto, ClientWriteDto } from '../models/client.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -39,5 +39,9 @@ export class ClientsHttpApi implements ClientsApi {
 
   contractBono(payload: ContractBonoDto): Observable<ClientBonoDto> {
     return this.http.post<ClientBonoDto>(apiUrl(API_PATHS.clientBonos), payload);
+  }
+
+  updateClientBono(id: string, payload: ClientBonoPatchDto): Observable<ClientBonoDto> {
+    return this.http.put<ClientBonoDto>(apiUrl(API_PATHS.clientBonos, id), payload);
   }
 }

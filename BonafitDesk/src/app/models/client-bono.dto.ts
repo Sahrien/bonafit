@@ -12,4 +12,9 @@ export interface ContractBonoDto {
   bonoId: string;
 }
 
+export interface ClientBonoPatchDto {
+  remainingSessions: number;
+  expiresAt: string | null;
+}
+
 export type ClientBonoWriteDto = Omit<ClientBonoDto, 'id'>;

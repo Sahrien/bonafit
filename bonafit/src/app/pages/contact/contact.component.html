@@ -1,13 +1,89 @@
-<div class="contact">
-    <h1>Contacto</h1>
+<section class="contact" aria-labelledby="contact-form-title">
+  <div class="contact__intro">
+    <p class="eyebrow">Hablemos</p>
+    <h2 id="contact-form-title">Solicita información</h2>
+    <p>
+      Cuéntanos cómo te sientes y qué te gustaría recuperar. Te responderemos
+      para valorar una primera sesión en la zona de Bonalba.
+    </p>
 
-    <p>¿Tienes alguna pregunta? Escríbenos.</p>
+    <ul class="contact__details">
+      <li>
+        <span>Teléfono</span>
+        <a href="tel:+34965123456">+34 965 12 34 56</a>
+      </li>
+      <li>
+        <span>WhatsApp</span>
+        <a href="https://wa.me/34622184709" target="_blank" rel="noopener noreferrer">+34 622 18 47 09</a>
+      </li>
+      <li>
+        <span>Email</span>
+        <a href="mailto:hola&#64;bonafit.es">hola&#64;bonafit.es</a>
+      </li>
+      <li>
+        <span>Estudio</span>
+        <address>Urbanización Bonalba Golf, 03110 Mutxamel, Alicante</address>
+      </li>
+      <li>
+        <span>Horario</span>
+        <p>Lunes a viernes 8:00–20:00 · Sábados 9:00–13:00</p>
+      </li>
+    </ul>
+  </div>
 
-    <app-text-field label="Nombre" placeholder="Introduce tu nombre" (valueChange)="name = $event" />
+  <form class="contact__form" (submit)="$event.preventDefault(); sendMessage()">
+    <app-text-field
+      label="Nombre"
+      placeholder="Tu nombre"
+      autocomplete="name"
+      [required]="true"
+      [value]="name()"
+      (valueChange)="name.set($event)"
+    />
 
-    <app-text-field label="Email" placeholder="Introduce tu email" type="email" (valueChange)="email = $event" />
+    <app-text-field
+      label="Email"
+      placeholder="tu@email.com"
+      type="email"
+      autocomplete="email"
+      [required]="true"
+      [value]="email()"
+      (valueChange)="email.set($event)"
+    />
 
-    <app-text-field label="Mensaje" placeholder="Escribe tu mensaje" (valueChange)="message = $event" />
+    <app-text-field
+      label="Teléfono"
+      placeholder="Opcional"
+      type="tel"
+      autocomplete="tel"
+      [value]="phone()"
+      (valueChange)="phone.set($event)"
+    />
 
-    <app-button text="Enviar mensaje" (clicked)="sendMessage()" />
-</div>
+    <app-text-field
+      label="Mensaje"
+      placeholder="Qué te gustaría trabajar o cómo podemos ayudarte"
+      [multiline]="true"
+      [required]="true"
+      [value]="message()"
+      (valueChange)="message.set($event)"
+    />
+
+    @if (error()) {
+      <p class="contact__error" role="alert">{{ error() }}</p>
+    }
+
+    <app-button text="Enviar mensaje" type="submit" />
+  </form>
+</section>
+
+<app-modal
+  [open]="showModal()"
+  (openChange)="showModal.set($event)"
+  title="Hemos recibido tu mensaje"
+>
+  <p>
+    Gracias por escribirnos. Te contactaremos en breve para hablar con calma
+    y ver si BONAFIT encaja contigo.
+  </p>
+</app-modal>

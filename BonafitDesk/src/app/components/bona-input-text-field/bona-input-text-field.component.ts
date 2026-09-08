@@ -12,7 +12,15 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 
-export type BonaInputType = 'text' | 'email' | 'tel' | 'number' | 'datetime-local' | 'password';
+export type BonaInputType =
+  | 'text'
+  | 'email'
+  | 'tel'
+  | 'number'
+  | 'datetime-local'
+  | 'date'
+  | 'time'
+  | 'password';
 
 @Component({
   selector: 'app-bona-input-text-field',

@@ -8,7 +8,9 @@
     }
   </div>
 
-  <div class="bona-form__actions">
-    <app-bona-button [text]="submitText()" type="submit" [disabled]="disabled()" />
-  </div>
+  @if (showSubmit()) {
+    <div class="bona-form__actions">
+      <app-bona-button [text]="submitText()" type="submit" [disabled]="disabled()" />
+    </div>
+  }
 </form>

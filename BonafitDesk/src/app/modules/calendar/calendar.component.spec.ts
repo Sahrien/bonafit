@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { BonaCalendarEvent } from '../../components/bona-calendar/bona-calendar.component';
-import { MOCK_APPOINTMENTS, MOCK_CLIENTS, MOCK_SERVICES, MOCK_TRAINERS } from '../../core/mock-data';
+import { MOCK_APPOINTMENTS, MOCK_BOOKING_SETTINGS, MOCK_CLIENTS, MOCK_SERVICES, MOCK_TRAINERS, MOCK_TRAINER_SCHEDULES } from '../../core/mock-data';
 import { AuthSessionDto } from '../../models/auth-session.dto';
 import { AuthApiService } from '../../services/auth-api.service';
 import { CalendarApiService } from '../../services/calendar-api.service';
@@ -35,6 +35,8 @@ describe('CalendarComponent', () => {
       'createAppointment',
       'updateAppointment',
       'deleteAppointment',
+      'getBookingSettings',
+      'getTrainerSchedules',
     ]);
     clientsApi = jasmine.createSpyObj('ClientsApiService', ['getClients', 'getClientBonos']);
     servicesApi = jasmine.createSpyObj('ServicesApiService', ['getServices', 'getBonos']);
@@ -42,6 +44,8 @@ describe('CalendarComponent', () => {
 
     calendarApi.getTrainers.and.returnValue(of(MOCK_TRAINERS));
     calendarApi.getAppointments.and.returnValue(of(MOCK_APPOINTMENTS));
+    calendarApi.getBookingSettings.and.returnValue(of(MOCK_BOOKING_SETTINGS));
+    calendarApi.getTrainerSchedules.and.returnValue(of(MOCK_TRAINER_SCHEDULES));
     clientsApi.getClients.and.returnValue(of(MOCK_CLIENTS));
     clientsApi.getClientBonos.and.returnValue(of([]));
     servicesApi.getServices.and.returnValue(of(MOCK_SERVICES));
@@ -95,6 +99,7 @@ describe('CalendarComponent', () => {
     expect(text).toContain(CALENDAR_LITERALS.startsAt);
     expect(text).toContain(CALENDAR_LITERALS.endsAt);
     expect(text).toContain(CALENDAR_LITERALS.location);
+    expect(text).toContain(CALENDAR_LITERALS.status);
     expect(fixture.nativeElement.querySelector('app-bona-form')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-bona-calendar')).toBeTruthy();
   });

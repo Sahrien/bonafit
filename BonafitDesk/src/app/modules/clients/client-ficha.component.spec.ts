@@ -5,6 +5,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { MOCK_CLIENTS } from '../../core/mock-data';
 import { ClientsApiService } from '../../services/clients-api.service';
+import { ServicesApiService } from '../../services/services-api.service';
 import { ClientFichaComponent } from './client-ficha.component';
 import { CLIENTS_LITERALS } from './clients.literals';
 
@@ -17,11 +18,15 @@ describe('ClientFichaComponent', () => {
       'createClient',
       'updateClient',
       'deleteClient',
+      'getClientBonos',
     ]);
+    const servicesApi = jasmine.createSpyObj('ServicesApiService', ['getBonos']);
     clientsApi.getClient.and.callFake((id: string) =>
       of(MOCK_CLIENTS.find((client) => client.id === id) ?? MOCK_CLIENTS[0]),
     );
     clientsApi.updateClient.and.returnValue(of(MOCK_CLIENTS[0]));
+    clientsApi.getClientBonos.and.returnValue(of([]));
+    servicesApi.getBonos.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [ClientFichaComponent],
@@ -29,6 +34,7 @@ describe('ClientFichaComponent', () => {
         provideNoopAnimations(),
         provideRouter([{ path: 'admin/clients/:id', component: ClientFichaComponent }]),
         { provide: ClientsApiService, useValue: clientsApi },
+        { provide: ServicesApiService, useValue: servicesApi },
       ],
     }).compileComponents();
   });
@@ -45,6 +51,7 @@ describe('ClientFichaComponent', () => {
     expect(text).toContain(CLIENTS_LITERALS.email);
     expect(text).toContain(CLIENTS_LITERALS.phone);
     expect(text).toContain(CLIENTS_LITERALS.notes);
+    expect(text).toContain(CLIENTS_LITERALS.instantConfirm);
 
     const inputs = Array.from(
       harness.routeNativeElement?.querySelectorAll('input') ?? [],

@@ -42,8 +42,40 @@ describe('CalendarMockApi', () => {
       }),
     );
     expect(created.location).toBe('studio-2');
+    expect(created.status).toBe('confirmed');
     const listed = await firstValueFrom(api.getAppointments());
     expect(listed.some((row) => row.id === created.id)).toBeTrue();
+  });
+
+  it('decrements remaining sessions when a trainer marks the appointment completed', async () => {
+    const store = TestBed.inject(MockStore);
+    const created = await firstValueFrom(
+      api.createAppointment({
+        trainerId: 'trainer-1',
+        clientId: 'client-1',
+        serviceId: 'svc-ep',
+        clientBonoId: 'cb-1',
+        startsAt: '2026-10-01T08:00:00.000Z',
+        endsAt: '2026-10-01T09:00:00.000Z',
+        location: 'studio-1',
+        status: 'confirmed',
+      }),
+    );
+    expect(store.clientBonos.find((row) => row.id === 'cb-1')?.remainingSessions).toBe(7);
+
+    await firstValueFrom(
+      api.updateAppointment(created.id, {
+        trainerId: created.trainerId,
+        clientId: created.clientId,
+        serviceId: created.serviceId,
+        clientBonoId: created.clientBonoId,
+        startsAt: created.startsAt,
+        endsAt: created.endsAt,
+        location: created.location,
+        status: 'completed',
+      }),
+    );
+    expect(store.clientBonos.find((row) => row.id === 'cb-1')?.remainingSessions).toBe(6);
   });
 });
 

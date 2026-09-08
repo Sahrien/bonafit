@@ -1,0 +1,173 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>{{ pageTitle() }}</h1>
+      <p>{{ literals.subtitle }}</p>
+    </div>
+    <app-bona-button
+      [text]="literals.back"
+      variant="secondary"
+      (action)="onBack()" />
+  </header>
+
+  @if (error()) {
+    <p class="page-error">{{ error() }}</p>
+  }
+  @if (feedback()) {
+    <p class="page-feedback">{{ feedback() }}</p>
+  }
+
+  <section class="page-section">
+    <h2>{{ literals.templateSection }}</h2>
+    <app-bona-input-text-field
+      [label]="literals.formTitle"
+      [value]="title()"
+      (valueChange)="onTitleChange($event)" />
+    <app-bona-field
+      [definition]="descriptionField"
+      [value]="description()"
+      (valueChange)="onDescriptionChange($event)" />
+
+    <header class="page-section__header">
+      <h3>{{ literals.questionsSection }}</h3>
+      <app-bona-button [text]="literals.addQuestion" (action)="onAddQuestion()" />
+    </header>
+
+    <ol class="question-list">
+      @for (question of questions(); track question.id; let index = $index; let last = $last) {
+        <li class="question-card">
+          <app-bona-input-text-field
+            [label]="literals.prompt"
+            [value]="question.prompt"
+            (valueChange)="onPromptChange(question.id, $event)" />
+          <div class="question-card__row">
+            <app-bona-field
+              [definition]="typeField"
+              [value]="question.type"
+              (valueChange)="onTypeChange(question.id, $event)" />
+            <app-bona-field
+              [definition]="requiredField"
+              [value]="question.required ? 'true' : 'false'"
+              (valueChange)="onRequiredChange(question.id, $event)" />
+          </div>
+
+          @if (question.type === 'singleChoice') {
+            <div class="question-card__options">
+              <p>{{ literals.options }}</p>
+              @for (option of question.options ?? []; track option.id) {
+                <div class="question-card__option">
+                  <app-bona-input-text-field
+                    [label]="literals.optionLabel"
+                    [value]="option.label"
+                    (valueChange)="onOptionLabelChange(question.id, option.id, $event)" />
+                  <app-bona-button
+                    [text]="literals.remove"
+                    variant="secondary"
+                    (action)="onRemoveOption(question.id, option.id)" />
+                </div>
+              }
+              <app-bona-button
+                [text]="literals.addOption"
+                variant="secondary"
+                (action)="onAddOption(question.id)" />
+            </div>
+          }
+
+          <div class="question-card__actions">
+            <app-bona-button
+              [text]="literals.moveUp"
+              variant="secondary"
+              [disabled]="index === 0"
+              (action)="onMoveQuestion(question.id, -1)" />
+            <app-bona-button
+              [text]="literals.moveDown"
+              variant="secondary"
+              [disabled]="last"
+              (action)="onMoveQuestion(question.id, 1)" />
+            <app-bona-button
+              [text]="literals.remove"
+              variant="secondary"
+              (action)="onRemoveQuestion(question.id)" />
+          </div>
+        </li>
+      }
+    </ol>
+
+    <div class="page-actions">
+      <app-bona-button
+        [text]="literals.save"
+        [disabled]="saving()"
+        (action)="onSave()" />
+      @if (!isNew()) {
+        <app-bona-button
+          [text]="literals.delete"
+          variant="secondary"
+          (action)="onDelete()" />
+      }
+    </div>
+  </section>
+
+  <section class="page-section">
+    <h2>{{ literals.assignSection }}</h2>
+    @if (isNew()) {
+      <p class="page-hint">{{ literals.assignHint }}</p>
+    } @else {
+      <ul class="client-picker">
+        @for (client of clientRows(); track client.id) {
+          <li
+            class="client-picker__item"
+            [class.client-picker__item--selected]="isSelected(client.id)">
+            <span>{{ client.firstName }} {{ client.lastName }}</span>
+            @if (isPending(client.id)) {
+              <span class="client-picker__status">{{ literals.alreadyPending }}</span>
+            } @else {
+              <app-bona-button
+                [text]="isSelected(client.id) ? literals.unselect : literals.select"
+                variant="secondary"
+                (action)="toggleClient(client.id)" />
+            }
+          </li>
+        } @empty {
+          <li class="page-hint">{{ literals.emptyClients }}</li>
+        }
+      </ul>
+      <div class="page-actions">
+        <app-bona-button
+          [text]="literals.assignAction"
+          [disabled]="assigning() || selectedClientIds().size === 0"
+          (action)="onAssign()" />
+      </div>
+    }
+  </section>
+
+  @if (!isNew()) {
+    <section class="page-section">
+      <h2>{{ literals.responsesSection }}</h2>
+      <app-bona-grid
+        [data]="assignmentRows()"
+        [columns]="assignmentColumns"
+        [actions]="assignmentActions"
+        [emptyMessage]="literals.emptyAssignments"
+        (action)="onAssignmentAction($event)"
+        (rowClick)="onAssignmentRowClick($event)" />
+
+      @if (selectedAnswers(); as answers) {
+        <div class="answers">
+          <header class="page-section__header">
+            <h3>{{ literals.answersTitle }} · {{ answers.clientName }}</h3>
+            <app-bona-button
+              [text]="literals.closeAnswers"
+              variant="secondary"
+              (action)="onCloseAnswers()" />
+          </header>
+          <dl class="answers__list">
+            @for (item of answers.items; track item.id) {
+              <dt>{{ item.prompt }}</dt>
+              <dd>{{ item.answer }}</dd>
+            }
+          </dl>
+        </div>
+      }
+    </section>
+  }
+</div>

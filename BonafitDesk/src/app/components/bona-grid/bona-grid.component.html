@@ -10,13 +10,15 @@
     @if (actions.length > 0) {
       <ng-container matColumnDef="_actions">
         <th mat-header-cell *matHeaderCellDef>Acciones</th>
-        <td mat-cell *matCellDef="let row" class="bona-grid__actions" (click)="$event.stopPropagation()">
-          @for (gridAction of actions; track gridAction.action) {
-            <app-bona-button
-              [text]="gridAction.label"
-              variant="secondary"
-              (action)="onAction(gridAction, row)" />
-          }
+        <td mat-cell *matCellDef="let row" (click)="$event.stopPropagation()">
+          <div class="bona-grid__actions">
+            @for (gridAction of actions; track gridAction.action) {
+              <app-bona-button
+                [text]="gridAction.label"
+                variant="secondary"
+                (action)="onAction(gridAction, row)" />
+            }
+          </div>
         </td>
       </ng-container>
     }

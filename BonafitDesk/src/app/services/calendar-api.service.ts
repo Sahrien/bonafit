@@ -6,7 +6,11 @@ import {
   AppointmentDto,
   AppointmentQuery,
   AppointmentWriteDto,
+  AvailabilityQuery,
+  AvailabilitySlotDto,
 } from '../models/appointment.dto';
+import { BookingSettingsDto, BookingSettingsWriteDto } from '../models/booking-settings.dto';
+import { TrainerScheduleDto, TrainerScheduleWriteDto } from '../models/trainer-schedule.dto';
 import { TrainerDto } from '../models/trainer.dto';
 import { CalendarHttpApi } from './calendar-http.service';
 import { CalendarMockApi } from './calendar-mock.service';
@@ -47,5 +51,35 @@ export class CalendarApiService implements CalendarApi {
   deleteAppointment(id: string): Observable<void> {
     return this.impl.deleteAppointment(id);
   }
-}
 
+  getAvailability(query: AvailabilityQuery): Observable<AvailabilitySlotDto[]> {
+    return this.impl.getAvailability(query);
+  }
+
+  getBookingSettings(): Observable<BookingSettingsDto> {
+    return this.impl.getBookingSettings();
+  }
+
+  updateBookingSettings(payload: BookingSettingsWriteDto): Observable<BookingSettingsDto> {
+    return this.impl.updateBookingSettings(payload);
+  }
+
+  getTrainerSchedules(trainerId?: string): Observable<TrainerScheduleDto[]> {
+    return this.impl.getTrainerSchedules(trainerId);
+  }
+
+  createTrainerSchedule(payload: TrainerScheduleWriteDto): Observable<TrainerScheduleDto> {
+    return this.impl.createTrainerSchedule(payload);
+  }
+
+  updateTrainerSchedule(
+    id: string,
+    payload: TrainerScheduleWriteDto,
+  ): Observable<TrainerScheduleDto> {
+    return this.impl.updateTrainerSchedule(id, payload);
+  }
+
+  deleteTrainerSchedule(id: string): Observable<void> {
+    return this.impl.deleteTrainerSchedule(id);
+  }
+}

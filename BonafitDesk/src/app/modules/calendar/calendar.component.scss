@@ -50,3 +50,20 @@
   margin: 0 0 var(--bona-space-4);
   color: var(--bona-color-danger);
 }
+
+.page-nested__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bona-space-3);
+  margin-bottom: var(--bona-space-4);
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.page-nested__form {
+  margin-top: var(--bona-space-4);
+}

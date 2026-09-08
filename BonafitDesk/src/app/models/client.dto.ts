@@ -5,6 +5,7 @@ export interface ClientDto {
   email: string;
   phone: string;
   notes: string;
+  instantConfirm: boolean;
 }
 
 export type ClientWriteDto = Omit<ClientDto, 'id'>;

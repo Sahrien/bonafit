@@ -12,6 +12,16 @@
 
 .bona-grid__table {
   width: 100%;
+
+  .mat-mdc-header-cell,
+  .mat-mdc-cell {
+    vertical-align: middle;
+  }
+
+  .mat-mdc-cell {
+    padding-top: var(--bona-space-3);
+    padding-bottom: var(--bona-space-3);
+  }
 }
 
 .bona-grid__row {
@@ -20,6 +30,7 @@
 
 .bona-grid__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--bona-space-2);
   align-items: center;
 }

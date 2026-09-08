@@ -7,11 +7,12 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { API_PATHS, apiUrl } from '../core/api-url';
-import { MOCK_CLIENTS, MOCK_SERVICES, MOCK_TRAINERS } from '../core/mock-data';
+import { MOCK_CLIENTS, MOCK_FORMS, MOCK_SERVICES, MOCK_TRAINERS } from '../core/mock-data';
 import { MockStore } from '../core/mock-store.service';
 import { AuthApiService } from './auth-api.service';
 import { CalendarApiService } from './calendar-api.service';
 import { ClientsApiService } from './clients-api.service';
+import { FormsApiService } from './forms-api.service';
 import { ServicesApiService } from './services-api.service';
 
 describe('API facades (mock vs HTTP)', () => {
@@ -30,6 +31,7 @@ describe('API facades (mock vs HTTP)', () => {
     const services = TestBed.inject(ServicesApiService);
     const calendar = TestBed.inject(CalendarApiService);
     const auth = TestBed.inject(AuthApiService);
+    const forms = TestBed.inject(FormsApiService);
 
     expect((await firstValueFrom(clients.getClients())).map((row) => row.id)).toEqual(
       MOCK_CLIENTS.map((row) => row.id),
@@ -37,6 +39,9 @@ describe('API facades (mock vs HTTP)', () => {
     expect((await firstValueFrom(services.getServices()))[2].allowsSingleSession).toBeTrue();
     expect(await firstValueFrom(calendar.getTrainers())).toEqual(MOCK_TRAINERS);
     expect((await firstValueFrom(auth.listAccounts())).some((row) => row.role === 'admin')).toBeTrue();
+    expect((await firstValueFrom(forms.getForms())).map((row) => row.id)).toEqual(
+      MOCK_FORMS.map((row) => row.id),
+    );
   });
 
   it('uses HTTP implementations when useMockApi is false', async () => {

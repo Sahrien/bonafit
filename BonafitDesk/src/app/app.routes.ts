@@ -25,14 +25,33 @@ const loadClientFicha = () =>
 const loadServices = () =>
   import('./modules/services/services.component').then((m) => m.ServicesComponent);
 
+const loadForms = () =>
+  import('./modules/forms/forms.component').then((m) => m.FormsComponent);
+
+const loadFormFicha = () =>
+  import('./modules/forms/form-ficha.component').then((m) => m.FormFichaComponent);
+
 const loadPortalProfile = () =>
   import('./modules/portal/profile/profile.component').then((m) => m.ProfileComponent);
 
 const loadPortalBonos = () =>
   import('./modules/portal/bonos/bonos.component').then((m) => m.BonosComponent);
 
+const loadPortalAgenda = () =>
+  import('./modules/portal/agenda/portal-agenda.component').then(
+    (m) => m.PortalAgendaComponent,
+  );
+
 const loadPortalCatalogo = () =>
   import('./modules/portal/catalogo/catalogo.component').then((m) => m.CatalogoComponent);
+
+const loadPortalForms = () =>
+  import('./modules/portal/forms/portal-forms.component').then((m) => m.PortalFormsComponent);
+
+const loadPortalFormFill = () =>
+  import('./modules/portal/forms/portal-form-fill.component').then(
+    (m) => m.PortalFormFillComponent,
+  );
 
 export const routes: Routes = [
   {
@@ -68,6 +87,14 @@ export const routes: Routes = [
             path: 'services',
             loadComponent: loadServices,
           },
+          {
+            path: 'forms',
+            loadComponent: loadForms,
+          },
+          {
+            path: 'forms/:id',
+            loadComponent: loadFormFicha,
+          },
         ],
       },
     ],
@@ -80,7 +107,10 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'profile' },
       { path: 'profile', loadComponent: loadPortalProfile },
       { path: 'bonos', loadComponent: loadPortalBonos },
+      { path: 'agenda', loadComponent: loadPortalAgenda },
       { path: 'catalogo', loadComponent: loadPortalCatalogo },
+      { path: 'formularios', loadComponent: loadPortalForms },
+      { path: 'formularios/:id', loadComponent: loadPortalFormFill },
     ],
   },
   {
