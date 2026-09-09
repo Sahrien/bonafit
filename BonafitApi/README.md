@@ -13,11 +13,9 @@ psql -U postgres -f setup_postgres.sql
 If the `bonafit` role already exists, skip that file and set `DATABASE_URL` in `.env` to the password you actually use.
 
 ```bash
-copy .env.example .env
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8080
+cp .env.example .env
+uv sync
+uv run uvicorn app.main:app --reload --port 8080
 ```
 
 Optional: `docker compose up -d` starts a Postgres 16 container with user/db `bonafit` if Docker is installed.

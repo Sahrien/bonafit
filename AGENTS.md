@@ -42,7 +42,7 @@ cd Webonafit && npm test
 
 # BonafitApi (Postgres 16 on localhost:5432)
 cd BonafitApi && docker compose up -d
-cd BonafitApi && .venv/bin/uvicorn app.main:app --reload --port 8080
+cd BonafitApi && uv sync && uv run uvicorn app.main:app --reload --port 8080
 ```
 
 Desk talks to the API at `http://localhost:8080/api` when `environment.useMockApi` is `false`. It currently ships with **mock API on** in development.

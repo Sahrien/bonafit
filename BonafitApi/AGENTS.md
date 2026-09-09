@@ -30,10 +30,11 @@ Postgres must be on `localhost:5432`. Once:
 docker compose up -d
 # or: psql -U postgres -f setup_postgres.sql
 cp .env.example .env
-python -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/uvicorn app.main:app --reload --port 8080
+uv sync
+uv run uvicorn app.main:app --reload --port 8080
 ```
+
+This is a uv project (`pyproject.toml` + `uv.lock`). Hatchling installs the existing `app/` package into `.venv` so `uvicorn app.main:app` works. Do not add a `requirements.txt`. Add or bump deps with `uv add`; commit `uv.lock` with `pyproject.toml`.
 
 Startup runs `create_all` and `seed_if_empty`. Seed password is `BOOTSTRAP_PASSWORD` (default `ChangeMe123!`).
 
