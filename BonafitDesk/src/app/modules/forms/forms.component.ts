@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { filter, forkJoin, switchMap } from 'rxjs';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
+import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
 import {
   BonaGridAction,
   BonaGridActionEvent,
@@ -10,6 +11,8 @@ import {
   BonaGridComponent,
 } from '../../components/bona-grid/bona-grid.component';
 import { BonaInputTextFieldComponent } from '../../components/bona-input-text-field/bona-input-text-field.component';
+import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
+import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { FormAssignmentDto, FormDto } from '../../models/form.dto';
 import { FormsApiService } from '../../services/forms-api.service';
 import { FORMS_LITERALS } from './forms.literals';
@@ -19,7 +22,7 @@ const NEW_FORM_ID = 'new';
 @Component({
   selector: 'app-forms',
   standalone: true,
-  imports: [BonaGridComponent, BonaButtonComponent, BonaInputTextFieldComponent],
+  imports: [BonaPageComponent, BonaGridComponent, BonaButtonComponent, BonaInputTextFieldComponent],
   templateUrl: './forms.component.html',
   styleUrl: './forms.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,10 +30,13 @@ const NEW_FORM_ID = 'new';
 export class FormsComponent {
   private readonly formsApi = inject(FormsApiService);
   private readonly router = inject(Router);
+  private readonly confirm = inject(BonaConfirm);
+  private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly literals = FORMS_LITERALS;
   readonly search = signal('');
+  readonly loading = signal(true);
   private readonly forms = signal<FormDto[]>([]);
   private readonly assignments = signal<FormAssignmentDto[]>([]);
 
@@ -102,11 +108,23 @@ export class FormsComponent {
   }
 
   private deleteForm(id: string): void {
-    this.formsApi
-      .deleteForm(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.confirm
+      .open({
+        title: this.literals.confirmDeleteTitle,
+        message: this.literals.confirmDeleteMessage,
+        confirmLabel: this.literals.delete,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() => this.formsApi.deleteForm(id)),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
-        next: () => this.load(),
+        next: () => {
+          this.toast.success(this.literals.deleted);
+          this.load();
+        },
+        error: () => this.toast.error(this.literals.errorSave),
       });
   }
 
@@ -116,9 +134,16 @@ export class FormsComponent {
       assignments: this.formsApi.getAssignments(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ forms, assignments }) => {
-        this.forms.set(forms);
-        this.assignments.set(assignments);
+      .subscribe({
+        next: ({ forms, assignments }) => {
+          this.forms.set(forms);
+          this.assignments.set(assignments);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.toast.error(this.literals.errorLoad);
+          this.loading.set(false);
+        },
       });
   }
 

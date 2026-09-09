@@ -6,6 +6,7 @@ import { BonoDto } from '../../../models/bono.dto';
 import { ClientBonoDto } from '../../../models/client-bono.dto';
 import { ServiceDto } from '../../../models/service.dto';
 import { AuthApiService } from '../../../services/auth-api.service';
+import { provideBonaFeedbackTesting } from '../../../testing/bona-feedback';
 import { ClientsApiService } from '../../../services/clients-api.service';
 import { ServicesApiService } from '../../../services/services-api.service';
 import { CatalogoComponent } from './catalogo.component';
@@ -93,6 +94,7 @@ describe('CatalogoComponent', () => {
         { provide: AuthApiService, useValue: authApi },
         { provide: ClientsApiService, useValue: clientsApi },
         { provide: ServicesApiService, useValue: servicesApi },
+        ...provideBonaFeedbackTesting().providers,
       ],
     }).compileComponents();
   });
@@ -136,7 +138,7 @@ describe('CatalogoComponent', () => {
       clientId: 'client-1',
       bonoId: 'bono-ep-10',
     });
-    expect(fixture.nativeElement.textContent).toContain(CATALOGO_LITERALS.contracted);
+    expect(servicesApi.getBonos).toHaveBeenCalledTimes(2);
   });
 
   it('contracts a one-session masaje bono', async () => {

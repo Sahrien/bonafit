@@ -1,0 +1,6 @@
+<app-bona-page [title]="literals.title" [subtitle]="literals.subtitleClient">
+  <section class="settings-section">
+    <h2>{{ literals.passwordTitle }}</h2>
+    <app-password-change-form (saved)="onPasswordSaved()" />
+  </section>
+</app-bona-page>

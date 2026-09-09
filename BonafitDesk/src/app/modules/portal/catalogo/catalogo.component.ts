@@ -1,12 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, forkJoin, map, switchMap, take } from 'rxjs';
+import { EMPTY, filter, forkJoin, map, switchMap, take } from 'rxjs';
+import { BonaConfirm } from '../../../components/bona-confirm/bona-confirm.service';
 import {
   BonaGridAction,
   BonaGridActionEvent,
   BonaGridColumn,
   BonaGridComponent,
 } from '../../../components/bona-grid/bona-grid.component';
+import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
+import { BonaToast } from '../../../components/bona-toast/bona-toast.service';
 import { BonoDto } from '../../../models/bono.dto';
 import { ServiceDto } from '../../../models/service.dto';
 import { AuthApiService } from '../../../services/auth-api.service';
@@ -17,7 +20,7 @@ import { CATALOGO_LITERALS } from './catalogo.literals';
 @Component({
   selector: 'app-portal-catalogo',
   standalone: true,
-  imports: [BonaGridComponent],
+  imports: [BonaPageComponent, BonaGridComponent],
   templateUrl: './catalogo.component.html',
   styleUrl: './catalogo.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,11 +29,13 @@ export class CatalogoComponent {
   private readonly auth = inject(AuthApiService);
   private readonly clientsApi = inject(ClientsApiService);
   private readonly servicesApi = inject(ServicesApiService);
+  private readonly confirm = inject(BonaConfirm);
+  private readonly toast = inject(BonaToast);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly literals = CATALOGO_LITERALS;
   readonly loading = signal(true);
   readonly error = signal('');
-  readonly feedback = signal('');
   readonly rows = signal<Record<string, unknown>[]>([]);
 
   readonly columns: BonaGridColumn[] = [
@@ -59,12 +64,8 @@ export class CatalogoComponent {
             return EMPTY;
           }
           this.clientId = clientId;
-          return forkJoin({
-            services: this.servicesApi.getServices(),
-            bonos: this.servicesApi.getBonos(),
-          });
+          return this.loadRows();
         }),
-        map(({ services, bonos }) => this.toRows(services, bonos)),
         takeUntilDestroyed(),
       )
       .subscribe({
@@ -89,11 +90,32 @@ export class CatalogoComponent {
       return;
     }
 
-    this.feedback.set('');
-    this.clientsApi.contractBono({ clientId: this.clientId, bonoId }).subscribe({
-      next: () => this.feedback.set(CATALOGO_LITERALS.contracted),
-      error: () => this.feedback.set(CATALOGO_LITERALS.contractError),
-    });
+    this.confirm
+      .open({
+        title: CATALOGO_LITERALS.confirmContractTitle,
+        message: CATALOGO_LITERALS.confirmContractMessage,
+        confirmLabel: CATALOGO_LITERALS.contract,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() => this.clientsApi.contractBono({ clientId: this.clientId, bonoId })),
+        switchMap(() => this.loadRows()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (rows) => {
+          this.rows.set(rows);
+          this.toast.success(CATALOGO_LITERALS.contracted);
+        },
+        error: () => this.toast.error(CATALOGO_LITERALS.contractError),
+      });
+  }
+
+  private loadRows() {
+    return forkJoin({
+      services: this.servicesApi.getServices(),
+      bonos: this.servicesApi.getBonos(),
+    }).pipe(map(({ services, bonos }) => this.toRows(services, bonos)));
   }
 
   private toRows(services: ServiceDto[], bonos: BonoDto[]): Record<string, unknown>[] {

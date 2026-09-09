@@ -1,0 +1,13 @@
+<div class="bona-tabs" role="tablist">
+  @for (tab of tabs(); track tab.id) {
+    <button
+      type="button"
+      role="tab"
+      class="bona-tabs__tab"
+      [class.bona-tabs__tab--active]="tab.id === active()"
+      [attr.aria-selected]="tab.id === active()"
+      (click)="onSelect(tab.id)">
+      {{ tab.label }}
+    </button>
+  }
+</div>

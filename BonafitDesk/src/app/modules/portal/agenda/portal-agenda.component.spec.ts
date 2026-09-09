@@ -9,6 +9,7 @@ import { AuthApiService } from '../../../services/auth-api.service';
 import { CalendarApiService } from '../../../services/calendar-api.service';
 import { ClientsApiService } from '../../../services/clients-api.service';
 import { ServicesApiService } from '../../../services/services-api.service';
+import { provideBonaFeedbackTesting } from '../../../testing/bona-feedback';
 import { PortalAgendaComponent } from './portal-agenda.component';
 import { PORTAL_AGENDA_LITERALS } from './portal-agenda.literals';
 
@@ -86,6 +87,7 @@ describe('PortalAgendaComponent', () => {
         { provide: CalendarApiService, useValue: calendarApi },
         { provide: ClientsApiService, useValue: clientsApi },
         { provide: ServicesApiService, useValue: servicesApi },
+        ...provideBonaFeedbackTesting().providers,
       ],
     }).compileComponents();
   });

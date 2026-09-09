@@ -1,0 +1,11 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+<mat-dialog-content>
+  <p>{{ data.message }}</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <app-bona-button
+    [text]="data.cancelLabel"
+    variant="secondary"
+    (action)="onCancel()" />
+  <app-bona-button [text]="data.confirmLabel" (action)="onConfirm()" />
+</mat-dialog-actions>

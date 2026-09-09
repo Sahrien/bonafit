@@ -1,19 +1,6 @@
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--bona-space-4);
+.page-toolbar {
   margin-bottom: var(--bona-space-5);
-
-  h1 {
-    margin: 0;
-    font-size: 1.5rem;
-  }
-
-  p {
-    margin: var(--bona-space-2) 0 0;
-    color: var(--bona-color-text-muted);
-  }
+  max-width: 22rem;
 }
 
 .page-error {
@@ -21,8 +8,18 @@
   color: var(--bona-color-danger);
 }
 
-.page-editor {
-  margin-top: var(--bona-space-6);
+.services-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--bona-space-5);
+  align-items: start;
+}
+
+.services-split--detail {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+}
+
+.services-split__editor {
   padding: var(--bona-space-5);
   background: var(--bona-color-surface);
   border: 1px solid var(--bona-color-border);
@@ -69,4 +66,14 @@
 
 .page-nested__form {
   margin-top: var(--bona-space-5);
+}
+
+@media (max-width: 56rem) {
+  .services-split--detail {
+    grid-template-columns: 1fr;
+  }
+
+  .services-split--detail .services-split__list {
+    display: none;
+  }
 }

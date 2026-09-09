@@ -12,4 +12,6 @@ export const CATALOGO_LITERALS = {
   contract: 'Contratar',
   contracted: 'Bono contratado.',
   contractError: 'No se pudo completar la contratación.',
+  confirmContractTitle: 'Contratar bono',
+  confirmContractMessage: 'Se contratará este bono.',
 } as const;

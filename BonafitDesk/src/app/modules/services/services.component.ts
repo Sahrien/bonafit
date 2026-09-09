@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { filter, forkJoin, switchMap } from 'rxjs';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
+import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import {
@@ -10,6 +11,9 @@ import {
   BonaGridColumn,
   BonaGridComponent,
 } from '../../components/bona-grid/bona-grid.component';
+import { BonaInputTextFieldComponent } from '../../components/bona-input-text-field/bona-input-text-field.component';
+import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
+import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { BonoDto, BonoWriteDto } from '../../models/bono.dto';
 import { ServiceCategory, ServiceDto, ServiceWriteDto } from '../../models/service.dto';
 import { ServicesApiService } from '../../services/services-api.service';
@@ -37,17 +41,27 @@ const EMPTY_BONO: BonaFormValue = {
 @Component({
   selector: 'app-services',
   standalone: true,
-  imports: [BonaGridComponent, BonaFormComponent, BonaButtonComponent],
+  imports: [
+    BonaPageComponent,
+    BonaGridComponent,
+    BonaFormComponent,
+    BonaButtonComponent,
+    BonaInputTextFieldComponent,
+  ],
   templateUrl: './services.component.html',
   styleUrl: './services.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ServicesComponent {
   private readonly servicesApi = inject(ServicesApiService);
+  private readonly confirm = inject(BonaConfirm);
+  private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly literals = SERVICES_LITERALS;
   readonly error = signal('');
+  readonly loading = signal(true);
+  readonly search = signal('');
   readonly selectedServiceId = signal<string | null>(null);
   readonly serviceForm = signal<BonaFormValue>({ ...EMPTY_SERVICE });
   readonly bonoFormOpen = signal(false);
@@ -83,8 +97,13 @@ export class ServicesComponent {
     { label: SERVICES_LITERALS.delete, action: 'delete' },
   ];
 
-  readonly serviceRows = computed(() =>
-    this.services().map((service) => ({
+  readonly serviceRows = computed(() => {
+    const query = this.search().trim().toLowerCase();
+    const source = this.services();
+    const filtered = query
+      ? source.filter((service) => service.name.toLowerCase().includes(query))
+      : source;
+    return filtered.map((service) => ({
       ...service,
       categoryLabel: SERVICE_CATEGORY_LABELS[service.category],
       allowsSingleSessionLabel: service.allowsSingleSession
@@ -95,8 +114,8 @@ export class ServicesComponent {
           ? String(service.singleSessionPrice)
           : '',
       activeLabel: service.active ? this.literals.yes : this.literals.no,
-    })),
-  );
+    }));
+  });
 
   readonly selectedBonos = computed(() => {
     const serviceId = this.selectedServiceId();
@@ -182,6 +201,10 @@ export class ServicesComponent {
     this.loadAll();
   }
 
+  onSearch(value: string): void {
+    this.search.set(value);
+  }
+
   onCreateService(): void {
     this.selectedServiceId.set(NEW_ID);
     this.serviceForm.set({ ...EMPTY_SERVICE });
@@ -220,9 +243,10 @@ export class ServicesComponent {
         : this.servicesApi.updateService(id, payload);
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (service) => {
+        this.toast.success(this.literals.saved);
         this.loadAll(() => this.selectService(service.id));
       },
-      error: () => this.error.set(this.literals.errorSave),
+      error: () => this.toast.error(this.literals.errorSave),
     });
   }
 
@@ -255,12 +279,23 @@ export class ServicesComponent {
       return;
     }
     if (event.action === 'delete' && id) {
-      this.servicesApi
-        .deleteBono(id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
+      this.confirm
+        .open({
+          title: this.literals.confirmDeleteBonoTitle,
+          message: this.literals.confirmDeleteBonoMessage,
+          confirmLabel: this.literals.delete,
+        })
+        .pipe(
+          filter((ok) => ok),
+          switchMap(() => this.servicesApi.deleteBono(id)),
+          takeUntilDestroyed(this.destroyRef),
+        )
         .subscribe({
-          next: () => this.loadAll(),
-          error: () => this.error.set(this.literals.errorSave),
+          next: () => {
+            this.toast.success(this.literals.deleted);
+            this.loadAll();
+          },
+          error: () => this.toast.error(this.literals.errorSave),
         });
     }
   }
@@ -285,10 +320,11 @@ export class ServicesComponent {
         : this.servicesApi.updateBono(id, payload);
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.closeBonoForm();
-        this.loadAll();
-      },
-      error: () => this.error.set(this.literals.errorSave),
+          this.toast.success(this.literals.saved);
+          this.closeBonoForm();
+          this.loadAll();
+        },
+        error: () => this.toast.error(this.literals.errorSave),
     });
   }
 
@@ -308,18 +344,27 @@ export class ServicesComponent {
   }
 
   private deleteService(id: string): void {
-    this.servicesApi
-      .deleteService(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.confirm
+      .open({
+        title: this.literals.confirmDeleteServiceTitle,
+        message: this.literals.confirmDeleteServiceMessage,
+        confirmLabel: this.literals.delete,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() => this.servicesApi.deleteService(id)),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
         next: () => {
           if (this.selectedServiceId() === id) {
             this.selectedServiceId.set(null);
             this.closeBonoForm();
           }
+          this.toast.success(this.literals.deleted);
           this.loadAll();
         },
-        error: () => this.error.set(this.literals.errorSave),
+        error: () => this.toast.error(this.literals.errorSave),
       });
   }
 
@@ -329,10 +374,17 @@ export class ServicesComponent {
       bonos: this.servicesApi.getBonos(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ services, bonos }) => {
-        this.services.set(services);
-        this.bonos.set(bonos);
-        after?.();
+      .subscribe({
+        next: ({ services, bonos }) => {
+          this.services.set(services);
+          this.bonos.set(bonos);
+          this.loading.set(false);
+          after?.();
+        },
+        error: () => {
+          this.toast.error(this.literals.errorSave);
+          this.loading.set(false);
+        },
       });
   }
 

@@ -1,21 +1,16 @@
-<div class="page">
-  <header class="page-header">
-    <div>
-      <h1>{{ title() }}</h1>
-      <p>{{ literals.subtitle }}</p>
-    </div>
-    <app-bona-button
-      [text]="literals.back"
-      variant="secondary"
-      (action)="onBack()" />
-  </header>
+<app-bona-page [title]="title()" [subtitle]="literals.subtitle" [loading]="loading()">
+  <app-bona-button
+    bonaPageActions
+    [text]="literals.back"
+    variant="secondary"
+    (action)="onBack()" />
 
   @if (error()) {
     <p class="page-error">{{ error() }}</p>
   }
 
   @if (temporaryPassword()) {
-    <p class="page-error" role="status">
+    <p class="page-success" role="status">
       {{ literals.temporaryPassword }}: {{ temporaryPassword() }}.
       {{ literals.temporaryPasswordHint }}
     </p>
@@ -60,4 +55,4 @@
         (action)="onDelete()" />
     </div>
   }
-</div>
+</app-bona-page>

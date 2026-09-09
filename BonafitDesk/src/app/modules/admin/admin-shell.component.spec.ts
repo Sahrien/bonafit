@@ -6,14 +6,8 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { AuthApiService } from '../../services/auth-api.service';
 import { MOCK_ACCOUNTS, createMockSession } from '../../testing/fixtures';
-import { AdminBarShellComponent } from './admin-bar-shell.component';
-
-@Component({
-  selector: 'app-admin-home-stub',
-  standalone: true,
-  template: 'admin-home',
-})
-class AdminHomeStubComponent {}
+import { AdminShellComponent } from './admin-shell.component';
+import { ADMIN_LITERALS } from '../../i18n/es';
 
 @Component({
   selector: 'app-calendar-stub',
@@ -22,7 +16,7 @@ class AdminHomeStubComponent {}
 })
 class CalendarStubComponent {}
 
-describe('AdminBarShellComponent', () => {
+describe('AdminShellComponent', () => {
   let router: Router;
 
   beforeEach(async () => {
@@ -31,20 +25,14 @@ describe('AdminBarShellComponent', () => {
     auth.logout.and.returnValue(of(undefined));
 
     await TestBed.configureTestingModule({
-      imports: [AdminBarShellComponent],
+      imports: [AdminShellComponent],
       providers: [
         provideNoopAnimations(),
         provideRouter([
           {
             path: 'admin',
-            children: [
-              { path: '', pathMatch: 'full', component: AdminHomeStubComponent },
-              {
-                path: '',
-                component: AdminBarShellComponent,
-                children: [{ path: 'calendar', component: CalendarStubComponent }],
-              },
-            ],
+            component: AdminShellComponent,
+            children: [{ path: 'calendar', component: CalendarStubComponent }],
           },
         ]),
         { provide: AuthApiService, useValue: auth },
@@ -54,22 +42,14 @@ describe('AdminBarShellComponent', () => {
     router = TestBed.inject(Router);
   });
 
-  it('shows the logged user and navigates back to /admin', async () => {
+  it('shows persistent nav and the logged user', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/admin/calendar');
 
-    const shell = document.querySelector('app-admin-bar-shell');
-    expect(shell?.textContent).toContain('Alex Martin');
-
-    const back = document.querySelector(
-      '.bona-shell-admin__bar button',
-    ) as HTMLButtonElement | null;
-    expect(back).toBeTruthy();
-    expect(back?.textContent).toContain('Volver al menú');
-
-    const navigate = spyOn(router, 'navigateByUrl').and.callThrough();
-    back?.click();
-
-    expect(navigate).toHaveBeenCalledWith('/admin');
+    const text = document.querySelector('app-admin-shell')?.textContent ?? '';
+    expect(text).toContain('Alex Martin');
+    expect(text).toContain(ADMIN_LITERALS.calendar);
+    expect(text).toContain(ADMIN_LITERALS.clients);
+    expect(router.url).toBe('/admin/calendar');
   });
 });

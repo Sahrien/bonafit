@@ -1,18 +1,14 @@
-<div class="portal-page">
-  <header class="portal-page__header">
-    <div>
-      <h1>{{ assignment()?.title || literals.title }}</h1>
-      <p>{{ literals.subtitle }}</p>
-    </div>
-    <app-bona-button
-      [text]="literals.back"
-      variant="secondary"
-      (action)="onBack()" />
-  </header>
+<app-bona-page
+  [title]="assignment()?.title || literals.title"
+  [subtitle]="literals.subtitle"
+  [loading]="loading()">
+  <app-bona-button
+    bonaPageActions
+    [text]="literals.back"
+    variant="secondary"
+    (action)="onBack()" />
 
-  @if (loading()) {
-    <p class="portal-page__status">{{ literals.loading }}</p>
-  } @else if (!assignment() && error()) {
+  @if (!assignment() && error()) {
     <p class="portal-page__status portal-page__status--error">{{ error() }}</p>
   } @else if (isCompleted()) {
     @if (feedback()) {
@@ -24,7 +20,7 @@
         <dd>{{ item.answer }}</dd>
       }
     </dl>
-  } @else {
+  } @else if (assignment()) {
     @if (error()) {
       <p class="portal-page__status portal-page__status--error">{{ error() }}</p>
     }
@@ -39,4 +35,4 @@
       <p class="portal-page__status">{{ feedback() }}</p>
     }
   }
-</div>
+</app-bona-page>

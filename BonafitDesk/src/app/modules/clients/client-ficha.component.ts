@@ -10,8 +10,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, map } from 'rxjs';
+import { filter, forkJoin, map, switchMap } from 'rxjs';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
+import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import {
@@ -20,6 +21,8 @@ import {
   BonaGridColumn,
   BonaGridComponent,
 } from '../../components/bona-grid/bona-grid.component';
+import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
+import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { BonoDto } from '../../models/bono.dto';
 import { ClientBonoDto, ClientBonoPatchDto } from '../../models/client-bono.dto';
 import { ClientDto, ClientWriteDto } from '../../models/client.dto';
@@ -42,7 +45,7 @@ const EMPTY_FORM: BonaFormValue = {
 @Component({
   selector: 'app-client-ficha',
   standalone: true,
-  imports: [BonaFormComponent, BonaButtonComponent, BonaGridComponent],
+  imports: [BonaPageComponent, BonaFormComponent, BonaButtonComponent, BonaGridComponent],
   templateUrl: './client-ficha.component.html',
   styleUrl: './client-ficha.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,11 +55,14 @@ export class ClientFichaComponent {
   private readonly servicesApi = inject(ServicesApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly confirm = inject(BonaConfirm);
+  private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly literals = CLIENTS_LITERALS;
   readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
   readonly error = signal('');
+  readonly loading = signal(true);
   readonly saving = signal(false);
   readonly temporaryPassword = signal('');
   readonly bonoFormOpen = signal(false);
@@ -162,12 +168,23 @@ export class ClientFichaComponent {
     if (this.isNew()) {
       return;
     }
-    this.clientsApi
-      .deleteClient(this.clientId())
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.confirm
+      .open({
+        title: this.literals.confirmDeleteTitle,
+        message: this.literals.confirmDeleteMessage,
+        confirmLabel: this.literals.delete,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() => this.clientsApi.deleteClient(this.clientId())),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
-        next: () => this.onBack(),
-        error: () => this.error.set(this.literals.errorSave),
+        next: () => {
+          this.toast.success(this.literals.deleted);
+          this.onBack();
+        },
+        error: () => this.toast.error(this.literals.errorSave),
       });
   }
 
@@ -229,6 +246,7 @@ export class ClientFichaComponent {
       this.formValue.set({ ...EMPTY_FORM });
       this.clientBonos.set([]);
       this.temporaryPassword.set('');
+      this.loading.set(false);
       return;
     }
     const createdPassword =
@@ -247,8 +265,12 @@ export class ClientFichaComponent {
           this.formValue.set(this.toFormValue(client));
           this.clientBonos.set(clientBonos);
           this.bonos.set(bonos);
+          this.loading.set(false);
         },
-        error: () => this.error.set(this.literals.errorLoad),
+        error: () => {
+          this.error.set(this.literals.errorLoad);
+          this.loading.set(false);
+        },
       });
   }
 

@@ -12,13 +12,11 @@ export function injectAuthSession() {
   return {
     session,
     userName: computed(() => session()?.user.displayName ?? ''),
+    userEmail: computed(() => session()?.user.email ?? ''),
     logout(): void {
       auth.logout().subscribe(() => {
         void router.navigateByUrl(AUTH_PATHS.login);
       });
-    },
-    goAdminHome(): void {
-      void router.navigateByUrl(AUTH_PATHS.admin);
     },
   };
 }

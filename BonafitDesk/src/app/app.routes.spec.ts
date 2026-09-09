@@ -41,9 +41,8 @@ describe('app routes', () => {
     expect(loaded.map((item) => item.name)).not.toContain('PlaceholderPageComponent');
   });
 
-  it('wires admin home, bar shell, and CRUD modules', () => {
-    expect(loaded).toContain(jasmine.objectContaining({ path: 'admin', name: 'AdminHomeComponent' }));
-    expect(loaded).toContain(jasmine.objectContaining({ path: 'admin', name: 'AdminBarShellComponent' }));
+  it('wires admin shell, CRUD modules, and settings', () => {
+    expect(loaded).toContain(jasmine.objectContaining({ path: 'admin', name: 'AdminShellComponent' }));
     expect(loaded).toContain(jasmine.objectContaining({ path: 'admin/calendar', name: 'CalendarComponent' }));
     expect(loaded).toContain(jasmine.objectContaining({ path: 'admin/clients', name: 'ClientsComponent' }));
     expect(loaded).toContain(
@@ -53,6 +52,9 @@ describe('app routes', () => {
     expect(loaded).toContain(jasmine.objectContaining({ path: 'admin/forms', name: 'FormsComponent' }));
     expect(loaded).toContain(
       jasmine.objectContaining({ path: 'admin/forms/:id', name: 'FormFichaComponent' }),
+    );
+    expect(loaded).toContain(
+      jasmine.objectContaining({ path: 'admin/ajustes', name: 'AdminSettingsComponent' }),
     );
   });
 
@@ -67,6 +69,9 @@ describe('app routes', () => {
     );
     expect(loaded).toContain(
       jasmine.objectContaining({ path: 'app/formularios/:id', name: 'PortalFormFillComponent' }),
+    );
+    expect(loaded).toContain(
+      jasmine.objectContaining({ path: 'app/ajustes', name: 'ClientSettingsComponent' }),
     );
   });
 });

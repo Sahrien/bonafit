@@ -59,4 +59,12 @@ export const FORMS_LITERALS = {
   errorLoad: 'No se ha podido cargar el formulario.',
   errorSave: 'No se ha podido guardar el formulario.',
   errorAssign: 'No se ha podido enviar el formulario.',
+  confirmDeleteTitle: 'Eliminar formulario',
+  confirmDeleteMessage: 'Se eliminará este formulario y no se puede deshacer.',
+  deleted: 'Formulario eliminado.',
+  tabTemplate: 'Plantilla',
+  tabAssign: 'Asignación',
+  tabResponses: 'Respuestas',
+  clientSearch: 'Buscar cliente',
+  clientSearchPlaceholder: 'Nombre del cliente',
 } as const;

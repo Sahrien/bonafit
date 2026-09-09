@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, switchMap, take } from 'rxjs';
 import { BonaFieldDefinition } from '../../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../../components/bona-form/bona-form.component';
+import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
 import { ClientDto, ClientWriteDto } from '../../../models/client.dto';
 import { AuthApiService } from '../../../services/auth-api.service';
 import { ClientsApiService } from '../../../services/clients-api.service';
@@ -11,7 +12,7 @@ import { PROFILE_LITERALS } from './profile.literals';
 @Component({
   selector: 'app-portal-profile',
   standalone: true,
-  imports: [BonaFormComponent],
+  imports: [BonaPageComponent, BonaFormComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

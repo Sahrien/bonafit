@@ -1,0 +1,32 @@
+<app-bona-page [title]="literals.title" [subtitle]="literals.subtitleAdmin" [loading]="loading()">
+  @if (error()) {
+    <p class="settings-error">{{ error() }}</p>
+  }
+
+  <section class="settings-section">
+    <h2>{{ literals.accountTitle }}</h2>
+    <dl class="settings-account">
+      <dt>{{ literals.name }}</dt>
+      <dd>{{ userName() }}</dd>
+      @if (userEmail()) {
+        <dt>{{ literals.email }}</dt>
+        <dd>{{ userEmail() }}</dd>
+      }
+    </dl>
+  </section>
+
+  <section class="settings-section">
+    <h2>{{ literals.bookingTitle }}</h2>
+    <app-bona-form
+      [fields]="bookingFields"
+      [value]="bookingForm()"
+      [submitText]="literals.save"
+      (valueChange)="onBookingChange($event)"
+      (submitted)="onSaveBooking($event)" />
+  </section>
+
+  <section class="settings-section">
+    <h2>{{ literals.passwordTitle }}</h2>
+    <app-password-change-form (saved)="onPasswordSaved()" />
+  </section>
+</app-bona-page>

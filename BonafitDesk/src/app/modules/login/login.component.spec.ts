@@ -44,7 +44,7 @@ describe('LoginComponent', () => {
       email: 'lucia@bonafit.com',
       password: 'ChangeMe123!',
     });
-    expect(router.navigateByUrl).toHaveBeenCalledWith(AUTH_PATHS.admin);
+    expect(router.navigateByUrl).toHaveBeenCalledWith(AUTH_PATHS.adminHome);
   });
 
   it('sends users who must change password to that screen', () => {

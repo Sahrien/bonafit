@@ -28,6 +28,9 @@ export const CLIENTS_LITERALS = {
   errorRequired: 'Completa los campos obligatorios.',
   errorLoad: 'No se ha podido cargar la ficha.',
   errorSave: 'No se ha podido guardar el cliente.',
+  confirmDeleteTitle: 'Eliminar cliente',
+  confirmDeleteMessage: 'Se eliminará este cliente y no se puede deshacer.',
+  deleted: 'Cliente eliminado.',
   temporaryPassword: 'Contraseña temporal',
   temporaryPasswordHint: 'Entrégasela al cliente. Solo se muestra ahora.',
 } as const;

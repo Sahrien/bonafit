@@ -1,0 +1,69 @@
+@use '@angular/material' as mat;
+
+// Compile-time Material 3 theme. Change seed palettes here; screens use --bona-* tokens.
+// Primary seed: #0f766e (teal). Tertiary/stone: warm neutrals from the current kit.
+// `color-scheme: light` selects the light side of light-dark() tokens; a later dark
+// mode is a color-scheme (or class) change, not a restyle of every screen.
+
+html {
+  color-scheme: light;
+
+  @include mat.theme((
+    color: (
+      primary: mat.$cyan-palette,
+      tertiary: mat.$orange-palette,
+    ),
+    typography: Inter,
+    density: 0,
+  ));
+
+  @include mat.button-overrides((
+    filled-container-shape: var(--bona-radius-md),
+    outlined-container-shape: var(--bona-radius-md),
+    protected-container-shape: var(--bona-radius-md),
+  ));
+
+  @include mat.form-field-overrides((
+    outlined-container-shape: var(--bona-radius-md),
+  ));
+}
+
+:root {
+  --bona-font-family: Inter, 'Segoe UI', Roboto, sans-serif;
+  --bona-color-bg: var(--mat-sys-surface);
+  --bona-color-surface: var(--mat-sys-surface-container-lowest);
+  --bona-color-text: var(--mat-sys-on-surface);
+  --bona-color-text-muted: var(--mat-sys-on-surface-variant);
+  --bona-color-border: var(--mat-sys-outline-variant);
+  --bona-color-primary: var(--mat-sys-primary);
+  --bona-color-primary-contrast: var(--mat-sys-on-primary);
+  --bona-color-secondary: var(--mat-sys-surface-container-lowest);
+  --bona-color-secondary-contrast: var(--mat-sys-on-surface);
+  --bona-color-accent: var(--mat-sys-tertiary);
+  --bona-color-accent-contrast: var(--mat-sys-on-tertiary);
+  --bona-color-danger: var(--mat-sys-error);
+  --bona-color-success: #0f766e;
+  --bona-color-warning: #d97706;
+  --bona-radius-sm: var(--mat-sys-corner-extra-small, 4px);
+  --bona-radius-md: var(--mat-sys-corner-small, 8px);
+  --bona-radius-lg: var(--mat-sys-corner-large, 16px);
+  --bona-space-1: 0.25rem;
+  --bona-space-2: 0.5rem;
+  --bona-space-3: 0.75rem;
+  --bona-space-4: 1rem;
+  --bona-space-5: 1.5rem;
+  --bona-space-6: 2rem;
+  --bona-shadow-card: var(--mat-sys-level2, 0 8px 24px rgba(28, 25, 23, 0.08));
+  --bona-header-height: 3.5rem;
+  --bona-focus-ring: 0 0 0 3px color-mix(in srgb, var(--bona-color-primary) 35%, transparent);
+}
+
+.bona-toast--success {
+  --mat-snackbar-container-color: var(--bona-color-success);
+  --mat-snackbar-supporting-text-color: var(--bona-color-primary-contrast);
+}
+
+.bona-toast--error {
+  --mat-snackbar-container-color: var(--bona-color-danger);
+  --mat-snackbar-supporting-text-color: var(--mat-sys-on-error, #ffffff);
+}

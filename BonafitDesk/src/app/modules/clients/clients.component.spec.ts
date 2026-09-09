@@ -5,6 +5,7 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { MOCK_CLIENTS } from '../../testing/fixtures';
+import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ClientsComponent } from './clients.component';
 import { CLIENTS_LITERALS } from './clients.literals';
@@ -37,6 +38,7 @@ describe('ClientsComponent', () => {
           { path: 'admin/clients/:id', component: ClientFichaStubComponent },
         ]),
         { provide: ClientsApiService, useValue: clientsApi },
+        ...provideBonaFeedbackTesting().providers,
       ],
     }).compileComponents();
 

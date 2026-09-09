@@ -1,4 +1,5 @@
 export const LOGIN_LITERALS = {
+  brand: 'Bonafit',
   title: 'Iniciar sesión',
   subtitle: 'Accede con tu email y contraseña',
   email: 'Email',
@@ -18,26 +19,31 @@ export const CHANGE_PASSWORD_LITERALS = {
   errorSave: 'No se ha podido cambiar la contraseña.',
 } as const;
 
+export const CONFIRM_LITERALS = {
+  confirm: 'Confirmar',
+  cancel: 'Cancelar',
+} as const;
+
 export const ADMIN_LITERALS = {
-  homeTitle: 'Panel de control',
-  homeSubtitle: 'Elige un módulo para continuar',
+  brand: 'Bonafit',
   logout: 'Salir',
-  back: 'Volver al menú',
-  calendarTitle: 'Calendario',
-  calendarDescription: 'Citas, entrenadores y horarios',
-  clientsTitle: 'Clientes',
-  clientsDescription: 'Fichas y seguimiento uno a uno',
-  servicesTitle: 'Servicios y bonos',
-  servicesDescription: 'Catálogo comercial del estudio',
-  formsTitle: 'Formularios y encuestas',
-  formsDescription: 'Preguntas para clientes y sus respuestas',
+  menu: 'Menú',
+  profileMenu: 'Cuenta',
+  settings: 'Ajustes',
+  calendar: 'Calendario',
+  clients: 'Clientes',
+  services: 'Servicios',
+  forms: 'Formularios',
 } as const;
 
 export const CLIENT_LITERALS = {
   brand: 'Bonafit',
   logout: 'Salir',
+  menu: 'Menú',
+  profileMenu: 'Cuenta',
+  settings: 'Ajustes',
   profile: 'Datos personales',
-  bonos: 'Bonos contratados',
+  bonos: 'Bonos',
   catalog: 'Catálogo',
   agenda: 'Agenda',
   forms: 'Formularios',

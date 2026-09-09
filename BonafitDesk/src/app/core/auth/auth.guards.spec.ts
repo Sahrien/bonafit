@@ -54,16 +54,16 @@ describe('auth guards', () => {
 
   it('sends an admin to the admin home and blocks the client portal', async () => {
     auth.getSession.and.returnValue(of(createMockSession(MOCK_ACCOUNTS[0])));
-    expect(urlOf(await resultOf(homeRedirectGuard))).toBe('/admin');
+    expect(urlOf(await resultOf(homeRedirectGuard))).toBe('/admin/calendar');
     expect(urlOf(await resultOf(adminGuard))).toBe(true);
-    expect(urlOf(await resultOf(clientGuard))).toBe('/admin');
+    expect(urlOf(await resultOf(clientGuard))).toBe('/admin/calendar');
   });
 
   it('sends a client to the portal and blocks the admin panel', async () => {
     auth.getSession.and.returnValue(of(createMockSession(MOCK_ACCOUNTS[2])));
-    expect(urlOf(await resultOf(homeRedirectGuard))).toBe('/app');
+    expect(urlOf(await resultOf(homeRedirectGuard))).toBe('/app/agenda');
     expect(urlOf(await resultOf(clientGuard))).toBe(true);
-    expect(urlOf(await resultOf(adminGuard))).toBe('/app');
+    expect(urlOf(await resultOf(adminGuard))).toBe('/app/agenda');
   });
 
   it('forces a password change when the API requires it', async () => {

@@ -13,6 +13,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { BonaButtonComponent } from '../../../components/bona-button/bona-button.component';
 import { BonaFormComponent, BonaFormValue } from '../../../components/bona-form/bona-form.component';
+import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
 import { FormAssignmentDto } from '../../../models/form.dto';
 import { FormsApiService } from '../../../services/forms-api.service';
 import {
@@ -30,7 +31,7 @@ import { PORTAL_FORMS_LITERALS } from './portal-forms.literals';
 @Component({
   selector: 'app-portal-form-fill',
   standalone: true,
-  imports: [BonaFormComponent, BonaButtonComponent],
+  imports: [BonaPageComponent, BonaFormComponent, BonaButtonComponent],
   templateUrl: './portal-form-fill.component.html',
   styleUrl: './portal-form-fill.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

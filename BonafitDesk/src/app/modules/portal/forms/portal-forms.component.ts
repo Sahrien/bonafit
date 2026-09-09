@@ -8,6 +8,7 @@ import {
   BonaGridColumn,
   BonaGridComponent,
 } from '../../../components/bona-grid/bona-grid.component';
+import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
 import { FormAssignmentDto } from '../../../models/form.dto';
 import { AuthApiService } from '../../../services/auth-api.service';
 import { FormsApiService } from '../../../services/forms-api.service';
@@ -16,7 +17,7 @@ import { PORTAL_FORMS_LITERALS } from './portal-forms.literals';
 @Component({
   selector: 'app-portal-forms',
   standalone: true,
-  imports: [BonaGridComponent],
+  imports: [BonaPageComponent, BonaGridComponent],
   templateUrl: './portal-forms.component.html',
   styleUrl: './portal-forms.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

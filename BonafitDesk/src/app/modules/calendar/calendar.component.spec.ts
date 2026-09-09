@@ -2,9 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { BonaCalendarEvent } from '../../components/bona-calendar/bona-calendar.component';
+import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import { MOCK_APPOINTMENTS, MOCK_BOOKING_SETTINGS, MOCK_CLIENTS, MOCK_SERVICES, MOCK_TRAINERS, MOCK_TRAINER_SCHEDULES } from '../../testing/fixtures';
-import { AuthSessionDto } from '../../models/auth-session.dto';
-import { AuthApiService } from '../../services/auth-api.service';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ServicesApiService } from '../../services/services-api.service';
@@ -16,17 +15,6 @@ describe('CalendarComponent', () => {
   let calendarApi: jasmine.SpyObj<CalendarApiService>;
   let clientsApi: jasmine.SpyObj<ClientsApiService>;
   let servicesApi: jasmine.SpyObj<ServicesApiService>;
-  let authApi: jasmine.SpyObj<AuthApiService>;
-
-  const session: AuthSessionDto = {
-    user: {
-      id: 'user-trainer-1',
-      displayName: 'Alex Martin',
-      role: 'admin',
-      trainerId: 'trainer-1',
-    },
-    token: 'mock',
-  };
 
   beforeEach(async () => {
     calendarApi = jasmine.createSpyObj('CalendarApiService', [
@@ -40,7 +28,6 @@ describe('CalendarComponent', () => {
     ]);
     clientsApi = jasmine.createSpyObj('ClientsApiService', ['getClients', 'getClientBonos']);
     servicesApi = jasmine.createSpyObj('ServicesApiService', ['getServices', 'getBonos']);
-    authApi = jasmine.createSpyObj('AuthApiService', ['getSession']);
 
     calendarApi.getTrainers.and.returnValue(of(MOCK_TRAINERS));
     calendarApi.getAppointments.and.returnValue(of(MOCK_APPOINTMENTS));
@@ -50,7 +37,6 @@ describe('CalendarComponent', () => {
     clientsApi.getClientBonos.and.returnValue(of([]));
     servicesApi.getServices.and.returnValue(of(MOCK_SERVICES));
     servicesApi.getBonos.and.returnValue(of([]));
-    authApi.getSession.and.returnValue(of(session));
 
     await TestBed.configureTestingModule({
       imports: [CalendarComponent],
@@ -59,7 +45,7 @@ describe('CalendarComponent', () => {
         { provide: CalendarApiService, useValue: calendarApi },
         { provide: ClientsApiService, useValue: clientsApi },
         { provide: ServicesApiService, useValue: servicesApi },
-        { provide: AuthApiService, useValue: authApi },
+        ...provideBonaFeedbackTesting().providers,
       ],
     }).compileComponents();
 
@@ -67,17 +53,17 @@ describe('CalendarComponent', () => {
     fixture.detectChanges();
   });
 
-  it('loads appointments and shows the session user', () => {
+  it('loads appointments without the booking settings form', () => {
     expect(calendarApi.getAppointments).toHaveBeenCalled();
     expect(clientsApi.getClients).toHaveBeenCalled();
     expect(servicesApi.getServices).toHaveBeenCalled();
-    expect(authApi.getSession).toHaveBeenCalled();
+    expect(calendarApi.getBookingSettings).toHaveBeenCalled();
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain(CALENDAR_LITERALS.title);
     expect(text).toContain(CALENDAR_LITERALS.week);
     expect(text).toContain(CALENDAR_LITERALS.day);
-    expect(text).toContain('Alex Martin');
+    expect(text).not.toContain(CALENDAR_LITERALS.settingsTitle);
     expect(fixture.componentInstance.events().length).toBe(MOCK_APPOINTMENTS.length);
   });
 

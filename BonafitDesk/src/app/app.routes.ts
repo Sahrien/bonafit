@@ -7,11 +7,8 @@ const loadLogin = () =>
 const loadChangePassword = () =>
   import('./modules/login/change-password.component').then((m) => m.ChangePasswordComponent);
 
-const loadAdminHome = () =>
-  import('./modules/admin/admin-home.component').then((m) => m.AdminHomeComponent);
-
-const loadAdminBarShell = () =>
-  import('./modules/admin/admin-bar-shell.component').then((m) => m.AdminBarShellComponent);
+const loadAdminShell = () =>
+  import('./modules/admin/admin-shell.component').then((m) => m.AdminShellComponent);
 
 const loadPortalShell = () =>
   import('./modules/portal/portal-shell.component').then((m) => m.PortalShellComponent);
@@ -33,6 +30,9 @@ const loadForms = () =>
 
 const loadFormFicha = () =>
   import('./modules/forms/form-ficha.component').then((m) => m.FormFichaComponent);
+
+const loadAdminSettings = () =>
+  import('./modules/settings/admin-settings.component').then((m) => m.AdminSettingsComponent);
 
 const loadPortalProfile = () =>
   import('./modules/portal/profile/profile.component').then((m) => m.ProfileComponent);
@@ -56,6 +56,9 @@ const loadPortalFormFill = () =>
     (m) => m.PortalFormFillComponent,
   );
 
+const loadClientSettings = () =>
+  import('./modules/settings/client-settings.component').then((m) => m.ClientSettingsComponent);
+
 export const routes: Routes = [
   {
     path: 'login',
@@ -69,42 +72,16 @@ export const routes: Routes = [
   {
     path: 'admin',
     canActivate: [adminGuard],
+    loadComponent: loadAdminShell,
     children: [
-      {
-        path: '',
-        pathMatch: 'full',
-        loadComponent: loadAdminHome,
-      },
-      {
-        path: '',
-        loadComponent: loadAdminBarShell,
-        children: [
-          {
-            path: 'calendar',
-            loadComponent: loadCalendar,
-          },
-          {
-            path: 'clients',
-            loadComponent: loadClients,
-          },
-          {
-            path: 'clients/:id',
-            loadComponent: loadClientFicha,
-          },
-          {
-            path: 'services',
-            loadComponent: loadServices,
-          },
-          {
-            path: 'forms',
-            loadComponent: loadForms,
-          },
-          {
-            path: 'forms/:id',
-            loadComponent: loadFormFicha,
-          },
-        ],
-      },
+      { path: '', pathMatch: 'full', redirectTo: 'calendar' },
+      { path: 'calendar', loadComponent: loadCalendar },
+      { path: 'clients', loadComponent: loadClients },
+      { path: 'clients/:id', loadComponent: loadClientFicha },
+      { path: 'services', loadComponent: loadServices },
+      { path: 'forms', loadComponent: loadForms },
+      { path: 'forms/:id', loadComponent: loadFormFicha },
+      { path: 'ajustes', loadComponent: loadAdminSettings },
     ],
   },
   {
@@ -112,13 +89,14 @@ export const routes: Routes = [
     canActivate: [clientGuard],
     loadComponent: loadPortalShell,
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'profile' },
+      { path: '', pathMatch: 'full', redirectTo: 'agenda' },
       { path: 'profile', loadComponent: loadPortalProfile },
       { path: 'bonos', loadComponent: loadPortalBonos },
       { path: 'agenda', loadComponent: loadPortalAgenda },
       { path: 'catalogo', loadComponent: loadPortalCatalogo },
       { path: 'formularios', loadComponent: loadPortalForms },
       { path: 'formularios/:id', loadComponent: loadPortalFormFill },
+      { path: 'ajustes', loadComponent: loadClientSettings },
     ],
   },
   {

@@ -1,0 +1,33 @@
+.settings-error {
+  margin: 0 0 var(--bona-space-4);
+  color: var(--bona-color-danger);
+}
+
+.settings-section {
+  margin-bottom: var(--bona-space-6);
+  padding: var(--bona-space-5);
+  background: var(--bona-color-surface);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-lg);
+
+  h2 {
+    margin: 0 0 var(--bona-space-4);
+    font-size: 1.125rem;
+  }
+}
+
+.settings-account {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--bona-space-2) var(--bona-space-4);
+  margin: 0;
+
+  dt {
+    color: var(--bona-color-text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+  }
+}

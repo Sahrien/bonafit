@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { MOCK_CLIENTS, MOCK_FORM_ASSIGNMENTS, MOCK_FORMS } from '../../testing/fixtures';
+import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { FormsApiService } from '../../services/forms-api.service';
 import { FormFichaComponent } from './form-ficha.component';
@@ -37,11 +38,12 @@ describe('FormFichaComponent', () => {
         provideRouter([{ path: 'admin/forms/:id', component: FormFichaComponent }]),
         { provide: FormsApiService, useValue: formsApi },
         { provide: ClientsApiService, useValue: clientsApi },
+        ...provideBonaFeedbackTesting().providers,
       ],
     }).compileComponents();
   });
 
-  it('loads the template, clients to assign, and responses', async () => {
+  it('loads the template and exposes assignment and response tabs', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/admin/forms/form-1', FormFichaComponent);
 
@@ -49,24 +51,41 @@ describe('FormFichaComponent', () => {
     expect(formsApi.getAssignments).toHaveBeenCalledWith('form-1');
     expect(clientsApi.getClients).toHaveBeenCalled();
 
-    const text = harness.routeNativeElement?.textContent ?? '';
+    let text = harness.routeNativeElement?.textContent ?? '';
     expect(text).toContain(FORMS_LITERALS.fichaTitle);
     expect(text).toContain(FORMS_LITERALS.templateSection);
-    expect(text).toContain(FORMS_LITERALS.assignSection);
-    expect(text).toContain(FORMS_LITERALS.responsesSection);
-    expect(text).toContain('Marina Lopez');
-    expect(text).toContain(FORMS_LITERALS.statusPending);
-    expect(text).toContain(FORMS_LITERALS.statusCompleted);
+    expect(text).toContain(FORMS_LITERALS.tabAssign);
+    expect(text).toContain(FORMS_LITERALS.tabResponses);
 
     const inputs = Array.from(
       harness.routeNativeElement?.querySelectorAll('input') ?? [],
     ) as HTMLInputElement[];
     expect(inputs.some((input) => input.value === 'Cuestionario inicial')).toBeTrue();
+
+    const assignTab = Array.from(
+      harness.routeNativeElement?.querySelectorAll('button') ?? [],
+    ).find((button) => button.textContent?.includes(FORMS_LITERALS.tabAssign)) as
+      | HTMLButtonElement
+      | undefined;
+    assignTab?.click();
+    harness.fixture.detectChanges();
+    text = harness.routeNativeElement?.textContent ?? '';
+    expect(text).toContain(FORMS_LITERALS.assignSection);
+    expect(text).toContain('Marina Lopez');
   });
 
   it('shows completed answers when opening a response', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/admin/forms/form-1', FormFichaComponent);
+
+    const responsesTab = Array.from(
+      harness.routeNativeElement?.querySelectorAll('button') ?? [],
+    ).find((button) => button.textContent?.includes(FORMS_LITERALS.tabResponses)) as
+      | HTMLButtonElement
+      | undefined;
+    responsesTab?.click();
+    harness.fixture.detectChanges();
+    await harness.fixture.whenStable();
 
     const buttons = Array.from(
       harness.routeNativeElement?.querySelectorAll('button') ?? [],

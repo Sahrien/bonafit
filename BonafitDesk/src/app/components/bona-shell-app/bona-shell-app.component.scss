@@ -1,0 +1,86 @@
+:host {
+  display: block;
+  min-height: 100%;
+}
+
+.bona-shell-app {
+  min-height: 100%;
+  background: var(--bona-color-bg);
+  color: var(--bona-color-text);
+  font-family: var(--bona-font-family);
+}
+
+.bona-shell-app__bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-height: var(--bona-header-height);
+  padding: 0 var(--bona-space-4);
+  gap: var(--bona-space-3);
+  background: var(--bona-color-surface);
+  color: var(--bona-color-text);
+  border-bottom: 1px solid var(--bona-color-border);
+}
+
+.bona-shell-app__brand {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: inherit;
+  text-decoration: none;
+  margin-right: var(--bona-space-2);
+}
+
+.bona-shell-app__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bona-space-1);
+  flex: 1;
+}
+
+.bona-shell-app__nav-link--active {
+  font-weight: 700;
+}
+
+.bona-shell-app__nav-toggle {
+  display: none;
+  margin-left: auto;
+}
+
+.bona-shell-app__profile {
+  margin-left: auto;
+}
+
+.bona-shell-app__profile-trigger {
+  display: inline-flex;
+  align-items: center;
+}
+
+.bona-shell-app__user-name {
+  font-weight: 600;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bona-shell-app__content {
+  padding: var(--bona-space-6);
+}
+
+@media (max-width: 48rem) {
+  .bona-shell-app__nav {
+    display: none;
+  }
+
+  .bona-shell-app__nav-toggle {
+    display: inline-flex;
+  }
+
+  .bona-shell-app__profile {
+    margin-left: 0;
+  }
+
+  .bona-shell-app__content {
+    padding: var(--bona-space-4);
+  }
+}

@@ -1,0 +1,55 @@
+<div class="bona-shell-app">
+  <mat-toolbar class="bona-shell-app__bar">
+    <a class="bona-shell-app__brand" routerLink="/">{{ brand() }}</a>
+
+    <nav class="bona-shell-app__nav" [attr.aria-label]="menuLabel()">
+      @for (item of navItems(); track item.id) {
+        <a
+          mat-button
+          class="bona-shell-app__nav-link"
+          [routerLink]="item.link"
+          routerLinkActive="bona-shell-app__nav-link--active">
+          {{ item.label }}
+        </a>
+      }
+    </nav>
+
+    <button
+      mat-icon-button
+      class="bona-shell-app__nav-toggle"
+      type="button"
+      [matMenuTriggerFor]="navMenu"
+      [attr.aria-label]="menuLabel()">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <mat-menu #navMenu="matMenu">
+      @for (item of navItems(); track item.id) {
+        <a mat-menu-item [routerLink]="item.link">{{ item.label }}</a>
+      }
+    </mat-menu>
+
+    <div class="bona-shell-app__profile">
+      <button
+        mat-button
+        type="button"
+        class="bona-shell-app__profile-trigger"
+        [matMenuTriggerFor]="profileMenu"
+        [attr.aria-label]="profileMenuLabel()">
+        <span class="bona-shell-app__user-name">{{ userName() }}</span>
+        <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+      <mat-menu #profileMenu="matMenu">
+        @for (item of menuItems(); track item.id) {
+          <a mat-menu-item [routerLink]="item.link">{{ item.label }}</a>
+        }
+        <button mat-menu-item type="button" (click)="logout.emit()">
+          {{ logoutLabel() }}
+        </button>
+      </mat-menu>
+    </div>
+  </mat-toolbar>
+
+  <div class="bona-shell-app__content">
+    <ng-content />
+  </div>
+</div>

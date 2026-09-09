@@ -10,8 +10,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, map } from 'rxjs';
+import { filter, forkJoin, map, switchMap } from 'rxjs';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
+import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
 import { BonaFieldComponent } from '../../components/bona-field/bona-field.component';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import {
@@ -21,6 +22,9 @@ import {
   BonaGridComponent,
 } from '../../components/bona-grid/bona-grid.component';
 import { BonaInputTextFieldComponent } from '../../components/bona-input-text-field/bona-input-text-field.component';
+import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
+import { BonaTabsComponent, BonaTabItem } from '../../components/bona-tabs/bona-tabs.component';
+import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { ClientDto } from '../../models/client.dto';
 import {
   FormAssignmentDto,
@@ -70,6 +74,8 @@ const DESCRIPTION_FIELD: BonaFieldDefinition = {
     BonaFieldComponent,
     BonaGridComponent,
     BonaInputTextFieldComponent,
+    BonaPageComponent,
+    BonaTabsComponent,
   ],
   templateUrl: './form-ficha.component.html',
   styleUrl: './form-ficha.component.scss',
@@ -80,6 +86,8 @@ export class FormFichaComponent {
   private readonly clientsApi = inject(ClientsApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly confirm = inject(BonaConfirm);
+  private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly literals = FORMS_LITERALS;
@@ -92,6 +100,9 @@ export class FormFichaComponent {
   readonly questions = signal<FormQuestionDto[]>([]);
   readonly error = signal('');
   readonly feedback = signal('');
+  readonly loading = signal(true);
+  readonly tab = signal('template');
+  readonly clientSearch = signal('');
   readonly saving = signal(false);
   readonly assigning = signal(false);
   readonly selectedClientIds = signal<Set<string>>(new Set());
@@ -120,7 +131,22 @@ export class FormFichaComponent {
     return pending;
   });
 
-  readonly clientRows = computed(() => this.clients());
+  readonly clientRows = computed(() => {
+    const query = this.clientSearch().trim().toLowerCase();
+    const source = this.clients();
+    if (!query) {
+      return source;
+    }
+    return source.filter((client) =>
+      `${client.firstName} ${client.lastName}`.toLowerCase().includes(query),
+    );
+  });
+
+  readonly tabs: BonaTabItem[] = [
+    { id: 'template', label: FORMS_LITERALS.tabTemplate },
+    { id: 'assign', label: FORMS_LITERALS.tabAssign },
+    { id: 'responses', label: FORMS_LITERALS.tabResponses },
+  ];
 
   readonly assignmentRows = computed(() => {
     const clientsById = new Map(
@@ -186,6 +212,14 @@ export class FormFichaComponent {
 
   onBack(): void {
     void this.router.navigateByUrl('/admin/forms');
+  }
+
+  onTabChange(id: string): void {
+    this.tab.set(id);
+  }
+
+  onClientSearch(value: string): void {
+    this.clientSearch.set(value);
   }
 
   onTitleChange(value: string): void {
@@ -338,12 +372,23 @@ export class FormFichaComponent {
     if (this.isNew()) {
       return;
     }
-    this.formsApi
-      .deleteForm(this.formId())
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.confirm
+      .open({
+        title: this.literals.confirmDeleteTitle,
+        message: this.literals.confirmDeleteMessage,
+        confirmLabel: this.literals.delete,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() => this.formsApi.deleteForm(this.formId())),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
-        next: () => this.onBack(),
-        error: () => this.error.set(this.literals.errorSave),
+        next: () => {
+          this.toast.success(this.literals.deleted);
+          this.onBack();
+        },
+        error: () => this.toast.error(this.literals.errorSave),
       });
   }
 
@@ -463,14 +508,18 @@ export class FormFichaComponent {
     this.feedback.set('');
     this.selectedAssignmentId.set(null);
     this.selectedClientIds.set(new Set());
+    this.tab.set('template');
+    this.clientSearch.set('');
     if (!id || id === NEW_FORM_ID) {
       this.title.set('');
       this.description.set('');
       this.questions.set([]);
       this.assignments.set([]);
       this.clients.set([]);
+      this.loading.set(false);
       return;
     }
+    this.loading.set(true);
     forkJoin({
       form: this.formsApi.getForm(id),
       assignments: this.formsApi.getAssignments(id),
@@ -484,8 +533,12 @@ export class FormFichaComponent {
           this.questions.set(orderedQuestions(form.questions));
           this.assignments.set(assignments);
           this.clients.set(clients);
+          this.loading.set(false);
         },
-        error: () => this.error.set(this.literals.errorLoad),
+        error: () => {
+          this.error.set(this.literals.errorLoad);
+          this.loading.set(false);
+        },
       });
   }
 

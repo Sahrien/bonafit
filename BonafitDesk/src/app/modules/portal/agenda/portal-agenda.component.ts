@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, forkJoin, switchMap, take } from 'rxjs';
+import { EMPTY, filter, forkJoin, switchMap, take } from 'rxjs';
 import { BonaButtonComponent } from '../../../components/bona-button/bona-button.component';
+import { BonaConfirm } from '../../../components/bona-confirm/bona-confirm.service';
 import { BonaFieldDefinition } from '../../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../../components/bona-form/bona-form.component';
 import {
@@ -10,6 +11,8 @@ import {
   BonaGridColumn,
   BonaGridComponent,
 } from '../../../components/bona-grid/bona-grid.component';
+import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
+import { BonaToast } from '../../../components/bona-toast/bona-toast.service';
 import { ApiBusinessError } from '../../../core/api-business.error';
 import { isActiveClientAppointment, isBonoUsable } from '../../../core/booking';
 import {
@@ -30,7 +33,7 @@ import { PORTAL_AGENDA_LITERALS, PORTAL_BOOKING_ERROR_LITERALS } from './portal-
 @Component({
   selector: 'app-portal-agenda',
   standalone: true,
-  imports: [BonaFormComponent, BonaButtonComponent, BonaGridComponent],
+  imports: [BonaPageComponent, BonaFormComponent, BonaButtonComponent, BonaGridComponent],
   templateUrl: './portal-agenda.component.html',
   styleUrl: './portal-agenda.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +43,8 @@ export class PortalAgendaComponent {
   private readonly calendarApi = inject(CalendarApiService);
   private readonly clientsApi = inject(ClientsApiService);
   private readonly servicesApi = inject(ServicesApiService);
+  private readonly toast = inject(BonaToast);
+  private readonly confirm = inject(BonaConfirm);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly literals = PORTAL_AGENDA_LITERALS;
@@ -206,17 +211,29 @@ export class PortalAgendaComponent {
       startsAt,
       endsAt,
     };
-    const request = changingId
-      ? this.calendarApi.updateAppointment(changingId, payload)
-      : this.calendarApi.createAppointment(payload);
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.feedback.set(this.literals.booked);
-        this.changingId.set(null);
-        this.reload();
-      },
-      error: (error) => this.error.set(this.messageFor(error)),
-    });
+    this.confirm
+      .open({
+        title: changingId ? this.literals.confirmChangeTitle : this.literals.confirmBookTitle,
+        message: changingId ? this.literals.confirmChangeMessage : this.literals.confirmBookMessage,
+        confirmLabel: changingId ? this.literals.saveChange : this.literals.book,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() =>
+          changingId
+            ? this.calendarApi.updateAppointment(changingId, payload)
+            : this.calendarApi.createAppointment(payload),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.toast.success(this.literals.booked);
+          this.changingId.set(null);
+          this.reload();
+        },
+        error: (error) => this.error.set(this.messageFor(error)),
+      });
   }
 
   onAppointmentAction(event: BonaGridActionEvent<Record<string, unknown>>): void {
@@ -226,12 +243,22 @@ export class PortalAgendaComponent {
       return;
     }
     if (event.action === 'cancel') {
-      this.calendarApi
-        .updateAppointment(id, { ...appointment, status: 'cancelled' })
-        .pipe(takeUntilDestroyed(this.destroyRef))
+      this.confirm
+        .open({
+          title: this.literals.confirmCancelTitle,
+          message: this.literals.confirmCancelMessage,
+          confirmLabel: this.literals.cancel,
+        })
+        .pipe(
+          filter((ok) => ok),
+          switchMap(() =>
+            this.calendarApi.updateAppointment(id, { ...appointment, status: 'cancelled' }),
+          ),
+          takeUntilDestroyed(this.destroyRef),
+        )
         .subscribe({
           next: () => {
-            this.feedback.set(this.literals.cancelled);
+            this.toast.success(this.literals.cancelled);
             this.changingId.set(null);
             this.reload();
           },

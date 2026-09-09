@@ -5,6 +5,7 @@ import {
   BonaGridColumn,
   BonaGridComponent,
 } from '../../../components/bona-grid/bona-grid.component';
+import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
 import { BonoDto } from '../../../models/bono.dto';
 import { ClientBonoDto } from '../../../models/client-bono.dto';
 import { AuthApiService } from '../../../services/auth-api.service';
@@ -15,7 +16,7 @@ import { BONOS_LITERALS } from './bonos.literals';
 @Component({
   selector: 'app-portal-bonos',
   standalone: true,
-  imports: [BonaGridComponent],
+  imports: [BonaPageComponent, BonaGridComponent],
   templateUrl: './bonos.component.html',
   styleUrl: './bonos.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

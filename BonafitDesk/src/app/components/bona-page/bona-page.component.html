@@ -1,0 +1,21 @@
+<div class="bona-page">
+  <header class="bona-page__header">
+    <div>
+      <h1>{{ title() }}</h1>
+      @if (subtitle()) {
+        <p>{{ subtitle() }}</p>
+      }
+    </div>
+    <div class="bona-page__actions">
+      <ng-content select="[bonaPageActions]" />
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="bona-page__loading" role="status">
+      <mat-progress-spinner diameter="36" mode="indeterminate" />
+    </div>
+  } @else {
+    <ng-content />
+  }
+</div>

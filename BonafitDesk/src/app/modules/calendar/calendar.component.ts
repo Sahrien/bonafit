@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { filter, forkJoin, switchMap } from 'rxjs';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
+import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
+import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
+import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import {
   BonaCalendarComponent,
   BonaCalendarEvent,
@@ -19,7 +22,6 @@ import {
 import { ApiBusinessError } from '../../core/api-business.error';
 import { addMinutes, isBonoUsable } from '../../core/booking';
 import { AppointmentDto, AppointmentStatus, AppointmentWriteDto } from '../../models/appointment.dto';
-import { AuthSessionDto } from '../../models/auth-session.dto';
 import { BonoDto } from '../../models/bono.dto';
 import { BookingSettingsDto } from '../../models/booking-settings.dto';
 import { ClientBonoDto } from '../../models/client-bono.dto';
@@ -27,7 +29,6 @@ import { ClientDto } from '../../models/client.dto';
 import { ServiceCategory, ServiceDto } from '../../models/service.dto';
 import { TrainerScheduleDto, TrainerScheduleWriteDto } from '../../models/trainer-schedule.dto';
 import { TrainerDto } from '../../models/trainer.dto';
-import { AuthApiService } from '../../services/auth-api.service';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ServicesApiService } from '../../services/services-api.service';
@@ -45,11 +46,6 @@ const EMPTY_FORM: BonaFormValue = {
   status: 'confirmed',
 };
 
-const EMPTY_SETTINGS: BonaFormValue = {
-  nextDayCutoffTime: '18:00',
-  defaultLocation: '',
-};
-
 const EMPTY_SCHEDULE: BonaFormValue = {
   trainerId: '',
   weekday: '1',
@@ -58,10 +54,10 @@ const EMPTY_SCHEDULE: BonaFormValue = {
 };
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  pending: '#d97706',
-  confirmed: '#2563eb',
-  completed: '#64748b',
-  cancelled: '#94a3b8',
+  pending: 'var(--bona-color-warning)',
+  confirmed: 'var(--bona-color-primary)',
+  completed: 'var(--bona-color-text-muted)',
+  cancelled: 'var(--bona-color-border)',
 };
 
 const NEW_ID = 'new';
@@ -69,7 +65,13 @@ const NEW_ID = 'new';
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [BonaCalendarComponent, BonaFormComponent, BonaButtonComponent, BonaGridComponent],
+  imports: [
+    BonaPageComponent,
+    BonaCalendarComponent,
+    BonaFormComponent,
+    BonaButtonComponent,
+    BonaGridComponent,
+  ],
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,17 +80,18 @@ export class CalendarComponent {
   private readonly calendarApi = inject(CalendarApiService);
   private readonly clientsApi = inject(ClientsApiService);
   private readonly servicesApi = inject(ServicesApiService);
-  private readonly authApi = inject(AuthApiService);
+  private readonly confirm = inject(BonaConfirm);
+  private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly literals = CALENDAR_LITERALS;
   readonly view = signal<BonaCalendarView>('week');
-  readonly userName = signal('');
+  readonly loading = signal(true);
   readonly formOpen = signal(false);
   readonly editingId = signal<string | null>(null);
   readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
   readonly error = signal('');
-  readonly settingsForm = signal<BonaFormValue>({ ...EMPTY_SETTINGS });
+  readonly schedulesOpen = signal(false);
   readonly scheduleFormOpen = signal(false);
   readonly editingScheduleId = signal<string | null>(null);
   readonly scheduleForm = signal<BonaFormValue>({ ...EMPTY_SCHEDULE });
@@ -212,11 +215,6 @@ export class CalendarComponent {
     ];
   });
 
-  readonly settingsFields: BonaFieldDefinition[] = [
-    { key: 'nextDayCutoffTime', label: CALENDAR_LITERALS.cutoffTime, type: 'time', required: true },
-    { key: 'defaultLocation', label: CALENDAR_LITERALS.defaultLocation, type: 'text', required: true },
-  ];
-
   readonly scheduleFields = computed((): BonaFieldDefinition[] => [
     {
       key: 'trainerId',
@@ -318,7 +316,17 @@ export class CalendarComponent {
   }
 
   onCancelAppointment(): void {
-    this.saveAppointment({ ...this.formValue(), status: 'cancelled' });
+    this.confirm
+      .open({
+        title: this.literals.confirmCancelTitle,
+        message: this.literals.confirmCancelMessage,
+        confirmLabel: this.literals.cancelAppointment,
+      })
+      .pipe(
+        filter((ok) => ok),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => this.saveAppointment({ ...this.formValue(), status: 'cancelled' }));
   }
 
   onDelete(): void {
@@ -326,43 +334,30 @@ export class CalendarComponent {
     if (!id) {
       return;
     }
-    this.calendarApi
-      .deleteAppointment(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.confirm
+      .open({
+        title: this.literals.confirmDeleteTitle,
+        message: this.literals.confirmDeleteMessage,
+        confirmLabel: this.literals.delete,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() => this.calendarApi.deleteAppointment(id)),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
         next: () => {
           this.formOpen.set(false);
           this.editingId.set(null);
+          this.toast.success(this.literals.deleted);
           this.loadAppointments();
         },
         error: (error) => this.error.set(this.messageFor(error)),
       });
   }
 
-  onSettingsChange(value: BonaFormValue): void {
-    this.settingsForm.set(value);
-  }
-
-  onSaveSettings(value: BonaFormValue): void {
-    const nextDayCutoffTime = (value['nextDayCutoffTime'] ?? '').trim();
-    const defaultLocation = (value['defaultLocation'] ?? '').trim();
-    if (!nextDayCutoffTime || !defaultLocation) {
-      this.error.set(this.literals.errorRequired);
-      return;
-    }
-    this.calendarApi
-      .updateBookingSettings({ nextDayCutoffTime, defaultLocation })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (settings) => {
-          this.settings.set(settings);
-          this.settingsForm.set({
-            nextDayCutoffTime: settings.nextDayCutoffTime,
-            defaultLocation: settings.defaultLocation,
-          });
-        },
-        error: (error) => this.error.set(this.messageFor(error)),
-      });
+  toggleSchedules(): void {
+    this.schedulesOpen.update((open) => !open);
   }
 
   onCreateSchedule(): void {
@@ -392,11 +387,22 @@ export class CalendarComponent {
       return;
     }
     if (event.action === 'delete' && id) {
-      this.calendarApi
-        .deleteTrainerSchedule(id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
+      this.confirm
+        .open({
+          title: this.literals.confirmDeleteScheduleTitle,
+          message: this.literals.confirmDeleteScheduleMessage,
+          confirmLabel: this.literals.delete,
+        })
+        .pipe(
+          filter((ok) => ok),
+          switchMap(() => this.calendarApi.deleteTrainerSchedule(id)),
+          takeUntilDestroyed(this.destroyRef),
+        )
         .subscribe({
-          next: () => this.loadSchedules(),
+          next: () => {
+            this.toast.success(this.literals.scheduleDeleted);
+            this.loadSchedules();
+          },
           error: (error) => this.error.set(this.messageFor(error)),
         });
     }
@@ -444,6 +450,7 @@ export class CalendarComponent {
       next: () => {
         this.formOpen.set(false);
         this.editingId.set(null);
+        this.toast.success(this.literals.saved);
         this.loadAppointments();
       },
       error: (error) => this.error.set(this.messageFor(error)),
@@ -457,24 +464,25 @@ export class CalendarComponent {
       clients: this.clientsApi.getClients(),
       services: this.servicesApi.getServices(),
       bonos: this.servicesApi.getBonos(),
-      session: this.authApi.getSession(),
       settings: this.calendarApi.getBookingSettings(),
       schedules: this.calendarApi.getTrainerSchedules(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ trainers, appointments, clients, services, bonos, session, settings, schedules }) => {
-        this.trainers.set(trainers);
-        this.appointments.set(appointments);
-        this.clients.set(clients);
-        this.services.set(services);
-        this.bonos.set(bonos);
-        this.userName.set(this.sessionLabel(session));
-        this.settings.set(settings);
-        this.schedules.set(schedules);
-        this.settingsForm.set({
-          nextDayCutoffTime: settings.nextDayCutoffTime,
-          defaultLocation: settings.defaultLocation,
-        });
+      .subscribe({
+        next: ({ trainers, appointments, clients, services, bonos, settings, schedules }) => {
+          this.trainers.set(trainers);
+          this.appointments.set(appointments);
+          this.clients.set(clients);
+          this.services.set(services);
+          this.bonos.set(bonos);
+          this.settings.set(settings);
+          this.schedules.set(schedules);
+          this.loading.set(false);
+        },
+        error: (error) => {
+          this.error.set(this.messageFor(error));
+          this.loading.set(false);
+        },
       });
   }
 
@@ -511,10 +519,6 @@ export class CalendarComponent {
 
   private defaultTrainerId(): string {
     return this.trainers()[0]?.id ?? '';
-  }
-
-  private sessionLabel(session: AuthSessionDto | null): string {
-    return session?.user.displayName ?? '';
   }
 
   private clientLabel(client: ClientDto): string {

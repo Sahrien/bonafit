@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { MOCK_BONOS, MOCK_SERVICES } from '../../testing/fixtures';
+import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import { ServicesApiService } from '../../services/services-api.service';
 import { ServicesComponent } from './services.component';
 import { SERVICE_CATEGORY_LABELS, SERVICES_LITERALS } from './services.literals';
@@ -29,6 +30,7 @@ describe('ServicesComponent', () => {
       providers: [
         provideNoopAnimations(),
         { provide: ServicesApiService, useValue: servicesApi },
+        ...provideBonaFeedbackTesting().providers,
       ],
     }).compileComponents();
 

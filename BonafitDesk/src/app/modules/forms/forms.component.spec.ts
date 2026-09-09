@@ -5,6 +5,7 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { MOCK_FORM_ASSIGNMENTS, MOCK_FORMS } from '../../testing/fixtures';
+import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import { FormsApiService } from '../../services/forms-api.service';
 import { FormsComponent } from './forms.component';
 import { FORMS_LITERALS } from './forms.literals';
@@ -35,6 +36,7 @@ describe('FormsComponent', () => {
           { path: 'admin/forms/:id', component: FormFichaStubComponent },
         ]),
         { provide: FormsApiService, useValue: formsApi },
+        ...provideBonaFeedbackTesting().providers,
       ],
     }).compileComponents();
 

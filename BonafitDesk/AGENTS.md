@@ -8,16 +8,19 @@ Dev server: `npm start` → `http://localhost:4200`. Tests: `npm test` (Karma + 
 
 ```
 src/app/components/bona-*   # shared UI kit (use these in modules)
-src/app/modules/            # routed screens (admin, portal, login)
+src/app/modules/            # routed screens (admin, portal, login, settings)
 src/app/services/           # *ApiService HTTP facades
 src/app/core/               # API interfaces, booking, auth guards, interceptors, apiUrl
 src/app/models/             # camelCase DTOs (JSON contract)
 src/app/i18n/es.ts          # shared shell/login literals
 src/environments/           # apiUrl origin
 src/app/testing/            # HTTP/screen spec fixtures (not a mock API)
+src/styles/_theme.scss      # Material 3 palettes + --bona-* token aliases
 ```
 
-Routes: `src/app/app.routes.ts`. Lazy-load screens with `loadComponent`. Guards: `adminGuard`, `clientGuard`, `homeRedirectGuard`, `authenticatedGuard`. Password-change screen: `/cambiar-clave`.
+Routes: `src/app/app.routes.ts`. Lazy-load screens with `loadComponent`. Guards: `adminGuard`, `clientGuard`, `homeRedirectGuard`, `authenticatedGuard`. Forced password-change screen: `/cambiar-clave` (no app bar). Role homes: `/admin/calendar` and `/app/agenda`. Settings: `/admin/ajustes` and `/app/ajustes`.
+
+Authenticated chrome is `bona-shell-app` (top bar, nav, profile menu). Admin wrapper: `modules/admin/admin-shell`. Client wrapper: `modules/portal/portal-shell`.
 
 ## Data layer
 
@@ -40,17 +43,17 @@ HTTP helpers: `API_PATHS` + `apiUrl()` in `core/api-url.ts`, query params via `t
 
 - Standalone components, `ChangeDetectionStrategy.OnPush`, `inject()`, `signal` / `computed` for local state.
 - New public APIs on kit components: `input()` / `output()`. Older kit pieces (`bona-button`, `bona-grid`) still use `@Input` / `@Output` — do not mix both styles on the same component.
-- Screens compose `bona-form`, `bona-field`, `bona-grid`, `bona-button`, `bona-shell-*`, `bona-calendar`. Do not drop raw Angular Material into a module unless extending the kit.
+- Screens compose `bona-form`, `bona-field`, `bona-grid`, `bona-button`, `bona-shell-app`, `bona-page`, `bona-confirm`, `bona-toast`, `bona-tabs`, `bona-calendar`. Do not drop raw Angular Material into a module unless extending the kit.
 - Selector prefix: `app-` (kit: `app-bona-*`).
 - Spanish copy: `*.literals.ts` next to the module, or `i18n/es.ts` for shared chrome. Templates bind `literals`, they do not hardcode user-facing strings.
-- Styles: component SCSS + `--bona-*` tokens in `src/styles.scss`. Do not copy Webonafit’s forest/cream tokens.
+- Styles: component SCSS + `--bona-*` tokens. Retune Material palettes and token aliases in `src/styles/_theme.scss`. Do not restyle screens with one-off hex, and do not copy Webonafit’s forest/cream tokens.
 
 ## Tests
 
 Colocate `*.spec.ts`. Patterns already in the repo:
 
 - HTTP services: `configureHttpClientTesting()` from `core/http-testing.ts` (includes auth/error interceptors).
-- Screens: `RouterTestingHarness`, spy the `*ApiService`, `provideNoopAnimations()`.
+- Screens: `RouterTestingHarness`, spy the `*ApiService`, `provideNoopAnimations()`. Screens that confirm or toast should use `provideBonaFeedbackTesting()` from `testing/bona-feedback.ts`.
 - Booking: unit tests in `core/booking.spec.ts`. Keep behavior aligned with `BonafitApi/app/booking.py`.
 - Shared fixture objects live in `src/app/testing/fixtures.ts`.
 

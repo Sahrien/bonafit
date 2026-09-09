@@ -8,6 +8,7 @@ export const SERVICES_LITERALS = {
   edit: 'Editar',
   delete: 'Eliminar',
   save: 'Guardar',
+  saved: 'Guardado.',
   cancel: 'Cancelar',
   emptyServices: 'Sin servicios',
   emptyBonos: 'Este servicio no tiene bonos',
@@ -28,6 +29,13 @@ export const SERVICES_LITERALS = {
   no: 'No',
   errorRequired: 'Completa los campos obligatorios.',
   errorSave: 'No se ha podido guardar.',
+  confirmDeleteServiceTitle: 'Eliminar servicio',
+  confirmDeleteServiceMessage: 'Se eliminará el servicio y sus bonos.',
+  confirmDeleteBonoTitle: 'Eliminar bono',
+  confirmDeleteBonoMessage: 'Se eliminará este bono del catálogo.',
+  deleted: 'Eliminado.',
+  search: 'Buscar',
+  searchPlaceholder: 'Nombre del servicio',
 } as const;
 
 export const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
