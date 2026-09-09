@@ -15,15 +15,21 @@ If the `bonafit` role already exists, skip that file and set `DATABASE_URL` in `
 ```bash
 cp .env.example .env
 uv sync
+uv run create-db
+uv run seed
 uv run uvicorn app.main:app --reload --port 8080
 ```
 
-Optional: `docker compose up -d` starts a Postgres 16 container with user/db `bonafit` if Docker is installed.
+Create a login without the demo seed:
+
+```bash
+uv run create-user you@example.com --role admin --name "Your Name"
+```
+
+That prints a generated temporary password. Optional: `docker compose up -d` starts a Postgres 16 container with user/db `bonafit` if Docker is installed.
 
 API: `http://localhost:8080/api`  
 Docs: `http://localhost:8080/docs`
-
-On startup the API creates tables and seeds demo data if `trainer-1` is missing.
 
 Seed login password: `ChangeMe123!` (`BOOTSTRAP_PASSWORD`)
 

@@ -1,9 +1,12 @@
+"""Load demo trainers, clients, services, and appointments if the database is empty."""
+
 from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from scripts.session import session_scope
 from app.models import (
     Appointment,
     Bono,
@@ -321,3 +324,16 @@ def seed_if_empty(db: Session) -> None:
 
 def already_seeded(db: Session) -> bool:
     return db.scalar(select(Trainer.id).where(Trainer.id == "trainer-1")) is not None
+
+
+def main() -> None:
+    with session_scope() as db:
+        if already_seeded(db):
+            print("Database already seeded.")
+            return
+        seed_if_empty(db)
+    print("Seeded demo data.")
+
+
+if __name__ == "__main__":
+    main()

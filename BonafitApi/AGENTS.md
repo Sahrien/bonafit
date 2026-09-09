@@ -15,9 +15,11 @@ app/deps.py          # auth dependencies
 app/errors.py        # NotFoundError, BusinessError, booking/auth codes
 app/booking.py       # slot/cutoff/bono rules (keep in sync with Desk core/booking.ts)
 app/security.py      # bcrypt + JWT
-app/seed.py          # demo data if trainer-1 is missing
 app/emailer.py       # optional SMTP for temporary passwords
 app/routers/         # auth, clients, services, calendar, forms
+scripts/create_db.py # create tables from models
+scripts/seed.py      # demo data if trainer-1 is missing
+scripts/create_user.py
 ```
 
 Routers mount at `/api`. OpenAPI: `http://localhost:8080/docs`.
@@ -31,12 +33,15 @@ docker compose up -d
 # or: psql -U postgres -f setup_postgres.sql
 cp .env.example .env
 uv sync
+uv run create-db
+uv run seed                 # optional demo data
+uv run create-user EMAIL [--role admin|client] [--name "Display Name"]
 uv run uvicorn app.main:app --reload --port 8080
 ```
 
-This is a uv project (`pyproject.toml` + `uv.lock`). Hatchling installs the existing `app/` package into `.venv` so `uvicorn app.main:app` works. Do not add a `requirements.txt`. Add or bump deps with `uv add`; commit `uv.lock` with `pyproject.toml`.
+This is a uv project (`pyproject.toml` + `uv.lock`). Hatchling installs `app/` and `scripts/`. Do not add a `requirements.txt`. Add or bump deps with `uv add`; commit `uv.lock` with `pyproject.toml`.
 
-Startup runs `create_all` and `seed_if_empty`. Seed password is `BOOTSTRAP_PASSWORD` (default `ChangeMe123!`).
+The API does not create tables or seed on startup. `create-user` generates a temporary password and prints it (`must_change_password` is true). Demo seed password is `BOOTSTRAP_PASSWORD` (default `ChangeMe123!`).
 
 | Email | Role |
 | --- | --- |
