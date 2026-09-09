@@ -48,6 +48,7 @@ export const CALENDAR_LITERALS = {
   errorRequired: 'Completa los campos obligatorios.',
   errorBonoRequired: 'Este servicio requiere un bono contratado.',
   errorSave: 'No se ha podido guardar la cita.',
+  errorServiceInactive: 'Este servicio no está activo.',
   errorCutoff: 'Fuera de plazo o el hueco no está disponible.',
   errorSlotTaken: 'Ese hueco ya está ocupado.',
   errorOneAppointment: 'El cliente ya tiene una cita activa.',
@@ -69,4 +70,5 @@ export const BOOKING_ERROR_LITERALS: Record<string, string> = {
   [BOOKING_ERROR_CODES.expiredBono]: CALENDAR_LITERALS.errorExpiredBono,
   [BOOKING_ERROR_CODES.noSessions]: CALENDAR_LITERALS.errorNoSessions,
   [BOOKING_ERROR_CODES.invalidStatus]: CALENDAR_LITERALS.errorInvalid,
+  [BOOKING_ERROR_CODES.serviceInactive]: CALENDAR_LITERALS.errorServiceInactive,
 };

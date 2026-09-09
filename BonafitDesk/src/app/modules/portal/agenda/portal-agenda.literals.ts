@@ -40,6 +40,7 @@ export const PORTAL_AGENDA_LITERALS = {
   errorNoSessions: 'No quedan sesiones.',
   errorInvalid: 'No se puede actualizar esta cita.',
   errorSave: 'No se ha podido guardar la cita.',
+  errorServiceInactive: 'Este servicio no está activo.',
 } as const;
 
 export const PORTAL_BOOKING_ERROR_LITERALS: Record<string, string> = {
@@ -51,4 +52,5 @@ export const PORTAL_BOOKING_ERROR_LITERALS: Record<string, string> = {
   [BOOKING_ERROR_CODES.expiredBono]: PORTAL_AGENDA_LITERALS.errorExpiredBono,
   [BOOKING_ERROR_CODES.noSessions]: PORTAL_AGENDA_LITERALS.errorNoSessions,
   [BOOKING_ERROR_CODES.invalidStatus]: PORTAL_AGENDA_LITERALS.errorInvalid,
+  [BOOKING_ERROR_CODES.serviceInactive]: PORTAL_AGENDA_LITERALS.errorServiceInactive,
 };

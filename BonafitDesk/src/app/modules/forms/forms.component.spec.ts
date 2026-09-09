@@ -4,7 +4,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
-import { MOCK_FORM_ASSIGNMENTS, MOCK_FORMS } from '../../core/mock-data';
+import { MOCK_FORM_ASSIGNMENTS, MOCK_FORMS } from '../../testing/fixtures';
 import { FormsApiService } from '../../services/forms-api.service';
 import { FormsComponent } from './forms.component';
 import { FORMS_LITERALS } from './forms.literals';

@@ -6,6 +6,8 @@ export interface AuthUserDto {
   role: UserRole;
   trainerId?: string;
   clientId?: string;
+  email?: string;
+  mustChangePassword?: boolean;
 }
 
 export interface AuthSessionDto {
@@ -14,5 +16,11 @@ export interface AuthSessionDto {
 }
 
 export interface LoginRequestDto {
-  userId: string;
+  email: string;
+  password: string;
+}
+
+export interface ChangePasswordRequestDto {
+  currentPassword: string;
+  newPassword: string;
 }

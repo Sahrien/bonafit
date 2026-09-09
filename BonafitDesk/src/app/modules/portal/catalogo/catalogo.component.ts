@@ -14,9 +14,6 @@ import { ClientsApiService } from '../../../services/clients-api.service';
 import { ServicesApiService } from '../../../services/services-api.service';
 import { CATALOGO_LITERALS } from './catalogo.literals';
 
-const OFFER_BONO = 'bono';
-const OFFER_SINGLE = 'single-session';
-
 @Component({
   selector: 'app-portal-catalogo',
   standalone: true,
@@ -87,12 +84,6 @@ export class CatalogoComponent {
       return;
     }
 
-    const kind = String(event.item['kind'] ?? '');
-    if (kind === OFFER_SINGLE) {
-      this.feedback.set(CATALOGO_LITERALS.singleSessionMock);
-      return;
-    }
-
     const bonoId = String(event.item['bonoId'] ?? '');
     if (!bonoId) {
       return;
@@ -112,26 +103,12 @@ export class CatalogoComponent {
       for (const bono of bonos.filter((row) => row.serviceId === service.id)) {
         rows.push({
           id: bono.id,
-          kind: OFFER_BONO,
           bonoId: bono.id,
           serviceId: service.id,
           serviceName: service.name,
           offerName: bono.name,
           sessionCount: bono.sessionCount,
           priceLabel: this.formatPrice(bono.price),
-        });
-      }
-
-      if (service.allowsSingleSession) {
-        rows.push({
-          id: `single-${service.id}`,
-          kind: OFFER_SINGLE,
-          bonoId: '',
-          serviceId: service.id,
-          serviceName: service.name,
-          offerName: CATALOGO_LITERALS.singleSession,
-          sessionCount: 1,
-          priceLabel: this.formatPrice(service.singleSessionPrice ?? 0),
         });
       }
     }

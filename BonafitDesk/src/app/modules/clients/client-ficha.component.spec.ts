@@ -3,7 +3,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
-import { MOCK_CLIENTS } from '../../core/mock-data';
+import { MOCK_CLIENTS } from '../../testing/fixtures';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ServicesApiService } from '../../services/services-api.service';
 import { ClientFichaComponent } from './client-ficha.component';

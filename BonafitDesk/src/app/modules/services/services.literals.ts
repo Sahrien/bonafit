@@ -15,6 +15,7 @@ export const SERVICES_LITERALS = {
   category: 'Categoría',
   allowsSingleSession: 'Permite sesión suelta',
   bookableByClient: 'Reservable por el cliente',
+  active: 'Activo',
   durationMinutes: 'Duración (minutos)',
   singleSessionPrice: 'Precio sesión suelta',
   sessionCount: 'Sesiones',

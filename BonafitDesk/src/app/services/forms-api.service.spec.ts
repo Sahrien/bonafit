@@ -3,17 +3,17 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { API_PATHS, apiUrl } from '../core/api-url';
 import { configureHttpClientTesting } from '../core/http-testing';
-import { MOCK_FORM_ASSIGNMENTS, MOCK_FORMS } from '../core/mock-data';
+import { MOCK_FORM_ASSIGNMENTS, MOCK_FORMS } from '../testing/fixtures';
 import { FormWriteDto } from '../models/form.dto';
-import { FormsHttpApi } from './forms-http.service';
+import { FormsApiService } from './forms-api.service';
 
-describe('FormsHttpApi', () => {
-  let api: FormsHttpApi;
+describe('FormsApiService', () => {
+  let api: FormsApiService;
   let http: HttpTestingController;
 
   beforeEach(() => {
     http = configureHttpClientTesting();
-    api = TestBed.inject(FormsHttpApi);
+    api = TestBed.inject(FormsApiService);
   });
 
   afterEach(() => {

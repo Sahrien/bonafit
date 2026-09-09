@@ -3,7 +3,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
-import { MOCK_FORM_ASSIGNMENTS } from '../../../core/mock-data';
+import { MOCK_FORM_ASSIGNMENTS } from '../../../testing/fixtures';
 import { FormAssignmentDto } from '../../../models/form.dto';
 import { FormsApiService } from '../../../services/forms-api.service';
 import { PortalFormFillComponent } from './portal-form-fill.component';

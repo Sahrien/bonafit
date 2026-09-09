@@ -35,6 +35,7 @@ describe('CatalogoComponent', () => {
       allowsSingleSession: false,
       durationMinutes: 60,
       bookableByClient: true,
+      active: true,
     },
     {
       id: 'svc-masaje',
@@ -44,6 +45,7 @@ describe('CatalogoComponent', () => {
       singleSessionPrice: 45,
       durationMinutes: 60,
       bookableByClient: false,
+      active: true,
     },
   ];
 
@@ -57,12 +59,12 @@ describe('CatalogoComponent', () => {
       price: 400,
     },
     {
-      id: 'bono-masaje-5',
+      id: 'bono-masaje-1',
       serviceId: 'svc-masaje',
-      name: 'pack-5',
-      description: 'sessions-5',
-      sessionCount: 5,
-      price: 200,
+      name: 'sesion-suelta',
+      description: 'sessions-1',
+      sessionCount: 1,
+      price: 45,
     },
   ];
 
@@ -109,7 +111,7 @@ describe('CatalogoComponent', () => {
     return row?.querySelector('button') ?? undefined;
   }
 
-  it('loads catalog offers including a single session when allowed', async () => {
+  it('loads catalog offers from real bonos only', async () => {
     await create();
 
     expect(servicesApi.getServices).toHaveBeenCalled();
@@ -118,8 +120,7 @@ describe('CatalogoComponent', () => {
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('pack-10');
-    expect(text).toContain('pack-5');
-    expect(text).toContain(CATALOGO_LITERALS.singleSession);
+    expect(text).toContain('sesion-suelta');
     expect(text).toContain(CATALOGO_LITERALS.contract);
   });
 
@@ -138,15 +139,17 @@ describe('CatalogoComponent', () => {
     expect(fixture.nativeElement.textContent).toContain(CATALOGO_LITERALS.contracted);
   });
 
-  it('uses a local mock path for single session because no API exists', async () => {
+  it('contracts a one-session masaje bono', async () => {
     await create();
 
-    contractButtonInRow(CATALOGO_LITERALS.singleSession)?.click();
+    contractButtonInRow('sesion-suelta')?.click();
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(clientsApi.contractBono).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.textContent).toContain(CATALOGO_LITERALS.singleSessionMock);
+    expect(clientsApi.contractBono).toHaveBeenCalledWith({
+      clientId: 'client-1',
+      bonoId: 'bono-masaje-1',
+    });
   });
 });

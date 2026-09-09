@@ -23,4 +23,5 @@ export type {
   AuthUserDto,
   AuthSessionDto,
   LoginRequestDto,
+  ChangePasswordRequestDto,
 } from './auth-session.dto';

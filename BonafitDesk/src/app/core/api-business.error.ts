@@ -17,6 +17,8 @@ export const BOOKING_ERROR_CODES = {
   expiredBono: 'booking.expiredBono',
   noSessions: 'booking.noSessions',
   invalidStatus: 'booking.invalidStatus',
+  serviceInactive: 'booking.serviceInactive',
+  mustChangePassword: 'auth.mustChangePassword',
 } as const;
 
 export type BookingErrorCode = (typeof BOOKING_ERROR_CODES)[keyof typeof BOOKING_ERROR_CODES];

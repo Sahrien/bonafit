@@ -7,23 +7,20 @@ import {
   RouterStateSnapshot,
   UrlTree,
 } from '@angular/router';
-import { firstValueFrom, isObservable, Observable } from 'rxjs';
+import { firstValueFrom, isObservable, Observable, of } from 'rxjs';
 import { AuthApiService } from '../../services/auth-api.service';
-import { MockStore } from '../mock-store.service';
-import { adminGuard, clientGuard, homeRedirectGuard } from './auth.guards';
+import { MOCK_ACCOUNTS, createMockSession } from '../../testing/fixtures';
+import { adminGuard, authenticatedGuard, clientGuard, homeRedirectGuard } from './auth.guards';
 
 describe('auth guards', () => {
-  let auth: AuthApiService;
+  let auth: jasmine.SpyObj<AuthApiService>;
   let router: Router;
-  let store: MockStore;
 
   beforeEach(() => {
+    auth = jasmine.createSpyObj('AuthApiService', ['getSession']);
     TestBed.configureTestingModule({
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: AuthApiService, useValue: auth }],
     });
-    store = TestBed.inject(MockStore);
-    store.reset();
-    auth = TestBed.inject(AuthApiService);
     router = TestBed.inject(Router);
   });
 
@@ -48,24 +45,33 @@ describe('auth guards', () => {
   }
 
   it('sends an anonymous visitor to login', async () => {
+    auth.getSession.and.returnValue(of(null));
     expect(urlOf(await resultOf(homeRedirectGuard))).toBe('/login');
     expect(urlOf(await resultOf(adminGuard))).toBe('/login');
     expect(urlOf(await resultOf(clientGuard))).toBe('/login');
+    expect(urlOf(await resultOf(authenticatedGuard))).toBe('/login');
   });
 
   it('sends an admin to the admin home and blocks the client portal', async () => {
-    await firstValueFrom(auth.login('user-trainer-1'));
-
+    auth.getSession.and.returnValue(of(createMockSession(MOCK_ACCOUNTS[0])));
     expect(urlOf(await resultOf(homeRedirectGuard))).toBe('/admin');
     expect(urlOf(await resultOf(adminGuard))).toBe(true);
     expect(urlOf(await resultOf(clientGuard))).toBe('/admin');
   });
 
   it('sends a client to the portal and blocks the admin panel', async () => {
-    await firstValueFrom(auth.login('user-client-1'));
-
+    auth.getSession.and.returnValue(of(createMockSession(MOCK_ACCOUNTS[2])));
     expect(urlOf(await resultOf(homeRedirectGuard))).toBe('/app');
     expect(urlOf(await resultOf(clientGuard))).toBe(true);
     expect(urlOf(await resultOf(adminGuard))).toBe('/app');
+  });
+
+  it('forces a password change when the API requires it', async () => {
+    auth.getSession.and.returnValue(
+      of(createMockSession({ ...MOCK_ACCOUNTS[2], mustChangePassword: true })),
+    );
+    expect(urlOf(await resultOf(homeRedirectGuard))).toBe('/cambiar-clave');
+    expect(urlOf(await resultOf(adminGuard))).toBe('/cambiar-clave');
+    expect(urlOf(await resultOf(authenticatedGuard))).toBe(true);
   });
 });

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { BonaCalendarEvent } from '../../components/bona-calendar/bona-calendar.component';
-import { MOCK_APPOINTMENTS, MOCK_BOOKING_SETTINGS, MOCK_CLIENTS, MOCK_SERVICES, MOCK_TRAINERS, MOCK_TRAINER_SCHEDULES } from '../../core/mock-data';
+import { MOCK_APPOINTMENTS, MOCK_BOOKING_SETTINGS, MOCK_CLIENTS, MOCK_SERVICES, MOCK_TRAINERS, MOCK_TRAINER_SCHEDULES } from '../../testing/fixtures';
 import { AuthSessionDto } from '../../models/auth-session.dto';
 import { AuthApiService } from '../../services/auth-api.service';
 import { CalendarApiService } from '../../services/calendar-api.service';

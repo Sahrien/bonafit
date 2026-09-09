@@ -1,8 +1,11 @@
 import { Routes } from '@angular/router';
-import { adminGuard, clientGuard, homeRedirectGuard } from './core/auth/auth.guards';
+import { adminGuard, authenticatedGuard, clientGuard, homeRedirectGuard } from './core/auth/auth.guards';
 
 const loadLogin = () =>
   import('./modules/login/login.component').then((m) => m.LoginComponent);
+
+const loadChangePassword = () =>
+  import('./modules/login/change-password.component').then((m) => m.ChangePasswordComponent);
 
 const loadAdminHome = () =>
   import('./modules/admin/admin-home.component').then((m) => m.AdminHomeComponent);
@@ -57,6 +60,11 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: loadLogin,
+  },
+  {
+    path: 'cambiar-clave',
+    canActivate: [authenticatedGuard],
+    loadComponent: loadChangePassword,
   },
   {
     path: 'admin',

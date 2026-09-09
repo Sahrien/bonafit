@@ -12,6 +12,4 @@ export const CATALOGO_LITERALS = {
   contract: 'Contratar',
   contracted: 'Bono contratado.',
   contractError: 'No se pudo completar la contratación.',
-  singleSession: 'Sesión suelta',
-  singleSessionMock: 'Sesión suelta contratada (mock, sin pasarela).',
 } as const;

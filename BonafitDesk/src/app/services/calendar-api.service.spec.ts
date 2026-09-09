@@ -3,16 +3,16 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { API_PATHS, apiUrl } from '../core/api-url';
 import { configureHttpClientTesting } from '../core/http-testing';
-import { MOCK_APPOINTMENTS, MOCK_TRAINERS } from '../core/mock-data';
-import { CalendarHttpApi } from './calendar-http.service';
+import { MOCK_APPOINTMENTS, MOCK_TRAINERS } from '../testing/fixtures';
+import { CalendarApiService } from './calendar-api.service';
 
-describe('CalendarHttpApi', () => {
-  let api: CalendarHttpApi;
+describe('CalendarApiService', () => {
+  let api: CalendarApiService;
   let http: HttpTestingController;
 
   beforeEach(() => {
     http = configureHttpClientTesting();
-    api = TestBed.inject(CalendarHttpApi);
+    api = TestBed.inject(CalendarApiService);
   });
 
   afterEach(() => {

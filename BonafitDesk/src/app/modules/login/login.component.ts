@@ -1,17 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
-import { BonaInputTextFieldComponent } from '../../components/bona-input-text-field/bona-input-text-field.component';
-import { homeForRole } from '../../core/auth/auth.paths';
+import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
+import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
+import { AUTH_PATHS, homeForRole } from '../../core/auth/auth.paths';
 import { LOGIN_LITERALS } from '../../i18n/es';
-import { AuthUserDto, UserRole } from '../../models/auth-session.dto';
 import { AuthApiService } from '../../services/auth-api.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [BonaButtonComponent, BonaInputTextFieldComponent],
+  imports: [BonaFormComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,34 +19,40 @@ export class LoginComponent {
   private readonly router = inject(Router);
 
   readonly literals = LOGIN_LITERALS;
-  readonly filter = signal('');
-  private readonly accounts = toSignal(this.auth.listAccounts(), {
-    initialValue: [] as AuthUserDto[],
-  });
+  readonly submitting = signal(false);
+  readonly error = signal('');
+  readonly formValue = signal<BonaFormValue>({ email: '', password: '' });
 
-  readonly filteredAccounts = computed(() => {
-    const query = this.filter().trim().toLowerCase();
-    const rows = this.accounts();
-    if (!query) {
-      return rows;
+  readonly fields: BonaFieldDefinition[] = [
+    { key: 'email', label: LOGIN_LITERALS.email, type: 'email', required: true },
+    { key: 'password', label: LOGIN_LITERALS.password, type: 'password', required: true },
+  ];
+
+  onFormChange(value: BonaFormValue): void {
+    this.formValue.set(value);
+  }
+
+  onSubmit(value: BonaFormValue): void {
+    const email = (value['email'] ?? '').trim();
+    const password = value['password'] ?? '';
+    if (!email || !password) {
+      this.error.set(this.literals.errorRequired);
+      return;
     }
-    return rows.filter((row) => {
-      const role = this.roleLabel(row.role).toLowerCase();
-      return row.displayName.toLowerCase().includes(query) || role.includes(query);
-    });
-  });
-
-  roleLabel(role: UserRole): string {
-    return role === 'admin' ? this.literals.roleAdmin : this.literals.roleClient;
-  }
-
-  accountAction(account: AuthUserDto): string {
-    return `${this.literals.enter}: ${account.displayName} · ${this.roleLabel(account.role)}`;
-  }
-
-  onSelect(account: AuthUserDto): void {
-    this.auth.login(account.id).subscribe((session) => {
-      void this.router.navigateByUrl(homeForRole(session.user.role));
+    this.submitting.set(true);
+    this.error.set('');
+    this.auth.login({ email, password }).subscribe({
+      next: (session) => {
+        this.submitting.set(false);
+        const path = session.user.mustChangePassword
+          ? AUTH_PATHS.changePassword
+          : homeForRole(session.user.role);
+        void this.router.navigateByUrl(path);
+      },
+      error: () => {
+        this.submitting.set(false);
+        this.error.set(this.literals.invalidCredentials);
+      },
     });
   }
 }

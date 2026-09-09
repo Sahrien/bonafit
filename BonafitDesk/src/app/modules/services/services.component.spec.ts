@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
-import { MOCK_BONOS, MOCK_SERVICES } from '../../core/mock-data';
+import { MOCK_BONOS, MOCK_SERVICES } from '../../testing/fixtures';
 import { ServicesApiService } from '../../services/services-api.service';
 import { ServicesComponent } from './services.component';
 import { SERVICE_CATEGORY_LABELS, SERVICES_LITERALS } from './services.literals';
@@ -58,7 +58,7 @@ describe('ServicesComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain(SERVICES_LITERALS.bonosTitle);
     expect(text).toContain(SERVICES_LITERALS.singleSessionPrice);
-    expect(text).toContain('pack-5');
+    expect(text).toContain('sesion-suelta');
     expect(text).toContain('45');
     expect(fixture.nativeElement.querySelectorAll('app-bona-grid').length).toBe(2);
   });

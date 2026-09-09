@@ -1,48 +1,48 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { API_PATHS, apiUrl } from '../core/api-url';
 import { ClientsApi } from '../core/clients-api';
-import { environment } from '../../environments/environment';
+import { toHttpParams } from '../core/http-params';
 import { ClientBonoDto, ClientBonoPatchDto, ContractBonoDto } from '../models/client-bono.dto';
 import { ClientDto, ClientWriteDto } from '../models/client.dto';
-import { ClientsHttpApi } from './clients-http.service';
-import { ClientsMockApi } from './clients-mock.service';
 
 @Injectable({ providedIn: 'root' })
 export class ClientsApiService implements ClientsApi {
-  private readonly impl: ClientsApi = environment.useMockApi
-    ? inject(ClientsMockApi)
-    : inject(ClientsHttpApi);
+  private readonly http = inject(HttpClient);
 
   getClients(): Observable<ClientDto[]> {
-    return this.impl.getClients();
+    return this.http.get<ClientDto[]>(apiUrl(API_PATHS.clients));
   }
 
   getClient(id: string): Observable<ClientDto> {
-    return this.impl.getClient(id);
+    return this.http.get<ClientDto>(apiUrl(API_PATHS.clients, id));
   }
 
   createClient(payload: ClientWriteDto): Observable<ClientDto> {
-    return this.impl.createClient(payload);
+    return this.http.post<ClientDto>(apiUrl(API_PATHS.clients), payload);
   }
 
   updateClient(id: string, payload: ClientWriteDto): Observable<ClientDto> {
-    return this.impl.updateClient(id, payload);
+    return this.http.put<ClientDto>(apiUrl(API_PATHS.clients, id), payload);
   }
 
   deleteClient(id: string): Observable<void> {
-    return this.impl.deleteClient(id);
+    return this.http.delete<void>(apiUrl(API_PATHS.clients, id));
   }
 
   getClientBonos(clientId: string): Observable<ClientBonoDto[]> {
-    return this.impl.getClientBonos(clientId);
+    return this.http.get<ClientBonoDto[]>(apiUrl(API_PATHS.clientBonos), {
+      params: toHttpParams({ clientId }),
+    });
   }
 
   contractBono(payload: ContractBonoDto): Observable<ClientBonoDto> {
-    return this.impl.contractBono(payload);
+    return this.http.post<ClientBonoDto>(apiUrl(API_PATHS.clientBonos), payload);
   }
 
   updateClientBono(id: string, payload: ClientBonoPatchDto): Observable<ClientBonoDto> {
-    return this.impl.updateClientBono(id, payload);
+    return this.http.put<ClientBonoDto>(apiUrl(API_PATHS.clientBonos, id), payload);
   }
 }
 

@@ -187,13 +187,11 @@ export function remainingSessionsDelta(
   fromStatus: AppointmentStatus | null,
   toStatus: AppointmentStatus,
 ): number {
-  const wasCompleted = fromStatus === 'completed';
-  const isCompleted = toStatus === 'completed';
-  if (!wasCompleted && isCompleted) {
-    return -1;
-  }
-  if (wasCompleted && !isCompleted) {
-    return 1;
-  }
-  return 0;
+  const before = fromStatus && consumesSession(fromStatus) ? 1 : 0;
+  const after = consumesSession(toStatus) ? 1 : 0;
+  return before - after;
+}
+
+function consumesSession(status: AppointmentStatus): boolean {
+  return status === 'confirmed' || status === 'completed';
 }

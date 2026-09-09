@@ -11,6 +11,7 @@ export interface ServiceDto {
   singleSessionPrice?: number;
   durationMinutes: number;
   bookableByClient: boolean;
+  active: boolean;
 }
 
 export type ServiceWriteDto = Omit<ServiceDto, 'id'>;

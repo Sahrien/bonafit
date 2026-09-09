@@ -3,17 +3,17 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { API_PATHS, apiUrl } from '../core/api-url';
 import { configureHttpClientTesting } from '../core/http-testing';
-import { MOCK_CLIENTS, MOCK_CLIENT_BONOS } from '../core/mock-data';
+import { MOCK_CLIENTS, MOCK_CLIENT_BONOS } from '../testing/fixtures';
 import { ClientWriteDto } from '../models/client.dto';
-import { ClientsHttpApi } from './clients-http.service';
+import { ClientsApiService } from './clients-api.service';
 
-describe('ClientsHttpApi', () => {
-  let api: ClientsHttpApi;
+describe('ClientsApiService', () => {
+  let api: ClientsApiService;
   let http: HttpTestingController;
 
   beforeEach(() => {
     http = configureHttpClientTesting();
-    api = TestBed.inject(ClientsHttpApi);
+    api = TestBed.inject(ClientsApiService);
   });
 
   afterEach(() => {
@@ -22,18 +22,15 @@ describe('ClientsHttpApi', () => {
 
   it('GET /clients', async () => {
     const pending = firstValueFrom(api.getClients());
-    const req = http.expectOne({ method: 'GET', url: apiUrl(API_PATHS.clients) });
-    req.flush(MOCK_CLIENTS);
+    http.expectOne({ method: 'GET', url: apiUrl(API_PATHS.clients) }).flush(MOCK_CLIENTS);
     expect(await pending).toEqual(MOCK_CLIENTS);
   });
 
   it('GET /clients/:id', async () => {
     const pending = firstValueFrom(api.getClient('client-1'));
-    const req = http.expectOne({
-      method: 'GET',
-      url: apiUrl(API_PATHS.clients, 'client-1'),
-    });
-    req.flush(MOCK_CLIENTS[0]);
+    http
+      .expectOne({ method: 'GET', url: apiUrl(API_PATHS.clients, 'client-1') })
+      .flush(MOCK_CLIENTS[0]);
     expect(await pending).toEqual(MOCK_CLIENTS[0]);
   });
 
@@ -46,7 +43,7 @@ describe('ClientsHttpApi', () => {
       notes: '',
       instantConfirm: false,
     };
-    const created = { ...payload, id: 'client-9' };
+    const created = { ...payload, id: 'client-9', temporaryPassword: 'TempPass1' };
     const pending = firstValueFrom(api.createClient(payload));
     const req = http.expectOne({ method: 'POST', url: apiUrl(API_PATHS.clients) });
     expect(req.request.body).toEqual(payload);
@@ -75,12 +72,7 @@ describe('ClientsHttpApi', () => {
 
   it('DELETE /clients/:id', async () => {
     const pending = firstValueFrom(api.deleteClient('client-1'));
-    const req = http.expectOne({
-      method: 'DELETE',
-      url: apiUrl(API_PATHS.clients, 'client-1'),
-    });
-    expect(req.request.method).toBe('DELETE');
-    req.flush(null);
+    http.expectOne({ method: 'DELETE', url: apiUrl(API_PATHS.clients, 'client-1') }).flush(null);
     expect(await pending).toBeNull();
   });
 
@@ -99,10 +91,7 @@ describe('ClientsHttpApi', () => {
   it('POST /client-bonos', async () => {
     const payload = { clientId: 'client-1', bonoId: 'bono-ep-5' };
     const pending = firstValueFrom(api.contractBono(payload));
-    const req = http.expectOne({
-      method: 'POST',
-      url: apiUrl(API_PATHS.clientBonos),
-    });
+    const req = http.expectOne({ method: 'POST', url: apiUrl(API_PATHS.clientBonos) });
     expect(req.request.body).toEqual(payload);
     req.flush({
       id: 'cb-9',

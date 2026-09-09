@@ -9,30 +9,32 @@ Dev server: `npm start` → `http://localhost:4200`. Tests: `npm test` (Karma + 
 ```
 src/app/components/bona-*   # shared UI kit (use these in modules)
 src/app/modules/            # routed screens (admin, portal, login)
-src/app/services/           # *ApiService facades + *-mock + *-http
-src/app/core/               # API interfaces, mocks, booking, auth guards, apiUrl
+src/app/services/           # *ApiService HTTP facades
+src/app/core/               # API interfaces, booking, auth guards, interceptors, apiUrl
 src/app/models/             # camelCase DTOs (JSON contract)
 src/app/i18n/es.ts          # shared shell/login literals
-src/environments/           # apiUrl + useMockApi
+src/environments/           # apiUrl origin
+src/app/testing/            # HTTP/screen spec fixtures (not a mock API)
 ```
 
-Routes: `src/app/app.routes.ts`. Lazy-load screens with `loadComponent`. Guards: `adminGuard`, `clientGuard`, `homeRedirectGuard`.
+Routes: `src/app/app.routes.ts`. Lazy-load screens with `loadComponent`. Guards: `adminGuard`, `clientGuard`, `homeRedirectGuard`, `authenticatedGuard`. Password-change screen: `/cambiar-clave`.
 
 ## Data layer
 
-`environment.useMockApi` (dev: `true`, prod: `false`) picks mock vs HTTP inside each `*ApiService`.
+Screens inject `*ApiService` only. Those services call BonafitApi through `HttpClient`. `environment.apiUrl` is the API **origin** (dev: `http://localhost:8080`); `apiUrl()` appends resource paths. Do not bake `/api` into the origin unless a proxy actually mounts there.
+
+Auth: `POST /auth/login` with `{ email, password }`. Persist the JWT in `AuthTokenStore`. `authTokenInterceptor` sends `Authorization: Bearer`. `apiErrorInterceptor` maps `409 { code }` to `ApiBusinessError` and `404 { resource, id }` to `ApiNotFoundError`. `GET /auth/me` refreshes the user; the token field from `/me` is empty — keep the stored login token.
+
+If `mustChangePassword` is true, guards send the user to `/cambiar-clave` (`POST /auth/change-password`).
 
 For a new resource:
 
 1. DTO in `models/`.
 2. Interface in `core/<resource>-api.ts`.
-3. `*-mock.service.ts` (uses `MockStore` / `mock-data.ts`) and `*-http.service.ts` (uses `apiUrl(API_PATHS…)`).
-4. Facade `*-api.service.ts` that `inject()`s mock or HTTP from `environment.useMockApi`.
-5. Screens inject the facade only, never mock/http classes.
+3. `*-api.service.ts` using `apiUrl(API_PATHS…)`.
+4. Screens inject the facade only.
 
-HTTP helpers: `API_PATHS` + `apiUrl()` in `core/api-url.ts`, query params via `toHttpParams`. There is **no** auth interceptor yet; Bearer tokens are not attached automatically.
-
-Login is an account picker (`login(userId)`). That matches mocks. The real API expects `{ email, password }` — keep both implementations behind `AuthApi` if you wire HTTP login; do not silently change the picker UX.
+HTTP helpers: `API_PATHS` + `apiUrl()` in `core/api-url.ts`, query params via `toHttpParams`.
 
 ## UI conventions
 
@@ -47,13 +49,13 @@ Login is an account picker (`login(userId)`). That matches mocks. The real API e
 
 Colocate `*.spec.ts`. Patterns already in the repo:
 
-- Facades: toggle `environment.useMockApi` and use `HttpTestingController` for HTTP (`services/api-facade.service.spec.ts`).
-- HTTP services: `configureHttpClientTesting()` from `core/http-testing.ts`.
+- HTTP services: `configureHttpClientTesting()` from `core/http-testing.ts` (includes auth/error interceptors).
 - Screens: `RouterTestingHarness`, spy the `*ApiService`, `provideNoopAnimations()`.
 - Booking: unit tests in `core/booking.spec.ts`. Keep behavior aligned with `BonafitApi/app/booking.py`.
+- Shared fixture objects live in `src/app/testing/fixtures.ts`.
 
 ## Do not
 
 - Import Webonafit components or fonts.
 - Call `HttpClient` from a routed module; go through the facade.
-- Set `useMockApi: false` in committed `environment.ts` unless the HTTP auth + interceptor work is actually done.
+- Reintroduce an in-memory mock API or `useMockApi`.

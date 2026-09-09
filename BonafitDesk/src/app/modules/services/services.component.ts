@@ -24,6 +24,7 @@ const EMPTY_SERVICE: BonaFormValue = {
   bookableByClient: 'true',
   durationMinutes: '60',
   singleSessionPrice: '',
+  active: 'true',
 };
 
 const EMPTY_BONO: BonaFormValue = {
@@ -62,6 +63,7 @@ export class ServicesComponent {
     { field: 'durationMinutes', header: SERVICES_LITERALS.durationMinutes, type: 'number' },
     { field: 'allowsSingleSessionLabel', header: SERVICES_LITERALS.allowsSingleSession },
     { field: 'singleSessionPriceLabel', header: SERVICES_LITERALS.singleSessionPrice },
+    { field: 'activeLabel', header: SERVICES_LITERALS.active },
   ];
 
   readonly serviceActions: BonaGridAction[] = [
@@ -92,6 +94,7 @@ export class ServicesComponent {
         service.allowsSingleSession && service.singleSessionPrice != null
           ? String(service.singleSessionPrice)
           : '',
+      activeLabel: service.active ? this.literals.yes : this.literals.no,
     })),
   );
 
@@ -133,6 +136,15 @@ export class ServicesComponent {
       {
         key: 'bookableByClient',
         label: this.literals.bookableByClient,
+        type: 'select',
+        options: [
+          { value: 'true', label: this.literals.yes },
+          { value: 'false', label: this.literals.no },
+        ],
+      },
+      {
+        key: 'active',
+        label: this.literals.active,
         type: 'select',
         options: [
           { value: 'true', label: this.literals.yes },
@@ -338,6 +350,7 @@ export class ServicesComponent {
       durationMinutes: String(service.durationMinutes),
       singleSessionPrice:
         service.singleSessionPrice != null ? String(service.singleSessionPrice) : '',
+      active: service.active ? 'true' : 'false',
     };
   }
 
@@ -365,6 +378,7 @@ export class ServicesComponent {
       allowsSingleSession,
       bookableByClient: value['bookableByClient'] === 'true',
       durationMinutes,
+      active: value['active'] !== 'false',
     };
     if (allowsSingleSession) {
       const price = Number(value['singleSessionPrice']);

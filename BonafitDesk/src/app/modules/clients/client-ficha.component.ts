@@ -58,6 +58,7 @@ export class ClientFichaComponent {
   readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
   readonly error = signal('');
   readonly saving = signal(false);
+  readonly temporaryPassword = signal('');
   readonly bonoFormOpen = signal(false);
   readonly bonoForm = signal<BonaFormValue>({ remainingSessions: '', expiresAt: '' });
   private readonly editingBonoId = signal<string | null>(null);
@@ -143,7 +144,9 @@ export class ClientFichaComponent {
       next: (client) => {
         this.saving.set(false);
         if (this.isNew()) {
-          void this.router.navigate(['/admin/clients', client.id]);
+          void this.router.navigate(['/admin/clients', client.id], {
+            state: { temporaryPassword: client.temporaryPassword ?? '' },
+          });
           return;
         }
         this.formValue.set(this.toFormValue(client));
@@ -225,8 +228,14 @@ export class ClientFichaComponent {
     if (!id || id === NEW_CLIENT_ID) {
       this.formValue.set({ ...EMPTY_FORM });
       this.clientBonos.set([]);
+      this.temporaryPassword.set('');
       return;
     }
+    const createdPassword =
+      typeof history.state?.['temporaryPassword'] === 'string'
+        ? String(history.state['temporaryPassword'])
+        : '';
+    this.temporaryPassword.set(createdPassword);
     forkJoin({
       client: this.clientsApi.getClient(id),
       clientBonos: this.clientsApi.getClientBonos(id),

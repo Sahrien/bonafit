@@ -9,20 +9,6 @@ import { ServiceDto } from '../models/service.dto';
 import { TrainerScheduleDto } from '../models/trainer-schedule.dto';
 import { TrainerDto } from '../models/trainer.dto';
 
-export interface MockDatabase {
-  trainers: TrainerDto[];
-  clients: ClientDto[];
-  services: ServiceDto[];
-  bonos: BonoDto[];
-  clientBonos: ClientBonoDto[];
-  appointments: AppointmentDto[];
-  trainerSchedules: TrainerScheduleDto[];
-  bookingSettings: BookingSettingsDto;
-  forms: FormDto[];
-  formAssignments: FormAssignmentDto[];
-  accounts: AuthUserDto[];
-}
-
 export const MOCK_TRAINERS: TrainerDto[] = [
   { id: 'trainer-1', name: 'Alex Martin' },
   { id: 'trainer-2', name: 'Sam Ortega' },
@@ -66,6 +52,7 @@ export const MOCK_SERVICES: ServiceDto[] = [
     allowsSingleSession: false,
     durationMinutes: 60,
     bookableByClient: true,
+    active: true,
   },
   {
     id: 'svc-hipo',
@@ -74,6 +61,7 @@ export const MOCK_SERVICES: ServiceDto[] = [
     allowsSingleSession: false,
     durationMinutes: 45,
     bookableByClient: true,
+    active: true,
   },
   {
     id: 'svc-masaje',
@@ -83,6 +71,7 @@ export const MOCK_SERVICES: ServiceDto[] = [
     singleSessionPrice: 45,
     durationMinutes: 60,
     bookableByClient: false,
+    active: true,
   },
 ];
 
@@ -112,12 +101,12 @@ export const MOCK_BONOS: BonoDto[] = [
     price: 240,
   },
   {
-    id: 'bono-masaje-5',
+    id: 'bono-masaje-1',
     serviceId: 'svc-masaje',
-    name: 'pack-5',
-    description: 'sessions-5',
-    sessionCount: 5,
-    price: 200,
+    name: 'sesion-suelta',
+    description: 'sessions-1',
+    sessionCount: 1,
+    price: 45,
   },
 ];
 
@@ -269,40 +258,30 @@ export const MOCK_ACCOUNTS: AuthUserDto[] = [
     displayName: 'Alex Martin',
     role: 'admin',
     trainerId: 'trainer-1',
+    email: 'lucia@bonafit.com',
+    mustChangePassword: false,
   },
   {
     id: 'user-trainer-2',
     displayName: 'Sam Ortega',
     role: 'admin',
     trainerId: 'trainer-2',
+    email: 'sam.ortega@bonafit.com',
+    mustChangePassword: false,
   },
   {
     id: 'user-client-1',
     displayName: 'Marina Lopez',
     role: 'client',
     clientId: 'client-1',
+    email: 'marina.lopez@example.com',
+    mustChangePassword: false,
   },
 ];
-
-export function createMockDatabase(): MockDatabase {
-  return structuredClone({
-    trainers: MOCK_TRAINERS,
-    clients: MOCK_CLIENTS,
-    services: MOCK_SERVICES,
-    bonos: MOCK_BONOS,
-    clientBonos: MOCK_CLIENT_BONOS,
-    appointments: MOCK_APPOINTMENTS,
-    trainerSchedules: MOCK_TRAINER_SCHEDULES,
-    bookingSettings: MOCK_BOOKING_SETTINGS,
-    forms: MOCK_FORMS,
-    formAssignments: MOCK_FORM_ASSIGNMENTS,
-    accounts: MOCK_ACCOUNTS,
-  });
-}
 
 export function createMockSession(user: AuthUserDto): AuthSessionDto {
   return {
     user: structuredClone(user),
-    token: `mock-${user.id}`,
+    token: `token-${user.id}`,
   };
 }

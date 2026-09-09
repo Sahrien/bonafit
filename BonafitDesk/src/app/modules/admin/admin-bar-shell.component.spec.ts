@@ -3,9 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { firstValueFrom } from 'rxjs';
-import { MockStore } from '../../core/mock-store.service';
+import { of } from 'rxjs';
 import { AuthApiService } from '../../services/auth-api.service';
+import { MOCK_ACCOUNTS, createMockSession } from '../../testing/fixtures';
 import { AdminBarShellComponent } from './admin-bar-shell.component';
 
 @Component({
@@ -24,9 +24,12 @@ class CalendarStubComponent {}
 
 describe('AdminBarShellComponent', () => {
   let router: Router;
-  let auth: AuthApiService;
 
   beforeEach(async () => {
+    const auth = jasmine.createSpyObj('AuthApiService', ['getSession', 'logout']);
+    auth.getSession.and.returnValue(of(createMockSession(MOCK_ACCOUNTS[0])));
+    auth.logout.and.returnValue(of(undefined));
+
     await TestBed.configureTestingModule({
       imports: [AdminBarShellComponent],
       providers: [
@@ -44,13 +47,11 @@ describe('AdminBarShellComponent', () => {
             ],
           },
         ]),
+        { provide: AuthApiService, useValue: auth },
       ],
     }).compileComponents();
 
-    TestBed.inject(MockStore).reset();
-    auth = TestBed.inject(AuthApiService);
     router = TestBed.inject(Router);
-    await firstValueFrom(auth.login('user-trainer-1'));
   });
 
   it('shows the logged user and navigates back to /admin', async () => {

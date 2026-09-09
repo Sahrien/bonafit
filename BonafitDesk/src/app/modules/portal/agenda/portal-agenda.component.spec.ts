@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
-import { MOCK_SERVICES, MOCK_TRAINERS } from '../../../core/mock-data';
+import { MOCK_SERVICES, MOCK_TRAINERS } from '../../../testing/fixtures';
 import { AuthSessionDto } from '../../../models/auth-session.dto';
 import { BonoDto } from '../../../models/bono.dto';
 import { ClientBonoDto } from '../../../models/client-bono.dto';

@@ -46,7 +46,7 @@ cd BonafitApi && uv sync && uv run create-db && uv run seed
 cd BonafitApi && uv run uvicorn app.main:app --reload --port 8080
 ```
 
-Desk talks to the API at `http://localhost:8080/api` when `environment.useMockApi` is `false`. It currently ships with **mock API on** in development.
+Desk talks to BonafitApi at `environment.apiUrl` (dev: `http://localhost:8080`). Login is `{ email, password }`; send `Authorization: Bearer <token>` on other routes.
 
 ## Do not
 

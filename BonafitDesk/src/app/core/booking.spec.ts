@@ -4,6 +4,7 @@ import {
   earliestBookableLocalDate,
   isBonoExpired,
   pickPreferredBono,
+  remainingSessionsDelta,
 } from './booking';
 
 describe('booking rules', () => {
@@ -56,5 +57,13 @@ describe('booking rules', () => {
   it('treats pending as a blocking appointment status', () => {
     const pending: AppointmentStatus = 'pending';
     expect(['pending', 'confirmed']).toContain(pending);
+  });
+
+  it('consumes a session when moving into confirmed or completed', () => {
+    expect(remainingSessionsDelta(null, 'confirmed')).toBe(-1);
+    expect(remainingSessionsDelta('pending', 'confirmed')).toBe(-1);
+    expect(remainingSessionsDelta('confirmed', 'cancelled')).toBe(1);
+    expect(remainingSessionsDelta('completed', 'cancelled')).toBe(1);
+    expect(remainingSessionsDelta('pending', 'cancelled')).toBe(0);
   });
 });

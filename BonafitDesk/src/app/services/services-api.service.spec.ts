@@ -3,16 +3,16 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { API_PATHS, apiUrl } from '../core/api-url';
 import { configureHttpClientTesting } from '../core/http-testing';
-import { MOCK_BONOS, MOCK_SERVICES } from '../core/mock-data';
-import { ServicesHttpApi } from './services-http.service';
+import { MOCK_BONOS, MOCK_SERVICES } from '../testing/fixtures';
+import { ServicesApiService } from './services-api.service';
 
-describe('ServicesHttpApi', () => {
-  let api: ServicesHttpApi;
+describe('ServicesApiService', () => {
+  let api: ServicesApiService;
   let http: HttpTestingController;
 
   beforeEach(() => {
     http = configureHttpClientTesting();
-    api = TestBed.inject(ServicesHttpApi);
+    api = TestBed.inject(ServicesApiService);
   });
 
   afterEach(() => {

@@ -14,6 +14,13 @@
     <p class="page-error">{{ error() }}</p>
   }
 
+  @if (temporaryPassword()) {
+    <p class="page-error" role="status">
+      {{ literals.temporaryPassword }}: {{ temporaryPassword() }}.
+      {{ literals.temporaryPasswordHint }}
+    </p>
+  }
+
   <app-bona-form
     [fields]="fields"
     [value]="formValue()"

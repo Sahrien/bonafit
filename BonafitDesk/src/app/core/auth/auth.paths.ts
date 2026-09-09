@@ -2,6 +2,7 @@ import { UserRole } from '../../models/auth-session.dto';
 
 export const AUTH_PATHS = {
   login: '/login',
+  changePassword: '/cambiar-clave',
   admin: '/admin',
   client: '/app',
 } as const;

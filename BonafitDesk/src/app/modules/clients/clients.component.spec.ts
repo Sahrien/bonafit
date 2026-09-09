@@ -4,7 +4,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
-import { MOCK_CLIENTS } from '../../core/mock-data';
+import { MOCK_CLIENTS } from '../../testing/fixtures';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ClientsComponent } from './clients.component';
 import { CLIENTS_LITERALS } from './clients.literals';

@@ -15,7 +15,25 @@ export const homeRedirectGuard: CanActivateFn = () => {
       if (!session) {
         return router.createUrlTree([AUTH_PATHS.login]);
       }
+      if (session.user.mustChangePassword) {
+        return router.createUrlTree([AUTH_PATHS.changePassword]);
+      }
       return router.createUrlTree([homeForRole(session.user.role)]);
+    }),
+  );
+};
+
+export const authenticatedGuard: CanActivateFn = () => {
+  const auth = inject(AuthApiService);
+  const router = inject(Router);
+
+  return auth.getSession().pipe(
+    take(1),
+    map((session) => {
+      if (!session) {
+        return router.createUrlTree([AUTH_PATHS.login]);
+      }
+      return true;
     }),
   );
 };
@@ -30,6 +48,9 @@ export const requireRole = (role: UserRole): CanActivateFn => {
       map((session) => {
         if (!session) {
           return router.createUrlTree([AUTH_PATHS.login]);
+        }
+        if (session.user.mustChangePassword) {
+          return router.createUrlTree([AUTH_PATHS.changePassword]);
         }
         if (session.user.role !== role) {
           return router.createUrlTree([homeForRole(session.user.role)]);

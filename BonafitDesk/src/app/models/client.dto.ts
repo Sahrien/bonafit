@@ -6,6 +6,7 @@ export interface ClientDto {
   phone: string;
   notes: string;
   instantConfirm: boolean;
+  temporaryPassword?: string | null;
 }
 
-export type ClientWriteDto = Omit<ClientDto, 'id'>;
+export type ClientWriteDto = Omit<ClientDto, 'id' | 'temporaryPassword'>;

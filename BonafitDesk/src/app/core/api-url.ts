@@ -12,10 +12,10 @@ export const API_PATHS = {
   trainerSchedules: 'trainer-schedules',
   forms: 'forms',
   formAssignments: 'form-assignments',
-  authAccounts: 'auth/accounts',
   authLogin: 'auth/login',
   authLogout: 'auth/logout',
   authMe: 'auth/me',
+  authChangePassword: 'auth/change-password',
 } as const;
 
 export function apiUrl(...segments: string[]): string {
