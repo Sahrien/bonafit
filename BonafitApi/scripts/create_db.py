@@ -1,11 +1,10 @@
 """Create database tables from SQLAlchemy models."""
 
-import app.models  # noqa: F401
-from app.database import Base, engine
+from app.containers import Container
 
 
 def main() -> None:
-    Base.metadata.create_all(bind=engine)
+    Container().db().create_database()
     print("Created database tables from models.")
 
 

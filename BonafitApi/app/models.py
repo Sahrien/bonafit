@@ -2,6 +2,7 @@ from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     ForeignKey,
@@ -201,7 +202,7 @@ class FormAssignment(Base):
     form_id: Mapped[str] = mapped_column(ForeignKey("forms.id"), nullable=False)
     client_id: Mapped[str] = mapped_column(ForeignKey("clients.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
-    questions: Mapped[list] = mapped_column(JSONB, nullable=False)
+    questions: Mapped[list] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

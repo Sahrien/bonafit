@@ -1,12 +1,18 @@
 """Load demo trainers, clients, services, and appointments if the database is empty."""
 
+from __future__ import annotations
+
+import argparse
+import sys
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from scripts.session import session_scope
+from app.containers import Container
+from app.database import Database
 from app.models import (
     Appointment,
     Bono,
@@ -70,7 +76,7 @@ def seed_if_empty(db: Session) -> None:
         [
             User(
                 id="user-trainer-1",
-                email="alex.martin@bonafit.local",
+                email="lucia@bonafit.com",
                 password_hash=password_hash,
                 display_name="Alex Martin",
                 role="admin",
@@ -79,7 +85,7 @@ def seed_if_empty(db: Session) -> None:
             ),
             User(
                 id="user-trainer-2",
-                email="sam.ortega@bonafit.local",
+                email="sam.ortega@bonafit.com",
                 password_hash=password_hash,
                 display_name="Sam Ortega",
                 role="admin",
@@ -171,6 +177,14 @@ def seed_if_empty(db: Session) -> None:
                 description="sessions-8",
                 session_count=8,
                 price=240,
+            ),
+            Bono(
+                id="bono-masaje-1",
+                service_id="svc-masaje",
+                name="sesion-suelta",
+                description="sessions-1",
+                session_count=1,
+                price=45,
             ),
         ]
     )
@@ -326,13 +340,81 @@ def already_seeded(db: Session) -> bool:
     return db.scalar(select(Trainer.id).where(Trainer.id == "trainer-1")) is not None
 
 
-def main() -> None:
-    with session_scope() as db:
+def ensure_masaje_single_session_bono(db: Session) -> None:
+    if db.get(Bono, "bono-masaje-1") is not None:
+        return
+    if db.get(Service, "svc-masaje") is None:
+        return
+    db.add(
+        Bono(
+            id="bono-masaje-1",
+            service_id="svc-masaje",
+            name="sesion-suelta",
+            description="sessions-1",
+            session_count=1,
+            price=45,
+        )
+    )
+
+
+def ensure_demo_trainer_emails(db: Session) -> None:
+    mapping = {
+        "user-trainer-1": "lucia@bonafit.com",
+        "user-trainer-2": "sam.ortega@bonafit.com",
+    }
+    for user_id, email in mapping.items():
+        user = db.get(User, user_id)
+        if user is not None and user.email != email:
+            user.email = email
+
+
+CONFIRM_PHRASE = "RESET"
+
+
+def prompt_force_confirmation(read_line: Callable[[str], str] = input) -> bool:
+    print("This will DELETE all data in the database and load demo seed data.")
+    try:
+        typed = read_line(f"Type {CONFIRM_PHRASE} to continue: ")
+    except EOFError:
+        return False
+    return typed.strip() == CONFIRM_PHRASE
+
+
+def seed_database(database: Database) -> str:
+    with database.session() as db:
         if already_seeded(db):
-            print("Database already seeded.")
-            return
+            ensure_masaje_single_session_bono(db)
+            ensure_demo_trainer_emails(db)
+            return "Database already seeded."
         seed_if_empty(db)
-    print("Seeded demo data.")
+    return "Seeded demo data."
+
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    database: Database | None = None,
+    read_line: Callable[[str], str] = input,
+) -> None:
+    parser = argparse.ArgumentParser(
+        description="Load demo data if the database is empty. Use --force to wipe and reseed.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help=f"Delete all rows and reseed after typing {CONFIRM_PHRASE}",
+    )
+    args = parser.parse_args(argv)
+
+    db = database or Container().db()
+    if args.force:
+        if not prompt_force_confirmation(read_line):
+            print("Aborted.", file=sys.stderr)
+            raise SystemExit(1)
+        db.clear_tables()
+        print("Cleared database.")
+
+    print(seed_database(db))
 
 
 if __name__ == "__main__":

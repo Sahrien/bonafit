@@ -8,10 +8,10 @@ import sys
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.emailer import generate_password, send_temporary_password
+from app.containers import Container
+from app.emailer import generate_password
 from app.models import Client, Trainer, User
 from app.security import hash_password
-from scripts.session import session_scope
 
 
 def default_display_name(email: str) -> str:
@@ -97,8 +97,9 @@ def main(argv: list[str] | None = None) -> None:
         print("Display name cannot be empty", file=sys.stderr)
         raise SystemExit(1)
 
+    container = Container()
     try:
-        with session_scope() as db:
+        with container.db().session() as db:
             user, password = create_user(
                 db,
                 email=email,
@@ -107,7 +108,7 @@ def main(argv: list[str] | None = None) -> None:
             )
             role = user.role
             try:
-                send_temporary_password(email, display_name, password)
+                container.emailer().send_temporary_password(email, display_name, password)
             except Exception:
                 pass
     except ValueError as exc:

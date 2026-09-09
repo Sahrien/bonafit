@@ -3,17 +3,12 @@ from contextlib import contextmanager
 
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
+from app.containers import Container
+
+_container = Container()
 
 
 @contextmanager
 def session_scope() -> Iterator[Session]:
-    db = SessionLocal()
-    try:
+    with _container.db().session() as db:
         yield db
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()

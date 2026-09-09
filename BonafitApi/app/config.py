@@ -8,7 +8,10 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-this-in-production"
     jwt_expire_hours: int = 12
     bootstrap_password: str = "ChangeMe123!"
-    cors_origins: str = "http://localhost:4200"
+    cors_origins: str = (
+        "http://localhost:4200,http://127.0.0.1:4200,"
+        "http://localhost:4201,http://127.0.0.1:4201"
+    )
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_user: str = ""
