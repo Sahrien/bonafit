@@ -24,8 +24,20 @@ export class LoginComponent {
   readonly formValue = signal<BonaFormValue>({ email: '', password: '' });
 
   readonly fields: BonaFieldDefinition[] = [
-    { key: 'email', label: LOGIN_LITERALS.email, type: 'email', required: true },
-    { key: 'password', label: LOGIN_LITERALS.password, type: 'password', required: true },
+    {
+      key: 'email',
+      label: LOGIN_LITERALS.email,
+      type: 'email',
+      required: true,
+      autocomplete: 'username',
+    },
+    {
+      key: 'password',
+      label: LOGIN_LITERALS.password,
+      type: 'password',
+      required: true,
+      autocomplete: 'current-password',
+    },
   ];
 
   onFormChange(value: BonaFormValue): void {

@@ -3,11 +3,6 @@
     bonaPageActions
     [text]="literals.newAppointment"
     (action)="onCreate()" />
-  <app-bona-button
-    bonaPageActions
-    [text]="literals.schedulesToggle"
-    variant="secondary"
-    (action)="onOpenSchedules()" />
 
   <section class="calendar-today" [attr.aria-label]="literals.todayTitle">
     <header class="calendar-today__header">
@@ -20,7 +15,11 @@
       <ul class="calendar-today__list">
         @for (row of todayAppointments(); track row.id) {
           <li>
-            <button type="button" class="calendar-today__item" (click)="onTodayClick(row.id)">
+            <button
+              type="button"
+              class="calendar-today__item"
+              [attr.data-status]="row.statusKey"
+              (click)="onTodayClick(row.id)">
               <span class="calendar-today__time">{{ row.time }}</span>
               <span class="calendar-today__copy">
                 <strong>{{ row.title }}</strong>
@@ -34,13 +33,13 @@
   </section>
 
   <div class="calendar-layout" [class.calendar-layout--panel]="formOpen()">
+    <app-bona-tabs
+      class="calendar-view-tabs"
+      [tabs]="viewTabs"
+      [active]="view()"
+      [label]="literals.viewLabel"
+      (activeChange)="onView($event)" />
     <div class="calendar-layout__main">
-      <app-bona-tabs
-        class="calendar-view-tabs"
-        [tabs]="viewTabs"
-        [active]="view()"
-        [label]="literals.viewLabel"
-        (activeChange)="onView($event)" />
       <app-bona-calendar
         [view]="view()"
         [events]="events()"
@@ -52,10 +51,13 @@
       <aside class="calendar-panel" [attr.aria-label]="editorTitle()">
         <header class="calendar-panel__header">
           <h2>{{ editorTitle() }}</h2>
-          <app-bona-button
-            [text]="literals.closeEditor"
-            variant="secondary"
-            (action)="onCancel()" />
+          <div class="calendar-panel__header-actions">
+            <app-bona-button
+              [text]="literals.closeEditor"
+              variant="secondary"
+              (action)="onCancel()" />
+            <app-bona-button [text]="literals.save" (action)="onSubmit(formValue())" />
+          </div>
         </header>
         @if (error()) {
           <p class="calendar-panel__error">{{ error() }}</p>
@@ -63,44 +65,43 @@
         <app-bona-form
           [fields]="appointmentFields()"
           [value]="formValue()"
-          [submitText]="literals.save"
+          [showSubmit]="false"
           (valueChange)="onFormChange($event)"
-          (submitted)="onSubmit($event)" />
-        <div class="calendar-panel__actions">
-          @if (editingId() && currentStatus() === 'pending') {
-            <app-bona-button [text]="literals.confirm" (action)="onConfirm()" />
-          }
-          @if (editingId() && currentStatus() === 'confirmed') {
-            <app-bona-button [text]="literals.complete" (action)="onComplete()" />
-          }
-          @if (editingId() && (currentStatus() === 'pending' || currentStatus() === 'confirmed')) {
-            <button
-              mat-icon-button
-              type="button"
-              [matMenuTriggerFor]="statusMenu"
-              [attr.aria-label]="literals.moreActions">
-              <mat-icon>more_vert</mat-icon>
-            </button>
-            <mat-menu #statusMenu="matMenu">
-              @if (currentStatus() === 'pending') {
-                <button mat-menu-item type="button" (click)="onComplete()">
-                  {{ literals.complete }}
+          (submitted)="onSubmit($event)">
+          <div bonaFormActions class="calendar-panel__actions">
+            @if (selectedClientId()) {
+              <app-bona-button
+                [text]="literals.viewClient"
+                variant="secondary"
+                (action)="onOpenClient()" />
+            }
+            @if (editingId() && currentStatus() === 'pending') {
+              <app-bona-button [text]="literals.confirm" (action)="onConfirm()" />
+            }
+            @if (editingId() && currentStatus() === 'confirmed') {
+              <app-bona-button [text]="literals.complete" (action)="onComplete()" />
+            }
+            @if (editingId() && canCancel()) {
+              <button
+                mat-icon-button
+                type="button"
+                [matMenuTriggerFor]="statusMenu"
+                [attr.aria-label]="literals.moreActions">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #statusMenu="matMenu">
+                @if (currentStatus() === 'pending') {
+                  <button mat-menu-item type="button" (click)="onComplete()">
+                    {{ literals.complete }}
+                  </button>
+                }
+                <button mat-menu-item type="button" (click)="onCancelAppointment()">
+                  {{ literals.cancelAppointment }}
                 </button>
-              }
-              <button mat-menu-item type="button" (click)="onCancelAppointment()">
-                {{ literals.cancelAppointment }}
-              </button>
-              <button mat-menu-item type="button" (click)="onDelete()">
-                {{ literals.delete }}
-              </button>
-            </mat-menu>
-          } @else if (editingId()) {
-            <app-bona-button
-              [text]="literals.delete"
-              variant="secondary"
-              (action)="onDelete()" />
-          }
-        </div>
+              </mat-menu>
+            }
+          </div>
+        </app-bona-form>
       </aside>
     }
   </div>

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { adminGuard, authenticatedGuard, clientGuard, homeRedirectGuard } from './core/auth/auth.guards';
+import { ADMIN_ROUTES } from './modules/admin/admin.routes';
 
 const loadLogin = () =>
   import('./modules/login/login.component').then((m) => m.LoginComponent);
@@ -35,6 +36,9 @@ const loadPortalFormFill = () =>
 const loadClientSettings = () =>
   import('./modules/settings/client-settings.component').then((m) => m.ClientSettingsComponent);
 
+const loadAdminShell = () =>
+  import('./modules/admin/admin-shell.component').then((m) => m.AdminShellComponent);
+
 export const routes: Routes = [
   {
     path: 'login',
@@ -48,7 +52,8 @@ export const routes: Routes = [
   {
     path: 'admin',
     canActivate: [adminGuard],
-    loadChildren: () => import('./modules/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
+    loadComponent: loadAdminShell,
+    children: ADMIN_ROUTES,
   },
   {
     path: 'app',

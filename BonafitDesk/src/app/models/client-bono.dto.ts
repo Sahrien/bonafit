@@ -3,6 +3,7 @@ export interface ClientBonoDto {
   clientId: string;
   bonoId: string;
   remainingSessions: number;
+  isGift?: boolean;
   purchasedAt: string;
   expiresAt: string | null;
 }
@@ -12,6 +13,7 @@ export interface ContractBonoDto {
   bonoId?: string;
   serviceId?: string;
   remainingSessions?: number;
+  isGift?: boolean;
 }
 
 export interface ClientBonoPatchDto {

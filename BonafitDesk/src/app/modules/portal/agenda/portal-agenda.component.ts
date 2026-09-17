@@ -16,13 +16,14 @@ import { BonaPageComponent } from '../../../components/bona-page/bona-page.compo
 import { BonaSummaryCardComponent } from '../../../components/bona-summary-card/bona-summary-card.component';
 import { BonaToast } from '../../../components/bona-toast/bona-toast.service';
 import { ApiBusinessError } from '../../../core/api-business.error';
-import { isActiveClientAppointment, isBonoUsable } from '../../../core/booking';
+import { canCancelAppointment, isActiveClientAppointment, isBonoUsable, isGiftCredit } from '../../../core/booking';
 import {
   AppointmentDto,
   AppointmentStatus,
   AvailabilitySlotDto,
 } from '../../../models/appointment.dto';
 import { BonoDto } from '../../../models/bono.dto';
+import { BookingSettingsDto } from '../../../models/booking-settings.dto';
 import { ClientBonoDto } from '../../../models/client-bono.dto';
 import { ServiceDto } from '../../../models/service.dto';
 import { TrainerDto } from '../../../models/trainer.dto';
@@ -74,6 +75,7 @@ export class PortalAgendaComponent {
   private readonly clientBonos = signal<ClientBonoDto[]>([]);
   private readonly appointments = signal<AppointmentDto[]>([]);
   private readonly slots = signal<AvailabilitySlotDto[]>([]);
+  private readonly bookingSettings = signal<BookingSettingsDto | null>(null);
 
   readonly bookableServices = computed(() => {
     const now = new Date();
@@ -82,6 +84,9 @@ export class PortalAgendaComponent {
         return false;
       }
       return this.clientBonos().some((row) => {
+        if (isGiftCredit(row)) {
+          return false;
+        }
         const bono = this.bonos().find((item) => item.id === row.bonoId);
         return bono?.serviceId === service.id && isBonoUsable(row, now);
       });
@@ -111,7 +116,10 @@ export class PortalAgendaComponent {
 
   readonly remainingSessions = computed(() => {
     const now = new Date();
-    return this.clientBonos().reduce((sum, row) => (isBonoUsable(row, now) ? sum + row.remainingSessions : sum), 0);
+    return this.clientBonos().reduce(
+      (sum, row) => (isGiftCredit(row) || !isBonoUsable(row, now) ? sum : sum + row.remainingSessions),
+      0,
+    );
   });
 
   readonly remainingHint = computed(() => {
@@ -194,10 +202,24 @@ export class PortalAgendaComponent {
     { field: 'statusLabel', header: PORTAL_AGENDA_LITERALS.status },
   ];
 
-  readonly appointmentActions: BonaGridAction[] = [
-    { label: PORTAL_AGENDA_LITERALS.change, action: 'change' },
-    { label: PORTAL_AGENDA_LITERALS.cancel, action: 'cancel' },
-  ];
+  readonly appointmentActions = computed<BonaGridAction[]>(() => {
+    const cutoff = this.bookingSettings()?.nextDayCutoffTime ?? '18:00';
+    const now = new Date();
+    return [
+      { label: PORTAL_AGENDA_LITERALS.change, action: 'change' },
+      {
+        label: PORTAL_AGENDA_LITERALS.cancel,
+        action: 'cancel',
+        visible: (item) =>
+          canCancelAppointment(
+            item['status'] as AppointmentStatus,
+            new Date(String(item['startsAt'] ?? '')),
+            now,
+            cutoff,
+          ),
+      },
+    ];
+  });
 
   constructor() {
     this.auth
@@ -218,17 +240,19 @@ export class PortalAgendaComponent {
             bonos: this.servicesApi.getBonos(),
             clientBonos: this.clientsApi.getClientBonos(clientId),
             appointments: this.calendarApi.getAppointments({ clientId }),
+            settings: this.calendarApi.getBookingSettings(),
           });
         }),
         takeUntilDestroyed(),
       )
       .subscribe({
-        next: ({ trainers, services, bonos, clientBonos, appointments }) => {
+        next: ({ trainers, services, bonos, clientBonos, appointments, settings }) => {
           this.trainers.set(trainers);
           this.services.set(services);
           this.bonos.set(bonos);
           this.clientBonos.set(clientBonos);
           this.appointments.set(appointments);
+          this.bookingSettings.set(settings);
           const first = this.bookableServices()[0];
           this.filterValue.set({ serviceId: first?.id ?? '', trainerId: '' });
           this.loading.set(false);
@@ -301,6 +325,16 @@ export class PortalAgendaComponent {
       return;
     }
     if (event.action === 'cancel') {
+      if (
+        !canCancelAppointment(
+          appointment.status,
+          new Date(appointment.startsAt),
+          new Date(),
+          this.bookingSettings()?.nextDayCutoffTime ?? '18:00',
+        )
+      ) {
+        return;
+      }
       this.confirm
         .open({
           title: this.literals.confirmCancelTitle,
@@ -405,7 +439,7 @@ export class PortalAgendaComponent {
     const now = new Date();
     const remaining = this.clientBonos().reduce((sum, row) => {
       const bono = this.bonos().find((item) => item.id === row.bonoId);
-      if (bono?.serviceId !== service.id || !isBonoUsable(row, now)) {
+      if (isGiftCredit(row) || bono?.serviceId !== service.id || !isBonoUsable(row, now)) {
         return sum;
       }
       return sum + row.remainingSessions;

@@ -99,22 +99,26 @@ def client_bono_out(row: ClientBono) -> ClientBonoOut:
         clientId=row.client_id,
         bonoId=row.bono_id,
         remainingSessions=row.remaining_sessions,
+        isGift=row.is_gift,
         purchasedAt=row.purchased_at,
         expiresAt=row.expires_at,
     )
 
 
-def appointment_out(row: Appointment) -> AppointmentOut:
+def appointment_out(row: Appointment, hide_notes: bool = False) -> AppointmentOut:
+    bono = row.client_bono
     return AppointmentOut(
         id=row.id,
         trainerId=row.trainer_id,
         clientId=row.client_id,
         serviceId=row.service_id,
         clientBonoId=row.client_bono_id,
+        isGift=bool(bono.is_gift) if bono is not None else False,
         startsAt=row.starts_at,
         endsAt=row.ends_at,
         location=row.location,
         status=row.status,  # type: ignore[arg-type]
+        notes="" if hide_notes else (row.notes or ""),
     )
 
 

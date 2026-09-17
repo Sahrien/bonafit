@@ -4,13 +4,16 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import {
+  MOCK_APPOINTMENTS,
   MOCK_BONOS,
   MOCK_CLIENT_BONOS,
   MOCK_CLIENTS,
   MOCK_SERVICES,
+  MOCK_TRAINERS,
 } from '../../testing/fixtures';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import { clickGridMenuAction } from '../../testing/grid-menu';
+import { CalendarApiService } from '../../services/calendar-api.service';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ServicesApiService } from '../../services/services-api.service';
 import { ClientFichaComponent } from './client-ficha.component';
@@ -19,6 +22,17 @@ import { CLIENTS_LITERALS } from './clients.literals';
 describe('ClientFichaComponent', () => {
   let clientsApi: jasmine.SpyObj<ClientsApiService>;
   let servicesApi: jasmine.SpyObj<ServicesApiService>;
+  let calendarApi: jasmine.SpyObj<CalendarApiService>;
+
+  async function openHistory(
+    harness: RouterTestingHarness,
+    component: ClientFichaComponent,
+  ): Promise<void> {
+    component.onToggleHistory();
+    harness.fixture.detectChanges();
+    await harness.fixture.whenStable();
+    harness.fixture.detectChanges();
+  }
 
   beforeEach(async () => {
     clientsApi = jasmine.createSpyObj('ClientsApiService', [
@@ -31,6 +45,11 @@ describe('ClientFichaComponent', () => {
       'deleteClientBono',
     ]);
     servicesApi = jasmine.createSpyObj('ServicesApiService', ['getBonos', 'getServices']);
+    calendarApi = jasmine.createSpyObj('CalendarApiService', [
+      'getTrainers',
+      'getAppointments',
+      'updateAppointment',
+    ]);
     clientsApi.getClient.and.callFake((id: string) =>
       of(MOCK_CLIENTS.find((client) => client.id === id) ?? MOCK_CLIENTS[0]),
     );
@@ -51,6 +70,16 @@ describe('ClientFichaComponent', () => {
     clientsApi.deleteClientBono.and.returnValue(of(void 0));
     servicesApi.getBonos.and.returnValue(of(MOCK_BONOS));
     servicesApi.getServices.and.returnValue(of(MOCK_SERVICES));
+    calendarApi.getTrainers.and.returnValue(of(MOCK_TRAINERS));
+    calendarApi.getAppointments.and.callFake((query?: { clientId?: string }) =>
+      of(MOCK_APPOINTMENTS.filter((row) => !query?.clientId || row.clientId === query.clientId)),
+    );
+    calendarApi.updateAppointment.and.callFake((id: string, payload) =>
+      of({
+        ...(MOCK_APPOINTMENTS.find((row) => row.id === id) ?? MOCK_APPOINTMENTS[0]),
+        notes: payload.notes ?? '',
+      }),
+    );
 
     await TestBed.configureTestingModule({
       imports: [ClientFichaComponent],
@@ -59,6 +88,7 @@ describe('ClientFichaComponent', () => {
         provideRouter([{ path: 'admin/clients/:id', component: ClientFichaComponent }]),
         { provide: ClientsApiService, useValue: clientsApi },
         { provide: ServicesApiService, useValue: servicesApi },
+        { provide: CalendarApiService, useValue: calendarApi },
         ...provideBonaFeedbackTesting().providers,
       ],
     }).compileComponents();
@@ -83,6 +113,11 @@ describe('ClientFichaComponent', () => {
     ) as HTMLInputElement[];
     expect(inputs.some((input) => input.value === 'Marina')).toBeTrue();
     expect(harness.routeNativeElement?.querySelector('app-bona-form')).toBeTruthy();
+
+    const pageActions = harness.routeNativeElement?.querySelector('.bona-page__actions');
+    expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.close);
+    expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.save);
+    expect(pageActions?.textContent).not.toContain(CLIENTS_LITERALS.delete);
   });
 
   it('lists assigned bonos and the gift form', async () => {
@@ -99,7 +134,72 @@ describe('ClientFichaComponent', () => {
     expect(text).toContain(CLIENTS_LITERALS.gift);
   });
 
-  it('labels a one-session gift as sesión suelta', async () => {
+  it('keeps the session history collapsed until asked', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
+
+    expect(calendarApi.getAppointments).not.toHaveBeenCalled();
+    const text = harness.routeNativeElement?.textContent ?? '';
+    expect(text).toContain(CLIENTS_LITERALS.historyTitle);
+    expect(text).toContain(CLIENTS_LITERALS.showHistory);
+    expect(text).not.toContain('Alex Martin');
+    expect(text).not.toContain('Buena sesión de fuerza.');
+  });
+
+  it('lists the session history for the client', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
+    await openHistory(harness, component);
+
+    expect(calendarApi.getAppointments).toHaveBeenCalledWith({ clientId: 'client-1' });
+    const text = harness.routeNativeElement?.textContent ?? '';
+    expect(text).toContain(CLIENTS_LITERALS.historyTitle);
+    expect(text).toContain(CLIENTS_LITERALS.hideHistory);
+    expect(text).toContain('Alex Martin');
+    expect(text).toContain(CLIENTS_LITERALS.statusCompleted);
+    expect(text).toContain('Buena sesión de fuerza.');
+  });
+
+  it('filters the session history from the column field', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
+    await openHistory(harness, component);
+
+    const notesFilter = Array.from(
+      harness.routeNativeElement?.querySelectorAll('.bona-grid__table .bona-grid__filter') ?? [],
+    ).find((input) => input.getAttribute('aria-label')?.includes(CLIENTS_LITERALS.sessionNotes)) as
+      | HTMLInputElement
+      | undefined;
+    expect(notesFilter).toBeTruthy();
+    notesFilter!.value = 'zzz';
+    notesFilter!.dispatchEvent(new Event('input'));
+    harness.fixture.detectChanges();
+    expect(harness.routeNativeElement?.textContent).toContain(CLIENTS_LITERALS.emptyHistoryFilter);
+
+    notesFilter!.value = 'fuerza';
+    notesFilter!.dispatchEvent(new Event('input'));
+    harness.fixture.detectChanges();
+    expect(harness.routeNativeElement?.textContent).toContain('Buena sesión de fuerza.');
+  });
+
+  it('saves a session note', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
+    await openHistory(harness, component);
+
+    clickGridMenuAction(harness.routeNativeElement, CLIENTS_LITERALS.editSessionNote, {
+      rowText: 'Buena sesión de fuerza.',
+    });
+    component.onSaveSessionNote({ notes: 'Más movilidad.' });
+    harness.fixture.detectChanges();
+    await harness.fixture.whenStable();
+
+    expect(calendarApi.updateAppointment).toHaveBeenCalled();
+    const payload = calendarApi.updateAppointment.calls.mostRecent().args[1];
+    expect(payload.notes).toBe('Más movilidad.');
+  });
+
+  it('labels a gifted session as regalo', async () => {
     clientsApi.getClientBonos.and.returnValue(
       of([
         {
@@ -107,6 +207,7 @@ describe('ClientFichaComponent', () => {
           clientId: 'client-1',
           bonoId: 'bono-ep-10',
           remainingSessions: 1,
+          isGift: true,
           purchasedAt: '2026-09-17T10:00:00.000Z',
           expiresAt: null,
         },
@@ -116,7 +217,7 @@ describe('ClientFichaComponent', () => {
     await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
 
     const text = harness.routeNativeElement?.textContent ?? '';
-    expect(text).toContain(CLIENTS_LITERALS.singleSession);
+    expect(text).toContain(CLIENTS_LITERALS.giftCredit);
     expect(text).not.toContain('pack-10');
   });
 
@@ -135,6 +236,7 @@ describe('ClientFichaComponent', () => {
     expect(clientsApi.contractBono).toHaveBeenCalledWith({
       clientId: 'client-1',
       bonoId: 'bono-ep-5',
+      isGift: true,
     });
   });
 
@@ -154,6 +256,7 @@ describe('ClientFichaComponent', () => {
       clientId: 'client-1',
       serviceId: 'svc-ep',
       remainingSessions: 1,
+      isGift: true,
     });
   });
 

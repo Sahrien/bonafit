@@ -4,6 +4,10 @@
   }
   <input
     matInput
+    class="bona-input__control"
+    [name]="inputName"
+    [attr.data-field-key]="inputName || null"
+    [attr.autocomplete]="autocomplete || null"
     [type]="inputType()"
     [value]="value"
     [placeholder]="placeholder"

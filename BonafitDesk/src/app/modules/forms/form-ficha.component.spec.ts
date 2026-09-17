@@ -55,6 +55,10 @@ describe('FormFichaComponent', () => {
     let text = harness.routeNativeElement?.textContent ?? '';
     expect(text).toContain(FORMS_LITERALS.fichaTitle);
     expect(text).toContain(FORMS_LITERALS.templateSection);
+    const pageActions = harness.routeNativeElement?.querySelector('.bona-page__actions');
+    expect(pageActions?.textContent).toContain(FORMS_LITERALS.close);
+    expect(pageActions?.textContent).toContain(FORMS_LITERALS.save);
+    expect(pageActions?.textContent).toContain(FORMS_LITERALS.preview);
     expect(text).toContain(FORMS_LITERALS.tabAssign);
     expect(text).toContain(FORMS_LITERALS.tabResponses);
 

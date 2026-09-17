@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { MOCK_SERVICES, MOCK_TRAINERS } from '../../../testing/fixtures';
+import { MOCK_BOOKING_SETTINGS, MOCK_SERVICES, MOCK_TRAINERS } from '../../../testing/fixtures';
 import { AuthSessionDto } from '../../../models/auth-session.dto';
 import { BonoDto } from '../../../models/bono.dto';
 import { ClientBonoDto } from '../../../models/client-bono.dto';
@@ -59,6 +59,7 @@ describe('PortalAgendaComponent', () => {
       'getTrainers',
       'getAppointments',
       'getAvailability',
+      'getBookingSettings',
       'createAppointment',
       'updateAppointment',
     ]);
@@ -67,6 +68,7 @@ describe('PortalAgendaComponent', () => {
     authApi.getSession.and.returnValue(of(session));
     calendarApi.getTrainers.and.returnValue(of(MOCK_TRAINERS));
     calendarApi.getAppointments.and.returnValue(of([]));
+    calendarApi.getBookingSettings.and.returnValue(of(MOCK_BOOKING_SETTINGS));
     calendarApi.getAvailability.and.returnValue(
       of([
         {
@@ -134,5 +136,30 @@ describe('PortalAgendaComponent', () => {
     expect(text).toContain(PORTAL_AGENDA_LITERALS.nextAppointment);
     expect(text).toContain('Entrenamiento personal');
     expect(text).not.toContain(PORTAL_AGENDA_LITERALS.noNextAppointment);
+  });
+
+  it('shows cancel for a confirmed appointment still inside the cutoff', async () => {
+    calendarApi.getAppointments.and.returnValue(
+      of([
+        {
+          id: 'apt-next',
+          trainerId: 'trainer-1',
+          clientId: 'client-1',
+          serviceId: 'svc-ep',
+          startsAt: '2026-12-01T10:00:00.000Z',
+          endsAt: '2026-12-01T11:00:00.000Z',
+          location: 'studio-1',
+          status: 'confirmed' as const,
+        },
+      ]),
+    );
+    fixture = TestBed.createComponent(PortalAgendaComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const cancel = fixture.componentInstance.appointmentActions().find((action) => action.action === 'cancel');
+    const row = fixture.componentInstance.appointmentRows()[0];
+    expect(cancel?.visible?.(row)).toBeTrue();
   });
 });

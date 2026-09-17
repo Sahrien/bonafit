@@ -7,15 +7,17 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.booking import (
     add_minutes,
+    can_admin_cancel_appointment,
+    can_cancel_appointment,
     is_active_client_appointment,
     is_bono_usable,
+    is_gift_credit,
     list_availability_slots,
     occupies_trainer_slot,
     parse_iso,
     pick_preferred_bono,
     ranges_overlap,
     session_delta,
-    shares_session_pool,
     slot_matches,
     status_on_client_reschedule,
     status_on_create,
@@ -145,7 +147,7 @@ class CalendarService:
         to: str | None = None,
     ) -> list[AppointmentOut]:
         with self._session_factory() as db:
-            query = select(Appointment)
+            query = select(Appointment).options(selectinload(Appointment.client_bono))
             if user.role == UserRole.CLIENT:
                 query = query.where(Appointment.client_id == user.client_id)
             elif client_id:
@@ -157,7 +159,8 @@ class CalendarService:
             if to:
                 query = query.where(Appointment.starts_at <= parse_iso(to))
             rows = db.scalars(query.order_by(Appointment.starts_at)).all()
-            return [appointment_out(row) for row in rows]
+            hide_notes = user.role == UserRole.CLIENT
+            return [appointment_out(row, hide_notes=hide_notes) for row in rows]
 
     def get_availability(
         self,
@@ -192,12 +195,12 @@ class CalendarService:
 
     def get_appointment(self, appointment_id: str, user: CurrentUser) -> AppointmentOut:
         with self._session_factory() as db:
-            row = db.get(Appointment, appointment_id)
+            row = db.get(Appointment, appointment_id, options=(selectinload(Appointment.client_bono),))
             if row is None:
                 raise NotFoundError("appointment", appointment_id)
             if user.role == UserRole.CLIENT and row.client_id != user.client_id:
                 raise NotFoundError("appointment", appointment_id)
-            return appointment_out(row)
+            return appointment_out(row, hide_notes=user.role == UserRole.CLIENT)
 
     def create_appointment(self, payload: AppointmentWrite, user: CurrentUser) -> AppointmentOut:
         with self._session_factory() as db:
@@ -205,7 +208,7 @@ class CalendarService:
             _apply_session_delta(db, None, created)
             db.add(created)
             db.flush()
-            return appointment_out(created)
+            return appointment_out(created, hide_notes=user.role == UserRole.CLIENT)
 
     def update_appointment(
         self,
@@ -223,19 +226,7 @@ class CalendarService:
             updated = _write_appointment(db, user, previous, payload)
             _apply_session_delta(db, snapshot, updated)
             db.flush()
-            return appointment_out(updated)
-
-    def delete_appointment(self, appointment_id: str, user: CurrentUser) -> None:
-        with self._session_factory() as db:
-            row = db.get(Appointment, appointment_id)
-            if row is None:
-                raise NotFoundError("appointment", appointment_id)
-            if user.role == UserRole.CLIENT and row.client_id != user.client_id:
-                raise NotFoundError("appointment", appointment_id)
-            cancelled = _snapshot(row)
-            cancelled.status = "cancelled"
-            _apply_session_delta(db, row, cancelled)
-            db.delete(row)
+            return appointment_out(updated, hide_notes=user.role == UserRole.CLIENT)
 
 
 class _AppointmentView:
@@ -293,6 +284,7 @@ def _write_appointment(
     if actor == "client":
         _assert_client_write(db, user, previous, payload, service, now, starts_at, ends_at)
 
+    held_id = previous.client_bono_id if previous else None
     client_bono = _resolve_bono(
         db,
         actor,
@@ -301,8 +293,26 @@ def _write_appointment(
         now,
         payload.clientBonoId,
         explicit="clientBonoId" in payload.model_fields_set,
+        held_id=held_id,
     )
     status_value = _resolve_status(actor, previous, payload, client.instant_confirm)
+    if status_value == "cancelled":
+        if previous is None:
+            raise BusinessError(E["invalidStatus"])
+        if actor == "client":
+            if previous.status not in {"pending", "confirmed"}:
+                raise BusinessError(E["invalidStatus"])
+            cutoff = _settings(db).next_day_cutoff_time
+            if not can_cancel_appointment(previous.status, previous.starts_at, now, cutoff):
+                raise BusinessError(E["cutoff"])
+        elif not can_admin_cancel_appointment(previous.status):
+            raise BusinessError(E["invalidStatus"])
+    if actor == "admin" and "notes" in payload.model_fields_set and payload.notes is not None:
+        notes = payload.notes.strip()
+    elif previous is not None:
+        notes = previous.notes or ""
+    else:
+        notes = ""
 
     if previous is None:
         row = Appointment(
@@ -310,10 +320,12 @@ def _write_appointment(
             client_id=payload.clientId,
             service_id=payload.serviceId,
             client_bono_id=client_bono.id if client_bono else None,
+            client_bono=client_bono,
             starts_at=starts_at,
             ends_at=ends_at,
             location=location,
             status=status_value,
+            notes=notes,
         )
     else:
         row = previous
@@ -321,10 +333,12 @@ def _write_appointment(
         row.client_id = payload.clientId
         row.service_id = payload.serviceId
         row.client_bono_id = client_bono.id if client_bono else None
+        row.client_bono = client_bono
         row.starts_at = starts_at
         row.ends_at = ends_at
         row.location = location
         row.status = status_value
+        row.notes = notes
 
     _assert_slot_free(db, row, previous.id if previous else None)
     return row
@@ -382,6 +396,7 @@ def _resolve_bono(
     requested_id: str | None = None,
     *,
     explicit: bool = False,
+    held_id: str | None = None,
 ) -> ClientBono | None:
     if requested_id == "":
         requested_id = None
@@ -390,7 +405,9 @@ def _resolve_bono(
         row = db.get(ClientBono, requested_id, options=(selectinload(ClientBono.bono),))
         if row is None or row.client_id != client_id or row.bono.service_id != service.id:
             raise NotFoundError("client-bono", requested_id)
-        if not is_bono_usable(row.remaining_sessions, row.expires_at, now):
+        if actor == "client" and is_gift_credit(row) and requested_id != held_id:
+            raise NotFoundError("client-bono", requested_id)
+        if requested_id != held_id and not is_bono_usable(row.remaining_sessions, row.expires_at, now):
             if row.remaining_sessions <= 0:
                 raise BusinessError(E["noSessions"])
             raise BusinessError(E["expiredBono"])
@@ -402,36 +419,41 @@ def _resolve_bono(
     ).all()
     matching = [row for row in rows if row.bono.service_id == service.id]
     if explicit and actor == "admin" and not requested_id:
-        return _admin_single_session(db, client_id, service, now, matching)
-    picked = pick_preferred_bono(matching, now)
+        held = _held_bono(matching, held_id)
+        if held is not None:
+            return held
+        return _admin_gift_session(db, client_id, service, now, matching)
+    pool = matching if actor == "admin" else [row for row in matching if not is_gift_credit(row)]
+    picked = pick_preferred_bono(pool, now)
     if picked:
         return picked
-    if not shares_session_pool(service) and service.allows_single_session and actor == "admin":
-        return None
-    if not matching:
+    held = _held_bono(matching, held_id)
+    if held is not None:
+        return held
+    if not pool:
         raise BusinessError(E["bonoRequired"])
-    if any(row.remaining_sessions > 0 for row in matching):
+    if any(row.remaining_sessions > 0 for row in pool):
         raise BusinessError(E["expiredBono"])
     raise BusinessError(E["noSessions"])
 
 
-def _is_gift_credit(row: ClientBono) -> bool:
-    return row.remaining_sessions == 1 and row.bono.session_count != 1
+def _held_bono(matching: list[ClientBono], held_id: str | None) -> ClientBono | None:
+    if not held_id:
+        return None
+    return next((row for row in matching if row.id == held_id), None)
 
 
-def _admin_single_session(
+def _admin_gift_session(
     db: Session,
     client_id: str,
     service: Service,
     now: datetime,
     matching: list[ClientBono],
-) -> ClientBono | None:
-    if service.allows_single_session:
-        return None
+) -> ClientBono:
     gifts = [
         row
         for row in matching
-        if _is_gift_credit(row) and is_bono_usable(row.remaining_sessions, row.expires_at, now)
+        if is_gift_credit(row) and is_bono_usable(row.remaining_sessions, row.expires_at, now)
     ]
     picked = pick_preferred_bono(gifts, now)
     if picked:
@@ -441,6 +463,7 @@ def _admin_single_session(
         client_id=client_id,
         bono_id=catalog.id,
         remaining_sessions=1,
+        is_gift=True,
         purchased_at=now,
         expires_at=None,
     )

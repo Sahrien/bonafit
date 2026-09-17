@@ -68,6 +68,8 @@ class ClientService:
                 service = row.bono.service
                 if not shares_session_pool(service):
                     continue
+                if row.is_gift:
+                    continue
                 if row.remaining_sessions <= 0:
                     continue
                 if row.expires_at is not None and row.expires_at <= now:
@@ -180,16 +182,19 @@ class ClientService:
             if not service.active:
                 raise BusinessError("booking.serviceInactive")
             remaining = bono.session_count
+            is_gift = user.role == UserRole.ADMIN and payload.isGift
             if (
                 user.role == UserRole.ADMIN
                 and payload.bonoId is None
                 and payload.serviceId
             ):
                 remaining = payload.remainingSessions or 1
+                is_gift = True
             row = ClientBono(
                 client_id=client.id,
                 bono_id=bono.id,
                 remaining_sessions=remaining,
+                is_gift=is_gift,
                 purchased_at=datetime.now(UTC),
                 expires_at=None,
             )

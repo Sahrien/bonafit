@@ -49,6 +49,8 @@ export class BonaInputTextFieldComponent implements ControlValueAccessor {
   @Input() value = '';
   @Input() disabled = false;
   @Input() type: BonaInputType = 'text';
+  @Input() inputName = '';
+  @Input() autocomplete = '';
 
   @Output() valueChange = new EventEmitter<string>();
 

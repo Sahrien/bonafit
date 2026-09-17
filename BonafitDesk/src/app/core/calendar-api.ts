@@ -20,7 +20,6 @@ export interface CalendarApi {
     id: string,
     payload: AppointmentWriteDto,
   ): Observable<AppointmentDto>;
-  deleteAppointment(id: string): Observable<void>;
   getAvailability(query: AvailabilityQuery): Observable<AvailabilitySlotDto[]>;
   getBookingSettings(): Observable<BookingSettingsDto>;
   updateBookingSettings(payload: BookingSettingsWriteDto): Observable<BookingSettingsDto>;

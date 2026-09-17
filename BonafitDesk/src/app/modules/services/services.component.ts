@@ -45,6 +45,22 @@ const YES_NO_OPTIONS = [
   { value: 'false', label: SERVICES_LITERALS.no },
 ];
 
+function catalogSearchHaystack(parts: Array<string | number | null | undefined>): string {
+  return parts
+    .map((part) => String(part ?? ''))
+    .join(' ')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ');
+}
+
+function catalogContains(parts: Array<string | number | null | undefined>, query: string): boolean {
+  const haystack = catalogSearchHaystack(parts);
+  const tokens = catalogSearchHaystack([query]).trim().split(/\s+/).filter(Boolean);
+  return tokens.every((token) => haystack.includes(token));
+}
+
 @Component({
   selector: 'app-services',
   standalone: true,
@@ -109,9 +125,9 @@ export class ServicesComponent {
     const rows: Record<string, unknown>[] = [];
     for (const service of this.services()) {
       const serviceBonos = this.bonos().filter((bono) => bono.serviceId === service.id);
-      const serviceMatches = !query || service.name.toLowerCase().includes(query);
+      const serviceMatches = !query || this.matchesService(service, query);
       const matchingBonos = query
-        ? serviceBonos.filter((bono) => bono.name.toLowerCase().includes(query))
+        ? serviceBonos.filter((bono) => this.matchesBono(service, bono, query))
         : serviceBonos;
       if (!serviceMatches && matchingBonos.length === 0) {
         continue;
@@ -126,7 +142,7 @@ export class ServicesComponent {
         priceLabel: service.singleSessionPrice,
         activeLabel: service.active ? this.literals.yes : this.literals.no,
       });
-      for (const bono of serviceMatches ? serviceBonos : matchingBonos) {
+      for (const bono of matchingBonos) {
         rows.push({
           rowKind: 'bono',
           id: bono.id,
@@ -506,6 +522,17 @@ export class ServicesComponent {
       payload.singleSessionPrice = price;
     }
     return payload;
+  }
+
+  private matchesService(service: ServiceDto, query: string): boolean {
+    return catalogContains([service.name], query);
+  }
+
+  private matchesBono(service: ServiceDto, bono: BonoDto, query: string): boolean {
+    return catalogContains(
+      [service.name, bono.name, bono.description, bono.sessionCount],
+      query,
+    );
   }
 
   private toBonoWrite(value: BonaFormValue, serviceId: string): BonoWriteDto | null {

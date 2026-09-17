@@ -67,6 +67,13 @@ describe('SchedulesComponent', () => {
     const component = await harness.navigateByUrl('/admin/horarios', SchedulesComponent);
 
     component.onCreate();
+    harness.fixture.detectChanges();
+    const nested = harness.routeNativeElement?.querySelector('.page-nested') as HTMLElement;
+    const grid = harness.routeNativeElement?.querySelector('app-bona-grid') as HTMLElement;
+    expect(nested).toBeTruthy();
+    expect(grid).toBeTruthy();
+    expect(nested.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
     component.onSave({
       trainerId: 'trainer-1',
       weekday: '6',

@@ -40,6 +40,7 @@ describe('AdminSettingsComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain(SETTINGS_LITERALS.title);
     expect(text).toContain(SETTINGS_LITERALS.bookingTitle);
+    expect(text).toContain(SETTINGS_LITERALS.cutoffTime);
     expect(text).toContain(SETTINGS_LITERALS.passwordTitle);
   });
 });

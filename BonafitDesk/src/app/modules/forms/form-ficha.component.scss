@@ -57,7 +57,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--bona-space-2);
-  margin-top: var(--bona-space-4);
+  margin-top: var(--bona-space-6);
+  padding-top: var(--bona-space-4);
+  border-top: 1px solid var(--bona-color-border);
 }
 
 .question-list {

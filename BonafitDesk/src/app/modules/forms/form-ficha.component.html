@@ -10,16 +10,22 @@
       (action)="onClosePreview()" />
   } @else {
     <ng-container bonaPageActions>
-      <app-bona-button
-        [text]="literals.back"
-        variant="secondary"
-        (action)="onBack()" />
       @if (isNew() || tab() === 'template') {
         <app-bona-button
           [text]="literals.preview"
           variant="secondary"
           [disabled]="questions().length === 0"
           (action)="onPreview()" />
+      }
+      <app-bona-button
+        [text]="literals.close"
+        variant="secondary"
+        (action)="onBack()" />
+      @if (isNew() || tab() === 'template') {
+        <app-bona-button
+          [text]="literals.save"
+          [disabled]="saving()"
+          (action)="onSave()" />
       }
     </ng-container>
   }
@@ -123,18 +129,14 @@
           <app-bona-button [text]="literals.addQuestion" (action)="onAddQuestion()" />
         </div>
 
-        <div class="page-actions">
-          <app-bona-button
-            [text]="literals.save"
-            [disabled]="saving()"
-            (action)="onSave()" />
-          @if (!isNew()) {
+        @if (!isNew()) {
+          <div class="page-actions">
             <app-bona-button
               [text]="literals.delete"
               variant="secondary"
               (action)="onDelete()" />
-          }
-        </div>
+          </div>
+        }
       </section>
     }
 

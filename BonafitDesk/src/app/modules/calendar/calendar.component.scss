@@ -51,6 +51,16 @@
   text-align: left;
   cursor: pointer;
   font: inherit;
+
+  &[data-status='pending'] {
+    background: color-mix(in srgb, var(--bona-color-warning) 28%, var(--bona-color-surface));
+    border-color: color-mix(in srgb, var(--bona-color-warning) 55%, var(--bona-color-border));
+  }
+
+  &[data-status='confirmed'] {
+    background: color-mix(in srgb, var(--bona-color-success) 28%, var(--bona-color-surface));
+    border-color: color-mix(in srgb, var(--bona-color-success) 55%, var(--bona-color-border));
+  }
 }
 
 .calendar-today__time {
@@ -75,7 +85,7 @@
 }
 
 .calendar-view-tabs {
-  margin-bottom: var(--bona-space-2);
+  grid-column: 1 / -1;
 }
 
 .calendar-layout {
@@ -112,6 +122,13 @@
   }
 }
 
+.calendar-panel__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--bona-space-2);
+}
+
 .calendar-panel__error {
   margin: 0 0 var(--bona-space-4);
   color: var(--bona-color-danger);
@@ -120,8 +137,8 @@
 .calendar-panel__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--bona-space-2);
-  margin-top: var(--bona-space-4);
 }
 
 @media (max-width: 56rem) {
@@ -129,6 +146,7 @@
     grid-template-columns: 1fr;
   }
 
+  .calendar-layout--panel .calendar-view-tabs,
   .calendar-layout--panel .calendar-layout__main {
     display: none;
   }

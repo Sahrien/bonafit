@@ -143,6 +143,7 @@ export const MOCK_APPOINTMENTS: AppointmentDto[] = [
     endsAt: '2026-09-07T09:00:00.000Z',
     location: 'studio-1',
     status: 'completed',
+    notes: 'Buena sesión de fuerza.',
   },
   {
     id: 'apt-2',

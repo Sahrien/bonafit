@@ -116,6 +116,7 @@ class ClientBono(Base):
     client_id: Mapped[str] = mapped_column(ForeignKey("clients.id"), nullable=False)
     bono_id: Mapped[str] = mapped_column(ForeignKey("bonos.id"), nullable=False)
     remaining_sessions: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_gift: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     purchased_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
@@ -157,6 +158,7 @@ class Appointment(Base):
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     location: Mapped[str] = mapped_column(String(120), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
+    notes: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
     trainer: Mapped[Trainer] = relationship(back_populates="appointments")
     client: Mapped[Client] = relationship(back_populates="appointments")

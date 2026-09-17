@@ -1,5 +1,7 @@
 .page-actions {
-  margin-top: var(--bona-space-4);
+  margin-top: var(--bona-space-6);
+  padding-top: var(--bona-space-4);
+  border-top: 1px solid var(--bona-color-border);
 }
 
 .page-error {
@@ -29,6 +31,21 @@
   }
 }
 
+.page-nested--history {
+  margin-top: var(--bona-space-6);
+  padding-top: var(--bona-space-4);
+  border-top: 1px solid var(--bona-color-border);
+
+  .page-nested__header {
+    justify-content: flex-start;
+    gap: var(--bona-space-2);
+  }
+
+  &:not(.page-nested--history-open) .page-nested__header {
+    margin-bottom: 0;
+  }
+}
+
 .page-nested__form {
   margin-top: var(--bona-space-4);
 
@@ -37,3 +54,4 @@
     font-size: 1rem;
   }
 }
+

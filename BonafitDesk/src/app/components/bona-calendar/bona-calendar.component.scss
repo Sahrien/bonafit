@@ -9,4 +9,12 @@
   border: 1px solid var(--bona-color-border);
   border-radius: var(--bona-radius-lg);
   font-family: var(--bona-font-family);
+
+  ::ng-deep .fc-event.bona-calendar__event--cancelled {
+    background: color-mix(in srgb, var(--bona-color-text-muted) 40%, var(--bona-color-surface));
+    border-color: var(--bona-color-border);
+    color: var(--bona-color-text-muted);
+    text-decoration: line-through;
+    pointer-events: none;
+  }
 }

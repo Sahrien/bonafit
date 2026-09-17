@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, forkJoin, switchMap } from 'rxjs';
+import { filter, forkJoin } from 'rxjs';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
@@ -18,7 +18,7 @@ import { BonaTabItem, BonaTabsComponent } from '../../components/bona-tabs/bona-
 import { BonaFieldDefinition, BonaFieldOption } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { ApiBusinessError } from '../../core/api-business.error';
-import { addMinutes, isBonoUsable } from '../../core/booking';
+import { addMinutes, canAdminCancelAppointment, isBonoUsable, isGiftCredit, pickPreferredBono } from '../../core/booking';
 import { AppointmentDto, AppointmentStatus, AppointmentWriteDto } from '../../models/appointment.dto';
 import { BonoDto } from '../../models/bono.dto';
 import { BookingSettingsDto } from '../../models/booking-settings.dto';
@@ -27,7 +27,6 @@ import { ClientDto } from '../../models/client.dto';
 import { ServiceDto } from '../../models/service.dto';
 import { TrainerDto } from '../../models/trainer.dto';
 import { Router } from '@angular/router';
-import { AUTH_PATHS } from '../../core/auth/auth.paths';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ServicesApiService } from '../../services/services-api.service';
@@ -43,6 +42,7 @@ const EMPTY_FORM: BonaFormValue = {
   endsAt: '',
   location: '',
   status: 'confirmed',
+  notes: '',
 };
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
@@ -91,6 +91,7 @@ export class CalendarComponent {
   readonly editingId = signal<string | null>(null);
   readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
   readonly error = signal('');
+  private readonly formBaseline = signal<BonaFormValue>({ ...EMPTY_FORM });
 
   private readonly trainers = signal<TrainerDto[]>([]);
   private readonly clients = signal<ClientDto[]>([]);
@@ -111,7 +112,9 @@ export class CalendarComponent {
     return this.appointments()
       .filter(
         (appointment) =>
-          appointment.status !== 'cancelled' && this.dayKey(new Date(appointment.startsAt)) === todayKey,
+          appointment.status !== 'cancelled' &&
+          appointment.status !== 'completed' &&
+          this.dayKey(new Date(appointment.startsAt)) === todayKey,
       )
       .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime())
       .map((appointment) => ({
@@ -119,6 +122,7 @@ export class CalendarComponent {
         time: this.formatTime(appointment.startsAt),
         title: this.toCalendarEvent(appointment).title,
         status: this.statusLabel(appointment.status),
+        statusKey: appointment.status,
       }));
   });
 
@@ -129,6 +133,13 @@ export class CalendarComponent {
   readonly currentStatus = computed(
     () => (this.formValue()['status'] ?? '') as AppointmentStatus | '',
   );
+
+  readonly canCancel = computed(() => {
+    const status = this.currentStatus();
+    return status !== '' && canAdminCancelAppointment(status);
+  });
+
+  readonly selectedClientId = computed(() => this.formValue()['clientId'] ?? '');
 
   readonly appointmentFields = computed((): BonaFieldDefinition[] => {
     const serviceId = this.formValue()['serviceId'] ?? '';
@@ -191,12 +202,12 @@ export class CalendarComponent {
         label: this.literals.status,
         type: 'select',
         required: true,
-        options: [
-          { value: 'pending', label: this.literals.statusPending },
-          { value: 'confirmed', label: this.literals.statusConfirmed },
-          { value: 'completed', label: this.literals.statusCompleted },
-          { value: 'cancelled', label: this.literals.statusCancelled },
-        ],
+        options: this.statusOptions(),
+      },
+      {
+        key: 'notes',
+        label: this.literals.sessionNotes,
+        type: 'textarea',
       },
     ];
   });
@@ -223,8 +234,26 @@ export class CalendarComponent {
     });
   }
 
-  onOpenSchedules(): void {
-    void this.router.navigateByUrl(AUTH_PATHS.adminSchedules);
+  onOpenClient(): void {
+    const clientId = this.selectedClientId();
+    if (!clientId) {
+      return;
+    }
+    const openFicha = (): void => {
+      void this.router.navigateByUrl(`/admin/clients/${clientId}`);
+    };
+    if (!this.isFormDirty()) {
+      openFicha();
+      return;
+    }
+    this.confirm
+      .open({
+        title: this.literals.confirmLeaveTitle,
+        message: this.literals.confirmLeaveMessage,
+        confirmLabel: this.literals.confirmLeaveConfirm,
+      })
+      .pipe(filter((ok) => ok), takeUntilDestroyed(this.destroyRef))
+      .subscribe(openFicha);
   }
 
   onSlotSelect(slot: BonaCalendarSlotSelect): void {
@@ -266,8 +295,7 @@ export class CalendarComponent {
     if (nextClient !== previousClient || nextService !== previousService) {
       next = {
         ...value,
-        clientBonoId:
-          nextClient === previousClient && nextService === previousService ? value['clientBonoId'] ?? '' : '',
+        clientBonoId: this.defaultClientBonoId(nextClient, nextService),
       };
     }
     if (nextService !== previousService || value['startsAt'] !== previousStart) {
@@ -297,10 +325,23 @@ export class CalendarComponent {
   }
 
   onComplete(): void {
-    this.saveAppointment({ ...this.formValue(), status: 'completed' });
+    this.confirm
+      .open({
+        title: this.literals.confirmCompleteTitle,
+        message: this.literals.confirmCompleteMessage,
+        confirmLabel: this.literals.complete,
+      })
+      .pipe(
+        filter((ok) => ok),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => this.saveAppointment({ ...this.formValue(), status: 'completed' }));
   }
 
   onCancelAppointment(): void {
+    if (!this.canCancel()) {
+      return;
+    }
     this.confirm
       .open({
         title: this.literals.confirmCancelTitle,
@@ -312,33 +353,6 @@ export class CalendarComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => this.saveAppointment({ ...this.formValue(), status: 'cancelled' }));
-  }
-
-  onDelete(): void {
-    const id = this.editingId();
-    if (!id) {
-      return;
-    }
-    this.confirm
-      .open({
-        title: this.literals.confirmDeleteTitle,
-        message: this.literals.confirmDeleteMessage,
-        confirmLabel: this.literals.delete,
-      })
-      .pipe(
-        filter((ok) => ok),
-        switchMap(() => this.calendarApi.deleteAppointment(id)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: () => {
-          this.formOpen.set(false);
-          this.editingId.set(null);
-          this.toast.success(this.literals.deleted);
-          this.loadAppointments();
-        },
-        error: (error) => this.error.set(this.messageFor(error)),
-      });
   }
 
   private saveAppointment(value: BonaFormValue): void {
@@ -381,8 +395,8 @@ export class CalendarComponent {
           this.settings.set(settings);
           this.loading.set(false);
         },
-        error: (error) => {
-          this.error.set(this.messageFor(error));
+        error: () => {
+          this.error.set(this.literals.errorLoad);
           this.loading.set(false);
         },
       });
@@ -405,6 +419,7 @@ export class CalendarComponent {
   private openForm(id: string | null, value: BonaFormValue): void {
     this.editingId.set(id);
     this.formValue.set(value);
+    this.formBaseline.set({ ...value });
     this.error.set('');
     this.formOpen.set(true);
     if (!value['clientId']) {
@@ -414,6 +429,15 @@ export class CalendarComponent {
 
   private defaultTrainerId(): string {
     return this.trainers()[0]?.id ?? '';
+  }
+
+  private isFormDirty(): boolean {
+    return this.formSnapshot(this.formValue()) !== this.formSnapshot(this.formBaseline());
+  }
+
+  private formSnapshot(value: BonaFormValue): string {
+    const keys = Object.keys(EMPTY_FORM).sort();
+    return JSON.stringify(keys.map((key) => value[key] ?? ''));
   }
 
   private dayKey(date: Date): string {
@@ -439,35 +463,75 @@ export class CalendarComponent {
     if (!service) {
       return [];
     }
-    const options: BonaFieldOption[] = [{ value: '', label: this.literals.singleSession }];
+    const options: BonaFieldOption[] = [];
     const clientId = this.formValue()['clientId'] ?? '';
+    const currentId = this.formValue()['clientBonoId'] ?? '';
     const now = new Date();
+    let hasUsableGift = false;
     for (const contracted of this.clientBonos()) {
-      if (contracted.clientId !== clientId || !isBonoUsable(contracted, now)) {
+      if (contracted.clientId !== clientId) {
+        continue;
+      }
+      const current = contracted.id === currentId;
+      if (!current && !isBonoUsable(contracted, now)) {
         continue;
       }
       const bono = this.bonos().find((item) => item.id === contracted.bonoId);
       if (!bono || bono.serviceId !== service.id) {
         continue;
       }
-      const gift = contracted.remainingSessions === 1 && bono.sessionCount !== 1;
+      if (isGiftCredit(contracted)) {
+        hasUsableGift = true;
+        options.push({
+          value: contracted.id,
+          label: `${this.literals.gift} · ${contracted.remainingSessions}`,
+        });
+        continue;
+      }
+      const name = bono.sessionCount === 1 ? this.literals.singleSession : bono.name;
       options.push({
         value: contracted.id,
-        label: gift
-          ? `${this.literals.singleSession} · ${contracted.remainingSessions}`
-          : `${bono.name} · ${contracted.remainingSessions}`,
+        label: `${name} · ${contracted.remainingSessions}`,
       });
     }
+    if (!hasUsableGift) {
+      options.unshift({ value: '', label: this.literals.gift });
+    }
     return options;
+  }
+
+  private defaultClientBonoId(clientId: string, serviceId: string): string {
+    const service = this.services().find((item) => item.id === serviceId);
+    if (!clientId || !service) {
+      return '';
+    }
+    const now = new Date();
+    const matching = this.clientBonos().filter((row) => {
+      if (row.clientId !== clientId || !isBonoUsable(row, now)) {
+        return false;
+      }
+      const bono = this.bonos().find((item) => item.id === row.bonoId);
+      return bono?.serviceId === service.id;
+    });
+    const purchased = matching.filter((row) => !isGiftCredit(row));
+    return pickPreferredBono(purchased, now)?.id ?? pickPreferredBono(matching, now)?.id ?? '';
   }
 
   private toCalendarEvent(appointment: AppointmentDto): BonaCalendarEvent {
     const client = this.clients().find((item) => item.id === appointment.clientId);
     const service = this.services().find((item) => item.id === appointment.serviceId);
     const trainer = this.trainers().find((item) => item.id === appointment.trainerId);
+    const parts = [
+      client ? this.clientLabel(client) : appointment.clientId,
+      service ? this.serviceLabel(service) : appointment.serviceId,
+    ];
+    if (appointment.isGift) {
+      parts.push(this.literals.gift);
+    }
+    parts.push(this.statusLabel(appointment.status));
     return {
       id: appointment.id,
-      title: `${client ? this.clientLabel(client) : appointment.clientId} · ${service ? this.serviceLabel(service) : appointment.serviceId} · ${this.statusLabel(appointment.status)}`,
+      title: parts.join(' · '),
       start: appointment.startsAt,
       end: appointment.endsAt,
       trainer: trainer?.name,
@@ -488,6 +552,18 @@ export class CalendarComponent {
     return labels[status];
   }
 
+  private statusOptions(): BonaFieldOption[] {
+    const current = this.currentStatus();
+    const options: BonaFieldOption[] = [
+      { value: 'pending', label: this.literals.statusPending },
+      { value: 'confirmed', label: this.literals.statusConfirmed },
+    ];
+    if (current === 'completed') {
+      options.push({ value: 'completed', label: this.literals.statusCompleted });
+    }
+    return options;
+  }
+
   private toFormValue(appointment: AppointmentDto): BonaFormValue {
     return {
       trainerId: appointment.trainerId,
@@ -498,6 +574,7 @@ export class CalendarComponent {
       endsAt: toDatetimeLocalValue(appointment.endsAt),
       location: appointment.location,
       status: appointment.status,
+      notes: appointment.notes ?? '',
     };
   }
 
@@ -523,6 +600,7 @@ export class CalendarComponent {
       location,
       status,
       clientBonoId: clientBonoId || null,
+      notes: (value['notes'] ?? '').trim(),
     };
     return payload;
   }

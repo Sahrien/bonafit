@@ -55,6 +55,41 @@ describe('ServicesComponent', () => {
     expect(fixture.nativeElement.querySelector('app-bona-grid')).toBeTruthy();
   });
 
+  it('filters the catalog by a partial bono name', () => {
+    fixture.componentInstance.onSearch('pack 8');
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('pack-8');
+    expect(text).toContain('Hipopresivos');
+    expect(text).not.toContain('pack-10');
+    expect(text).not.toContain('pack-5');
+    expect(text).not.toContain('Entrenamiento personal');
+    expect(text).not.toContain('Masaje');
+  });
+
+  it('filters the catalog by bono description fragments', () => {
+    fixture.componentInstance.onSearch('sessions 5');
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('pack-5');
+    expect(text).toContain('Entrenamiento personal');
+    expect(text).not.toContain('pack-10');
+    expect(text).not.toContain('Hipopresivos');
+  });
+
+  it('keeps a bono that contains the query under its service', () => {
+    fixture.componentInstance.onSearch('10');
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('pack-10');
+    expect(text).toContain('Entrenamiento personal');
+    expect(text).not.toContain('pack-5');
+    expect(text).not.toContain('Hipopresivos');
+  });
+
   it('opens nested bonos for a service', () => {
     fixture.componentInstance.onServiceRowClick({ id: 'svc-masaje' });
     fixture.detectChanges();

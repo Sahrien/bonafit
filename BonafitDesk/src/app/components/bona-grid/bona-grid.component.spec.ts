@@ -114,6 +114,60 @@ describe('BonaGridComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('45');
   });
 
+  it('pages rows when pageSize is set', () => {
+    const rows = Array.from({ length: 12 }, (_, index) => ({
+      id: String(index),
+      nombre: `N${index}`,
+    }));
+    fixture.componentRef.setInput('pageSize', 10);
+    fixture.componentRef.setInput('data', rows);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('N0');
+    expect(fixture.nativeElement.textContent).toContain('N9');
+    expect(fixture.nativeElement.textContent).not.toContain('N10');
+    expect(fixture.nativeElement.textContent).toContain(
+      GRID_LITERALS.pageOf.replace('{page}', '1').replace('{pages}', '2'),
+    );
+
+    const next = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((item) => item.textContent?.includes(GRID_LITERALS.nextPage));
+    next?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('N10');
+    expect(fixture.nativeElement.textContent).not.toContain('N0');
+    expect(fixture.nativeElement.textContent).toContain(
+      GRID_LITERALS.pageOf.replace('{page}', '2').replace('{pages}', '2'),
+    );
+  });
+
+  it('filters rows from the column header field', () => {
+    fixture.componentRef.setInput('columnFilters', true);
+    fixture.componentRef.setInput('data', [
+      { id: '1', nombre: 'Ana' },
+      { id: '2', nombre: 'Luis' },
+    ]);
+    fixture.detectChanges();
+
+    const filter = fixture.nativeElement.querySelector(
+      '.bona-grid__table .bona-grid__filter',
+    ) as HTMLInputElement;
+    filter.value = 'zzz';
+    filter.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(GRID_LITERALS.empty);
+    expect(fixture.nativeElement.querySelectorAll('tr[mat-row]').length).toBe(0);
+
+    filter.value = 'Ana';
+    filter.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Ana');
+    expect(fixture.nativeElement.textContent).not.toContain('Luis');
+  });
+
   it('emits action from the row menu without emitting rowClick', () => {
     const row = { id: '1', nombre: 'Ana' };
     fixture.componentRef.setInput('data', [row]);

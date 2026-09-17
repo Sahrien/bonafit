@@ -2,6 +2,10 @@ export const GRID_LITERALS = {
   empty: 'Sin resultados',
   emptyTitle: 'Nada que mostrar',
   actions: 'Acciones',
+  previousPage: 'Anterior',
+  nextPage: 'Siguiente',
+  pageOf: 'Página {page} de {pages}',
+  filter: 'Filtrar',
 } as const;
 
 export const PASSWORD_FIELD_LITERALS = {
@@ -12,8 +16,7 @@ export const PASSWORD_FIELD_LITERALS = {
 export const LOGIN_LITERALS = {
   brand: 'Bonafit',
   title: 'Iniciar sesión',
-  value: 'Gestiona el estudio o reserva tus sesiones.',
-  subtitle: 'Estudio para entrenadores y portal para clientes. Accede con tu email y contraseña.',
+  slogan: 'Wellness & Longevity',
   email: 'Email',
   password: 'Contraseña',
   submit: 'Entrar',

@@ -25,6 +25,10 @@ export function isBonoUsable(row: ClientBonoDto, now: Date): boolean {
   return row.remainingSessions > 0 && !isBonoExpired(row.expiresAt, now);
 }
 
+export function isGiftCredit(row: ClientBonoDto): boolean {
+  return row.isGift === true;
+}
+
 export function pickPreferredBono(rows: ClientBonoDto[], now: Date): ClientBonoDto | null {
   const usable = rows.filter((row) => isBonoUsable(row, now));
   if (usable.length === 0) {
@@ -194,4 +198,20 @@ export function remainingSessionsDelta(
 
 function consumesSession(status: AppointmentStatus): boolean {
   return status === 'confirmed' || status === 'completed';
+}
+
+export function canCancelAppointment(
+  status: AppointmentStatus,
+  startsAt: Date,
+  now: Date,
+  cutoffTime: string,
+): boolean {
+  if (!isActiveClientAppointment(status)) {
+    return false;
+  }
+  return isClientStartAllowed(startsAt, now, cutoffTime);
+}
+
+export function canAdminCancelAppointment(status: AppointmentStatus): boolean {
+  return status === 'pending' || status === 'confirmed';
 }

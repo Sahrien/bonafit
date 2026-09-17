@@ -151,6 +151,7 @@ class ClientBonoOut(BaseModel):
     clientId: str
     bonoId: str
     remainingSessions: int
+    isGift: bool = False
     purchasedAt: IsoDateTime
     expiresAt: IsoDateTime | None = None
 
@@ -161,6 +162,7 @@ class ContractBono(BaseModel):
     bonoId: str | None = None
     serviceId: str | None = None
     remainingSessions: int | None = Field(default=None, ge=1)
+    isGift: bool = False
 
 
 class ClientBonoPatch(BaseModel):
@@ -182,10 +184,12 @@ class AppointmentOut(BaseModel):
     clientId: str
     serviceId: str
     clientBonoId: str | None = None
+    isGift: bool = False
     startsAt: IsoDateTime
     endsAt: IsoDateTime
     location: str
     status: AppointmentStatus
+    notes: str = ""
 
 
 class AppointmentWrite(BaseModel):
@@ -198,6 +202,7 @@ class AppointmentWrite(BaseModel):
     endsAt: datetime | None = None
     location: str | None = None
     status: AppointmentStatus | None = None
+    notes: str | None = None
 
 
 class AvailabilitySlotOut(BaseModel):

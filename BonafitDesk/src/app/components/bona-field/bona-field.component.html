@@ -1,11 +1,13 @@
 @if (isTextInput(definition().type)) {
-  <app-bona-input-text-field
-    [label]="definition().label"
-    [placeholder]="definition().placeholder ?? ''"
-    [type]="textInputType(definition().type)"
-    [value]="value()"
-    [disabled]="definition().disabled ?? false"
-    (valueChange)="onValueChange($event)" />
+      <app-bona-input-text-field
+        [label]="definition().label"
+        [placeholder]="definition().placeholder ?? ''"
+        [type]="textInputType(definition().type)"
+        [inputName]="definition().key"
+        [autocomplete]="definition().autocomplete ?? ''"
+        [value]="value()"
+        [disabled]="definition().disabled ?? false"
+        (valueChange)="onValueChange($event)" />
 } @else if (definition().type === 'textarea') {
   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bona-field">
     <mat-label>{{ definition().label }}</mat-label>

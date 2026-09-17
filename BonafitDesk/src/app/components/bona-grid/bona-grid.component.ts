@@ -3,7 +3,9 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnChanges,
   Output,
+  SimpleChanges,
 } from '@angular/core';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -20,9 +22,10 @@ export interface BonaGridColumn {
   type?: BonaGridColumnType;
 }
 
-export interface BonaGridAction {
+export interface BonaGridAction<T = Record<string, unknown>> {
   label: string;
   action: string;
+  visible?: (item: T) => boolean;
 }
 
 export interface BonaGridActionEvent<T = Record<string, unknown>> {
@@ -46,20 +49,128 @@ export interface BonaGridActionEvent<T = Record<string, unknown>> {
   styleUrl: './bona-grid.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BonaGridComponent<T extends Record<string, unknown> = Record<string, unknown>> {
+export class BonaGridComponent<T extends Record<string, unknown> = Record<string, unknown>>
+  implements OnChanges
+{
   @Input() data: T[] = [];
   @Input() columns: BonaGridColumn[] = [];
-  @Input() actions: BonaGridAction[] = [];
+  @Input() actions: BonaGridAction<T>[] = [];
   @Input() emptyMessage: string = GRID_LITERALS.empty;
   @Input() emptyTitle = '';
   @Input() emptyActionLabel = '';
   @Input() actionsLabel: string = GRID_LITERALS.actions;
+  @Input() pageSize = 0;
+  @Input() columnFilters = false;
+  @Input() emptyFilteredMessage = '';
+
+  pageIndex = 0;
+  filterValues: Record<string, string> = {};
 
   readonly GRID_LITERALS = GRID_LITERALS;
 
   @Output() action = new EventEmitter<BonaGridActionEvent<T>>();
   @Output() emptyAction = new EventEmitter<void>();
   @Output() rowClick = new EventEmitter<T>();
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['data']) {
+      this.pageIndex = 0;
+    }
+    if (changes['data'] || changes['pageSize']) {
+      this.clampPage();
+    }
+  }
+
+  get filteredData(): T[] {
+    if (!this.columnFilters) {
+      return this.data;
+    }
+    return this.data.filter((row) =>
+      this.columns.every((column) => {
+        const query = this.columnFilter(column.field).trim().toLowerCase();
+        if (!query) {
+          return true;
+        }
+        return this.formatCell(row, column).toLowerCase().includes(query);
+      }),
+    );
+  }
+
+  get filteredEmpty(): boolean {
+    return this.data.length > 0 && this.filteredData.length === 0;
+  }
+
+  get pagedData(): T[] {
+    const rows = this.filteredData;
+    if (!this.showPager) {
+      return rows;
+    }
+    const start = this.pageIndex * this.pageSize;
+    return rows.slice(start, start + this.pageSize);
+  }
+
+  get showPager(): boolean {
+    return this.pageSize > 0 && this.filteredData.length > 0;
+  }
+
+  get pageCount(): number {
+    if (!this.showPager) {
+      return 1;
+    }
+    return Math.max(1, Math.ceil(this.filteredData.length / this.pageSize));
+  }
+
+  get pageLabel(): string {
+    return GRID_LITERALS.pageOf
+      .replace('{page}', String(this.pageIndex + 1))
+      .replace('{pages}', String(this.pageCount));
+  }
+
+  get canPrevious(): boolean {
+    return this.pageIndex > 0;
+  }
+
+  get canNext(): boolean {
+    return this.pageIndex < this.pageCount - 1;
+  }
+
+  onPreviousPage(): void {
+    if (!this.canPrevious) {
+      return;
+    }
+    this.pageIndex -= 1;
+  }
+
+  onNextPage(): void {
+    if (!this.canNext) {
+      return;
+    }
+    this.pageIndex += 1;
+  }
+
+  private clampPage(): void {
+    const last = this.pageCount - 1;
+    if (this.pageIndex > last) {
+      this.pageIndex = last;
+    }
+    if (this.pageIndex < 0) {
+      this.pageIndex = 0;
+    }
+  }
+
+  columnFilter(field: string): string {
+    return this.filterValues[field] ?? '';
+  }
+
+  filterLabel(column: BonaGridColumn): string {
+    return `${GRID_LITERALS.filter} ${column.header}`;
+  }
+
+  onColumnFilter(field: string, event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.filterValues = { ...this.filterValues, [field]: value };
+    this.pageIndex = 0;
+  }
 
   get titleColumn(): BonaGridColumn | undefined {
     return this.columns[0];
@@ -100,11 +211,15 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
     return String(raw);
   }
 
-  onAction(gridAction: BonaGridAction, item: T): void {
+  onAction(gridAction: BonaGridAction<T>, item: T): void {
     this.action.emit({
       action: gridAction.action,
       item,
     });
+  }
+
+  visibleActions(item: T): BonaGridAction<T>[] {
+    return this.actions.filter((action) => !action.visible || action.visible(item));
   }
 
   onRowClick(item: T): void {

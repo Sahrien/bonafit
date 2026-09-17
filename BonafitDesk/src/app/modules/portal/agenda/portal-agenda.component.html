@@ -35,7 +35,7 @@
       <app-bona-grid
         [data]="appointmentRows()"
         [columns]="appointmentColumns"
-        [actions]="appointmentActions"
+        [actions]="appointmentActions()"
         [emptyTitle]="literals.emptyAppointmentsTitle"
         [emptyMessage]="literals.emptyAppointments"
         [emptyActionLabel]="bookableServices().length > 0 ? literals.bookCta : literals.catalogCta"

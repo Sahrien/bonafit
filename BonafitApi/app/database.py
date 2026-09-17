@@ -23,6 +23,7 @@ class Database:
         else:
             self._engine = create_engine(db_url, pool_pre_ping=True)
         self._session_factory = sessionmaker(bind=self._engine, autoflush=False, autocommit=False)
+        _ensure_appointment_notes(self._engine)
 
     @property
     def engine(self) -> Engine:
@@ -33,6 +34,7 @@ class Database:
 
         Base.metadata.create_all(self._engine)
         _flatten_legacy_categories(self._engine)
+        _ensure_appointment_notes(self._engine)
 
     def clear_tables(self) -> None:
         import app.models  # noqa: F401
@@ -116,5 +118,27 @@ def _flatten_legacy_categories(engine: Engine) -> None:
             connection.execute(text("ALTER TABLE services DROP COLUMN category"))
         if "service_categories" in tables:
             connection.execute(text("DROP TABLE IF EXISTS service_categories"))
+
+    if "client_bonos" not in tables:
+        return
+    bono_columns = {column["name"] for column in inspector.get_columns("client_bonos")}
+    if "is_gift" in bono_columns:
+        return
+    with engine.begin() as connection:
+        connection.execute(
+            text(f"ALTER TABLE client_bonos ADD COLUMN is_gift BOOLEAN NOT NULL DEFAULT {false_sql}")
+        )
+
+
+def _ensure_appointment_notes(engine: Engine) -> None:
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    if "appointments" not in tables:
+        return
+    columns = {column["name"] for column in inspector.get_columns("appointments")}
+    if "notes" in columns:
+        return
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE appointments ADD COLUMN notes TEXT NOT NULL DEFAULT ''"))
 
 

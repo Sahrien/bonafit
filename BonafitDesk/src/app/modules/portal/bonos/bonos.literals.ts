@@ -8,6 +8,7 @@ export const BONOS_LITERALS = {
   noSession: 'No hay un cliente asociado a esta sesión.',
   empty: 'Todavía no tienes bonos contratados.',
   bono: 'Bono',
+  gift: 'Regalo',
   remainingSessions: 'Sesiones restantes',
   purchasedAt: 'Contratado',
   expiresAt: 'Caducidad',

@@ -6,17 +6,23 @@ export interface AppointmentDto {
   clientId: string;
   serviceId: string;
   clientBonoId?: string | null;
+  isGift?: boolean;
   startsAt: string;
   endsAt: string;
   location: string;
   status: AppointmentStatus;
+  notes?: string;
 }
 
-export type AppointmentWriteDto = Omit<AppointmentDto, 'id' | 'status' | 'location' | 'endsAt' | 'clientBonoId'> & {
+export type AppointmentWriteDto = Omit<
+  AppointmentDto,
+  'id' | 'status' | 'location' | 'endsAt' | 'clientBonoId' | 'isGift' | 'notes'
+> & {
   status?: AppointmentStatus;
   location?: string;
   endsAt?: string;
   clientBonoId?: string | null;
+  notes?: string;
 };
 
 export interface AppointmentQuery {

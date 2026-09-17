@@ -8,9 +8,10 @@
     }
   </div>
 
-  @if (showSubmit()) {
-    <div class="bona-form__actions">
+  <div class="bona-form__actions">
+    <ng-content select="[bonaFormActions]" />
+    @if (showSubmit()) {
       <app-bona-button [text]="submitText()" type="submit" [disabled]="disabled()" />
-    </div>
-  }
+    }
+  </div>
 </form>

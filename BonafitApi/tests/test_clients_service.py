@@ -96,8 +96,21 @@ def test_contract_and_list_bonos(client_service: ClientService, db: Database) ->
     add_bono(db)
     contracted = client_service.contract_bono(ContractBono(clientId="client-1", bonoId="bono-1"), admin_user())
     assert contracted.remainingSessions == 10
+    assert contracted.isGift is False
     rows = client_service.list_client_bonos("client-1", admin_user())
     assert len(rows) == 1
+
+
+def test_admin_gifts_catalog_pack(client_service: ClientService, db: Database) -> None:
+    add_client(db)
+    add_service(db)
+    add_bono(db)
+    gifted = client_service.contract_bono(
+        ContractBono(clientId="client-1", bonoId="bono-1", isGift=True),
+        admin_user(),
+    )
+    assert gifted.isGift is True
+    assert gifted.remainingSessions == 10
 
 
 def test_admin_gifts_single_session_for_service(client_service: ClientService, db: Database) -> None:
@@ -110,6 +123,7 @@ def test_admin_gifts_single_session_for_service(client_service: ClientService, d
     )
     assert gifted.remainingSessions == 1
     assert gifted.bonoId == "bono-1"
+    assert gifted.isGift is True
 
 
 def test_admin_gift_prefers_single_session_catalog_bono(
@@ -125,6 +139,7 @@ def test_admin_gift_prefers_single_session_catalog_bono(
     )
     assert gifted.bonoId == "bono-1"
     assert gifted.remainingSessions == 1
+    assert gifted.isGift is True
 
 
 def test_client_cannot_gift_single_session(client_service: ClientService, db: Database) -> None:

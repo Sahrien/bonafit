@@ -53,10 +53,6 @@ export class CalendarApiService implements CalendarApi {
     return this.http.put<AppointmentDto>(apiUrl(API_PATHS.appointments, id), payload);
   }
 
-  deleteAppointment(id: string): Observable<void> {
-    return this.http.delete<void>(apiUrl(API_PATHS.appointments, id));
-  }
-
   getAvailability(query: AvailabilityQuery): Observable<AvailabilitySlotDto[]> {
     return this.http.get<AvailabilitySlotDto[]>(apiUrl(API_PATHS.availability), {
       params: toHttpParams({

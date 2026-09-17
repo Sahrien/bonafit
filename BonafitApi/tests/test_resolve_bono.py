@@ -20,12 +20,13 @@ def _service(**kwargs: object) -> SimpleNamespace:
     return SimpleNamespace(**values)
 
 
-def _client_bono(service_id: str = "svc-masaje", remaining: int = 1) -> SimpleNamespace:
+def _client_bono(service_id: str = "svc-masaje", remaining: int = 1, is_gift: bool = False) -> SimpleNamespace:
     return SimpleNamespace(
         id="cb-m",
         client_id="client-1",
         remaining_sessions=remaining,
         expires_at=None,
+        is_gift=is_gift,
         bono=SimpleNamespace(service_id=service_id),
     )
 
@@ -48,9 +49,10 @@ def test_picks_usable_masaje_bono() -> None:
     assert picked is row
 
 
-def test_admin_walk_in_without_masaje_voucher() -> None:
-    picked = _resolve_bono(_db([]), "admin", "client-1", _service(), NOW)
-    assert picked is None
+def test_admin_requires_masaje_voucher() -> None:
+    with pytest.raises(BusinessError) as exc:
+        _resolve_bono(_db([]), "admin", "client-1", _service(), NOW)
+    assert exc.value.code == "booking.bonoRequired"
 
 
 def test_client_requires_masaje_bono() -> None:
@@ -59,9 +61,10 @@ def test_client_requires_masaje_bono() -> None:
     assert exc.value.code == "booking.bonoRequired"
 
 
-def test_admin_walk_in_when_masaje_bono_has_no_sessions() -> None:
-    picked = _resolve_bono(_db([_client_bono(remaining=0)]), "admin", "client-1", _service(), NOW)
-    assert picked is None
+def test_admin_no_sessions_when_masaje_bono_empty() -> None:
+    with pytest.raises(BusinessError) as exc:
+        _resolve_bono(_db([_client_bono(remaining=0)]), "admin", "client-1", _service(), NOW)
+    assert exc.value.code == "booking.noSessions"
 
 
 def test_client_no_sessions_when_masaje_bono_empty() -> None:
@@ -70,8 +73,14 @@ def test_client_no_sessions_when_masaje_bono_empty() -> None:
     assert exc.value.code == "booking.noSessions"
 
 
-def test_admin_explicit_walk_in_skips_usable_bono() -> None:
-    row = _client_bono()
+def test_client_cannot_use_gift() -> None:
+    with pytest.raises(BusinessError) as exc:
+        _resolve_bono(_db([_client_bono(is_gift=True)]), "client", "client-1", _service(), NOW)
+    assert exc.value.code == "booking.bonoRequired"
+
+
+def test_admin_explicit_gift_reuses_credit() -> None:
+    row = _client_bono(is_gift=True)
     picked = _resolve_bono(
         _db([row]),
         "admin",
@@ -81,7 +90,35 @@ def test_admin_explicit_walk_in_skips_usable_bono() -> None:
         None,
         explicit=True,
     )
-    assert picked is None
+    assert picked is row
+
+
+def test_admin_explicit_gift_without_catalog() -> None:
+    with pytest.raises(BusinessError) as exc:
+        _resolve_bono(
+            _db([]),
+            "admin",
+            "client-1",
+            _service(),
+            NOW,
+            None,
+            explicit=True,
+        )
+    assert exc.value.code == "booking.bonoRequired"
+
+
+def test_client_cannot_select_gift_id() -> None:
+    row = _client_bono(is_gift=True)
+    with pytest.raises(NotFoundError):
+        _resolve_bono(
+            _db([row]),
+            "client",
+            "client-1",
+            _service(),
+            NOW,
+            "cb-m",
+            explicit=True,
+        )
 
 
 def test_admin_explicit_bono_id() -> None:
@@ -109,3 +146,49 @@ def test_admin_explicit_missing_bono() -> None:
             "cb-missing",
             explicit=True,
         )
+
+
+def test_held_bono_with_no_remaining_is_allowed() -> None:
+    row = _client_bono(remaining=0)
+    picked = _resolve_bono(
+        _db([row]),
+        "admin",
+        "client-1",
+        _service(),
+        NOW,
+        "cb-m",
+        explicit=True,
+        held_id="cb-m",
+    )
+    assert picked is row
+
+
+def test_other_empty_bono_is_not_held() -> None:
+    row = _client_bono(remaining=0)
+    with pytest.raises(BusinessError) as exc:
+        _resolve_bono(
+            _db([row]),
+            "admin",
+            "client-1",
+            _service(),
+            NOW,
+            "cb-m",
+            explicit=True,
+            held_id="cb-other",
+        )
+    assert exc.value.code == "booking.noSessions"
+
+
+def test_admin_explicit_empty_keeps_held_bono() -> None:
+    row = _client_bono(remaining=0, is_gift=True)
+    picked = _resolve_bono(
+        _db([row]),
+        "admin",
+        "client-1",
+        _service(),
+        NOW,
+        None,
+        explicit=True,
+        held_id="cb-m",
+    )
+    assert picked is row

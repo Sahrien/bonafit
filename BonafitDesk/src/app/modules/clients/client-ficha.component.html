@@ -1,9 +1,14 @@
 <app-bona-page [title]="title()" [subtitle]="literals.subtitle" [loading]="loading()">
-  <app-bona-button
-    bonaPageActions
-    [text]="literals.back"
-    variant="secondary"
-    (action)="onBack()" />
+  <ng-container bonaPageActions>
+    <app-bona-button
+      [text]="literals.close"
+      variant="secondary"
+      (action)="onBack()" />
+    <app-bona-button
+      [text]="literals.save"
+      [disabled]="saving()"
+      (action)="onSubmit(formValue())" />
+  </ng-container>
 
   @if (error()) {
     <p class="page-error">{{ error() }}</p>
@@ -19,7 +24,7 @@
   <app-bona-form
     [fields]="fields"
     [value]="formValue()"
-    [submitText]="literals.save"
+    [showSubmit]="false"
     [disabled]="saving()"
     (valueChange)="onFormChange($event)"
     (submitted)="onSubmit($event)" />
@@ -42,11 +47,13 @@
             [value]="bonoForm()"
             [submitText]="literals.save"
             (valueChange)="onBonoFormChange($event)"
-            (submitted)="onSaveBono($event)" />
-          <app-bona-button
-            [text]="literals.back"
-            variant="secondary"
-            (action)="onCancelBono()" />
+            (submitted)="onSaveBono($event)">
+            <app-bona-button
+              bonaFormActions
+              [text]="literals.close"
+              variant="secondary"
+              (action)="onCancelBono()" />
+          </app-bona-form>
         </div>
       }
 
@@ -59,6 +66,42 @@
           (valueChange)="onGiftFormChange($event)"
           (submitted)="onGiftSubmit($event)" />
       </div>
+    </section>
+    <section class="page-nested page-nested--history" [class.page-nested--history-open]="historyOpen()">
+      <header class="page-nested__header">
+        <h2>{{ literals.historyTitle }}</h2>
+        <app-bona-button
+          [text]="historyOpen() ? literals.hideHistory : literals.showHistory"
+          variant="secondary"
+          (action)="onToggleHistory()" />
+      </header>
+      @if (historyOpen()) {
+        <app-bona-grid
+          [data]="historyRows()"
+          [columns]="historyColumns"
+          [actions]="historyActions"
+          [pageSize]="historyPageSize"
+          [columnFilters]="true"
+          [emptyMessage]="literals.emptyHistory"
+          [emptyFilteredMessage]="literals.emptyHistoryFilter"
+          (action)="onHistoryAction($event)" />
+        @if (sessionNoteFormOpen()) {
+          <div class="page-nested__form">
+            <app-bona-form
+              [fields]="sessionNoteFields"
+              [value]="sessionNoteForm()"
+              [submitText]="literals.save"
+              (valueChange)="onSessionNoteFormChange($event)"
+              (submitted)="onSaveSessionNote($event)">
+              <app-bona-button
+                bonaFormActions
+                [text]="literals.close"
+                variant="secondary"
+                (action)="onCancelSessionNote()" />
+            </app-bona-form>
+          </div>
+        }
+      }
     </section>
     <div class="page-actions">
       <app-bona-button

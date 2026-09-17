@@ -36,7 +36,7 @@ export const SERVICES_LITERALS = {
   deleted: 'Eliminado.',
   errorAssigned: 'No se puede eliminar: hay citas, bonos o está asignado a un cliente.',
   search: 'Buscar',
-  searchPlaceholder: 'Nombre del servicio',
+  searchPlaceholder: 'Nombre del servicio o bono',
   sharesSessionPool: 'Comparte bono de sesiones',
   forcesSingleSession: 'Fuerza sesión suelta',
 } as const;

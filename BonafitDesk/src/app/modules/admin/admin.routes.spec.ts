@@ -14,7 +14,7 @@ import {
   MOCK_TRAINER_SCHEDULES,
   createMockSession,
 } from '../../testing/fixtures';
-import { SchedulesComponent } from '../schedules/schedules.component';
+import { SCHEDULES_LITERALS } from '../schedules/schedules.literals';
 
 describe('ADMIN_ROUTES horarios', () => {
   beforeEach(async () => {
@@ -40,9 +40,9 @@ describe('ADMIN_ROUTES horarios', () => {
 
   it('loads the schedules screen at /admin/horarios', async () => {
     const harness = await RouterTestingHarness.create();
-    const page = await harness.navigateByUrl(AUTH_PATHS.adminSchedules, SchedulesComponent);
-    expect(page).toBeInstanceOf(SchedulesComponent);
+    await harness.navigateByUrl(AUTH_PATHS.adminSchedules);
     expect(TestBed.inject(Router).url).toBe(AUTH_PATHS.adminSchedules);
-    expect(harness.routeNativeElement?.textContent).toContain('Horarios');
+    expect(harness.routeNativeElement?.textContent).toContain(SCHEDULES_LITERALS.subtitle);
+    expect(harness.routeNativeElement?.textContent).toContain(SCHEDULES_LITERALS.newSchedule);
   });
 });

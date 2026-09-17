@@ -48,6 +48,22 @@ export class BonaFormComponent {
     if (this.disabled()) {
       return;
     }
-    this.submitted.emit(this.currentValue());
+    this.submitted.emit(this.valueFromSubmit(event.currentTarget));
+  }
+
+  private valueFromSubmit(target: EventTarget | null): BonaFormValue {
+    const next = { ...this.currentValue() };
+    if (!(target instanceof HTMLFormElement)) {
+      return next;
+    }
+    for (const field of this.fields()) {
+      const control = target.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+        `[data-field-key="${CSS.escape(field.key)}"], [name="${CSS.escape(field.key)}"]`,
+      );
+      if (control) {
+        next[field.key] = control.value;
+      }
+    }
+    return next;
   }
 }

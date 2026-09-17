@@ -1,58 +1,71 @@
 :host {
-  display: block;
+  display: flex;
   min-height: 100%;
-  background: var(--bona-color-bg);
 }
 
 .login {
-  max-width: 28rem;
-  margin: 0 auto;
-  padding: var(--bona-space-4);
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: var(--bona-space-6) var(--bona-space-4);
   font-family: var(--bona-font-family);
   color: var(--bona-color-text);
 }
 
 .login__card {
-  padding: var(--bona-space-4);
+  width: 100%;
+  max-width: 24rem;
+  padding: var(--bona-space-6) var(--bona-space-5);
   background: var(--bona-color-surface);
   border: 1px solid var(--bona-color-border);
   border-radius: var(--bona-radius-lg);
   box-shadow: var(--bona-shadow-card);
 }
 
+.login__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: 0 0 var(--bona-space-5);
+  padding-bottom: var(--bona-space-5);
+  border-bottom: 1px solid var(--bona-color-border);
+}
+
+.login__slogan {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em;
+  text-transform: uppercase;
+  color: var(--bona-color-text-muted);
+}
+
 .login__brand {
-  margin: 0 0 var(--bona-space-3);
-  font-size: 1.125rem;
+  margin: var(--bona-space-2) 0 0;
+  font-size: 1.75rem;
   font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+}
+
+.login__title,
+.login__header h1 {
+  margin: var(--bona-space-4) 0 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--bona-color-text-muted);
 }
 
 .login__header {
   margin-bottom: var(--bona-space-4);
 
-  h1 {
-    margin: 0;
-    font-size: 1.5rem;
-  }
-
-  .login__value {
-    margin: var(--bona-space-2) 0 0;
-    font-weight: 600;
-    color: var(--bona-color-text);
-  }
-
   p {
     margin: var(--bona-space-2) 0 0;
     color: var(--bona-color-text-muted);
   }
-}
-
-.login__accounts {
-  list-style: none;
-  margin: var(--bona-space-4) 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--bona-space-3);
 }
 
 .login__error {

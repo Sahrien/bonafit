@@ -76,11 +76,3 @@ def test_availability() -> None:
         )
     assert response.status_code == 200
     assert response.json()[0]["trainerId"] == "trainer-1"
-
-
-def test_delete_appointment() -> None:
-    calendar = mock.Mock(spec=CalendarService)
-    with api(calendar=calendar) as http:
-        response = http.delete("/appointments/apt-1", headers=AUTH)
-    assert response.status_code == 204
-    calendar.delete_appointment.assert_called_once()

@@ -83,17 +83,6 @@ describe('CalendarApiService', () => {
     expect((await pending).location).toBe('studio-2');
   });
 
-  it('DELETE /appointments/:id', async () => {
-    const pending = firstValueFrom(api.deleteAppointment('apt-1'));
-    const req = http.expectOne({
-      method: 'DELETE',
-      url: apiUrl(API_PATHS.appointments, 'apt-1'),
-    });
-    expect(req.request.method).toBe('DELETE');
-    req.flush(null);
-    expect(await pending).toBeNull();
-  });
-
   it('GET /appointments/availability', async () => {
     const pending = firstValueFrom(
       api.getAvailability({

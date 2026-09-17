@@ -16,5 +16,12 @@
 
 .bona-form__actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
+  gap: var(--bona-space-2);
+
+  &:not(:has(*)) {
+    display: none;
+  }
 }

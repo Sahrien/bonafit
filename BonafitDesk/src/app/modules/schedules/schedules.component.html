@@ -13,16 +13,6 @@
       (valueChange)="onFilterChange($event)" />
   </div>
 
-  <app-bona-grid
-    [data]="rows()"
-    [columns]="columns"
-    [actions]="actions"
-    [emptyMessage]="literals.empty"
-    [emptyTitle]="literals.emptyTitle"
-    [emptyActionLabel]="literals.newSchedule"
-    (emptyAction)="onCreate()"
-    (action)="onRowAction($event)" />
-
   @if (formOpen()) {
     <section class="page-nested">
       @if (error()) {
@@ -40,4 +30,14 @@
         (action)="onCancel()" />
     </section>
   }
+
+  <app-bona-grid
+    [data]="rows()"
+    [columns]="columns"
+    [actions]="actions"
+    [emptyMessage]="literals.empty"
+    [emptyTitle]="literals.emptyTitle"
+    [emptyActionLabel]="literals.newSchedule"
+    (emptyAction)="onCreate()"
+    (action)="onRowAction($event)" />
 </app-bona-page>

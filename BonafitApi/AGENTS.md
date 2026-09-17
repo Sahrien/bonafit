@@ -79,4 +79,4 @@ Prefer adding tests next to the module you change rather than leaving booking/au
 
 Update BonafitDesk in the same change: `models/*.dto.ts`, `core/*-api.ts`, `*-api.service.ts`, and `API_PATHS` if the path is new.
 
-Masaje may have bonos (including `sessionCount: 1`). Admin walk-in without a voucher is allowed only when `allowsSingleSession` and there is no usable client bono. Session-pool / walk-in behaviour comes from `services.sharesSessionPool` and `forcesSingleSession`, not from hardcoded names.
+Masaje may have bonos (including `sessionCount: 1`). A sesión suelta is a contracted catalog product (`sessionCount: 1`, `isGift: false`). A gift is `isGift: true` (admin-only). Clients cannot book with a gift. Admin cannot invent a sesión suelta; they may assign a gift appointment (`clientBonoId` empty). Session-pool behaviour comes from `services.sharesSessionPool` and `forcesSingleSession`, not from hardcoded names.

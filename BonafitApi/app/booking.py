@@ -48,6 +48,10 @@ def earliest_bookable_local_date(now: datetime, cutoff_time: str) -> datetime:
     return day
 
 
+def is_client_start_allowed(starts_at: datetime, now: datetime, cutoff_time: str) -> bool:
+    return start_of_local_day(starts_at) >= earliest_bookable_local_date(now, cutoff_time)
+
+
 def ranges_overlap(a_start: datetime, a_end: datetime, b_start: datetime, b_end: datetime) -> bool:
     return a_start < b_end and a_end > b_start
 
@@ -68,6 +72,16 @@ def consumes_session(status: str) -> bool:
     return status in CONSUMES_SESSION
 
 
+def can_cancel_appointment(status: str, starts_at: datetime, now: datetime, cutoff_time: str) -> bool:
+    if status not in OCCUPIES_SLOT:
+        return False
+    return is_client_start_allowed(starts_at, now, cutoff_time)
+
+
+def can_admin_cancel_appointment(status: str) -> bool:
+    return status in {"pending", "confirmed"}
+
+
 def session_delta(previous_status: str | None, next_status: str) -> int:
     before = 1 if previous_status and consumes_session(previous_status) else 0
     after = 1 if consumes_session(next_status) else 0
@@ -84,6 +98,10 @@ def is_bono_expired(expires_at: datetime | None, now: datetime) -> bool:
 
 def is_bono_usable(remaining: int, expires_at: datetime | None, now: datetime) -> bool:
     return remaining > 0 and not is_bono_expired(expires_at, now)
+
+
+def is_gift_credit(row: object) -> bool:
+    return bool(getattr(row, "is_gift", False) or getattr(row, "isGift", False))
 
 
 def pick_preferred_bono(rows: list, now: datetime):

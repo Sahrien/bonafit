@@ -25,6 +25,8 @@ export interface BonaCalendarEvent {
   location?: string;
   resourceId?: string;
   color?: string;
+  classNames?: string[];
+  interactive?: boolean;
 }
 
 export interface BonaCalendarSlotSelect {
@@ -44,6 +46,8 @@ export function toFullCalendarEvent(event: BonaCalendarEvent): EventInput {
     end: event.end,
     backgroundColor: event.color,
     borderColor: event.color,
+    classNames: event.classNames,
+    interactive: event.interactive,
     extendedProps: {
       trainer: event.trainer,
       client: event.client,
@@ -116,6 +120,8 @@ export class BonaCalendarComponent {
     events: this.events().map(toFullCalendarEvent),
     selectable: this.selectable(),
     selectMirror: true,
+    selectOverlap: true,
+    eventOverlap: true,
     allDaySlot: false,
     slotMinTime: '07:00:00',
     slotMaxTime: '22:00:00',

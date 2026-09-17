@@ -14,7 +14,7 @@ export const FORMS_LITERALS = {
   questionCount: 'Preguntas',
   assignmentCount: 'Envíos',
   save: 'Guardar',
-  back: 'Volver al listado',
+  close: 'Cerrar',
   fichaTitle: 'Formulario',
   fichaNewTitle: 'Nuevo formulario',
   templateSection: 'Plantilla',

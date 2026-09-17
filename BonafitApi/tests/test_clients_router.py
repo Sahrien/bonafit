@@ -53,6 +53,7 @@ def test_contract_bono() -> None:
         clientId="client-1",
         bonoId="bono-masaje-1",
         remainingSessions=1,
+        isGift=False,
         purchasedAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
         expiresAt=None,
     )

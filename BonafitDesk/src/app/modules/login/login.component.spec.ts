@@ -30,6 +30,25 @@ describe('LoginComponent', () => {
     fixture.detectChanges();
   });
 
+  it('submits email and password typed in the fields', () => {
+    const session = createMockSession(MOCK_ACCOUNTS[0]);
+    auth.login.and.returnValue(of(session));
+
+    const email = fixture.nativeElement.querySelector('[data-field-key="email"]') as HTMLInputElement;
+    const password = fixture.nativeElement.querySelector('[data-field-key="password"]') as HTMLInputElement;
+    email.value = 'lucia@bonafit.com';
+    password.value = 'ChangeMe123!';
+
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    expect(auth.login).toHaveBeenCalledWith({
+      email: 'lucia@bonafit.com',
+      password: 'ChangeMe123!',
+    });
+  });
+
   it('logs in with email and password and goes to the admin home', () => {
     const session = createMockSession(MOCK_ACCOUNTS[0]);
     auth.login.and.returnValue(of(session));
@@ -67,5 +86,11 @@ describe('LoginComponent', () => {
     });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain(LOGIN_LITERALS.invalidCredentials);
+  });
+
+  it('shows the brand tagline above the sign-in title', () => {
+    const text = fixture.nativeElement.textContent as string;
+    expect(text.indexOf(LOGIN_LITERALS.slogan)).toBeGreaterThanOrEqual(0);
+    expect(text.indexOf(LOGIN_LITERALS.slogan)).toBeLessThan(text.indexOf(LOGIN_LITERALS.title));
   });
 });

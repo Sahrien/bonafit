@@ -1,10 +1,9 @@
 <div class="login">
   <div class="login__card">
-    <p class="login__brand">{{ literals.brand }}</p>
-    <header class="login__header">
-      <h1>{{ literals.title }}</h1>
-      <p class="login__value">{{ literals.value }}</p>
-      <p>{{ literals.subtitle }}</p>
+    <header class="login__intro">
+      <p class="login__slogan">{{ literals.slogan }}</p>
+      <p class="login__brand">{{ literals.brand }}</p>
+      <h1 class="login__title">{{ literals.title }}</h1>
     </header>
 
     @if (error()) {

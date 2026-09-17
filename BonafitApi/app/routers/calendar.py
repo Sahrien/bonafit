@@ -191,16 +191,3 @@ def update_appointment(
 ) -> AppointmentOut:
     user = auth_service.require_not_must_change(authorization)
     return calendar_service.update_appointment(appointment_id, payload, user)
-
-
-@router.delete("/appointments/{appointment_id}", status_code=status.HTTP_204_NO_CONTENT)
-@inject
-def delete_appointment(
-    appointment_id: str,
-    calendar_service: CalendarSvc,
-    auth_service: AuthSvc,
-    authorization: AuthorizationHeader = None,
-) -> Response:
-    user = auth_service.require_not_must_change(authorization)
-    calendar_service.delete_appointment(appointment_id, user)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)

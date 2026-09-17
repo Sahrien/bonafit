@@ -104,6 +104,7 @@ def add_client_bono(db: Database, **overrides: object) -> None:
         "client_id": "client-1",
         "bono_id": "bono-1",
         "remaining_sessions": 10,
+        "is_gift": False,
         "purchased_at": datetime(2026, 9, 1, tzinfo=UTC),
         "expires_at": None,
     }

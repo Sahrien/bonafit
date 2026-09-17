@@ -80,7 +80,7 @@ export class BonosComponent {
     const bonoById = new Map(bonos.map((bono) => [bono.id, bono]));
     return clientBonos.map((row) => ({
       id: row.id,
-      name: bonoById.get(row.bonoId)?.name ?? row.bonoId,
+      name: row.isGift ? BONOS_LITERALS.gift : (bonoById.get(row.bonoId)?.name ?? row.bonoId),
       remainingSessions: row.remainingSessions,
       purchasedAt: row.purchasedAt,
       expiresAt: row.expiresAt ?? BONOS_LITERALS.noExpiry,

@@ -32,6 +32,7 @@ export interface BonaFieldDefinition {
   lastNameLabel?: string;
   moveUpLabel?: string;
   moveDownLabel?: string;
+  autocomplete?: string;
 }
 
 const TEXT_INPUT_TYPES: ReadonlySet<BonaFieldControlType> = new Set([

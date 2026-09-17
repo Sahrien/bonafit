@@ -27,6 +27,7 @@ describe('BonaCalendarComponent', () => {
       expect(mapped.title).toContain('Ana · Masaje');
       expect(mapped.title).toContain('Sala 1');
       expect(mapped.start).toBe(sample.start);
+      expect(mapped.interactive).toBeUndefined();
       expect(mapped.extendedProps).toEqual(
         jasmine.objectContaining({
           trainer: 'Entrenador A',
@@ -36,6 +37,17 @@ describe('BonaCalendarComponent', () => {
           source: sample,
         }),
       );
+    });
+
+    it('maps cancelled appointments as non-interactive so the slot stays selectable', () => {
+      const cancelled: BonaCalendarEvent = {
+        ...sample,
+        interactive: false,
+        classNames: ['bona-calendar__event--cancelled'],
+      };
+      const mapped = toFullCalendarEvent(cancelled);
+      expect(mapped.interactive).toBeFalse();
+      expect(mapped.classNames).toEqual(['bona-calendar__event--cancelled']);
     });
 
     it('restores the original DTO from a FullCalendar event', () => {
@@ -74,6 +86,8 @@ describe('BonaCalendarComponent', () => {
     it('builds week view options from generic event inputs', () => {
       const options = component.calendarOptions();
       expect(options.initialView).toBe('timeGridWeek');
+      expect(options.selectOverlap).toBeTrue();
+      expect(options.eventOverlap).toBeTrue();
       expect(options.events).toEqual([toFullCalendarEvent(sample)]);
     });
 

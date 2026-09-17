@@ -6,7 +6,7 @@ export const SETTINGS_LITERALS = {
   name: 'Nombre',
   email: 'Email',
   bookingTitle: 'Reserva',
-  cutoffTime: 'Hora límite del día anterior',
+  cutoffTime: 'Hora límite del día anterior para reservar y anular',
   defaultLocation: 'Lugar por defecto',
   save: 'Guardar',
   passwordTitle: 'Cambiar contraseña',
