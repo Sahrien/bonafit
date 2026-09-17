@@ -48,6 +48,7 @@ BOOKING_ERROR_CODES = {
     "invalidStatus": "booking.invalidStatus",
     "serviceInactive": "booking.serviceInactive",
     "mustChangePassword": "auth.mustChangePassword",
+    "invalidCurrentPassword": "auth.invalidCurrentPassword",
 }
 
 

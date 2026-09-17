@@ -2,7 +2,7 @@ from unittest import mock
 
 from fastapi.testclient import TestClient
 
-from app.errors import UnauthorizedError
+from app.errors import BusinessError, UnauthorizedError
 from app.main import app
 from app.schemas import AuthSessionOut, AuthUserOut
 from app.services.auth import AuthService
@@ -83,6 +83,42 @@ def test_change_password_ok() -> None:
     assert response.status_code == 200
     assert response.json() == {"ok": True}
     auth_mock.change_password.assert_called_once()
+    authorization, payload = auth_mock.change_password.call_args.args
+    assert authorization == "Bearer t"
+    assert payload.currentPassword == "old-secret"
+    assert payload.newPassword == "new-secret"
+
+
+def test_change_password_first_login_without_current() -> None:
+    auth_mock = mock.Mock(spec=AuthService)
+    auth_mock.change_password.return_value = {"ok": True}
+
+    with app.container.auth_service.override(auth_mock):
+        response = TestClient(app).post(
+            "/auth/change-password",
+            json={"newPassword": "new-secret"},
+            headers={"Authorization": "Bearer t"},
+        )
+
+    assert response.status_code == 200
+    _, payload = auth_mock.change_password.call_args.args
+    assert payload.currentPassword == ""
+    assert payload.newPassword == "new-secret"
+
+
+def test_change_password_wrong_current() -> None:
+    auth_mock = mock.Mock(spec=AuthService)
+    auth_mock.change_password.side_effect = BusinessError("auth.invalidCurrentPassword")
+
+    with app.container.auth_service.override(auth_mock):
+        response = TestClient(app).post(
+            "/auth/change-password",
+            json={"currentPassword": "wrong", "newPassword": "new-secret"},
+            headers={"Authorization": "Bearer t"},
+        )
+
+    assert response.status_code == 409
+    assert response.json() == {"code": "auth.invalidCurrentPassword"}
 
 
 def test_logout() -> None:

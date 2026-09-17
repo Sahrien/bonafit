@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.containers import Container
 from app.emailer import generate_password
 from app.models import Client, Trainer, User
+from app.roles import USER_ROLE_VALUES, UserRole
 from app.security import hash_password
 
 
@@ -30,7 +31,7 @@ def create_user(
     db: Session,
     *,
     email: str,
-    role: str,
+    role: UserRole,
     display_name: str,
 ) -> tuple[User, str]:
     if db.scalar(select(User.id).where(User.email == email)) is not None:
@@ -42,12 +43,12 @@ def create_user(
     trainer_id: str | None = None
     client_id: str | None = None
 
-    if role == "admin":
+    if role is UserRole.ADMIN:
         trainer = Trainer(name=display_name)
         db.add(trainer)
         db.flush()
         trainer_id = trainer.id
-    else:
+    elif role is UserRole.CLIENT:
         first_name, last_name = split_name(display_name)
         client = Client(
             first_name=first_name,
@@ -58,6 +59,8 @@ def create_user(
         db.add(client)
         db.flush()
         client_id = client.id
+    else:
+        raise ValueError(f"Unsupported role: {role}. Use one of: {', '.join(USER_ROLE_VALUES)}")
 
     user = User(
         email=email,
@@ -80,9 +83,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("email", help="Login email")
     parser.add_argument(
         "--role",
-        choices=("admin", "client"),
-        default="admin",
-        help="Account role (default: admin)",
+        choices=USER_ROLE_VALUES,
+        default=UserRole.ADMIN.value,
+        help=f"Account role: {', '.join(USER_ROLE_VALUES)} (default: {UserRole.ADMIN.value})",
     )
     parser.add_argument("--name", help="Display name (default: derived from the email)")
     args = parser.parse_args(argv)
@@ -103,7 +106,7 @@ def main(argv: list[str] | None = None) -> None:
             user, password = create_user(
                 db,
                 email=email,
-                role=args.role,
+                role=UserRole(args.role),
                 display_name=display_name,
             )
             role = user.role

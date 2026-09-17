@@ -3,6 +3,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { Component } from '@angular/core';
 import { BonaInputTextFieldComponent } from './bona-input-text-field.component';
+import { PASSWORD_FIELD_LITERALS } from '../../i18n/es';
 
 @Component({
   standalone: true,
@@ -57,6 +58,34 @@ describe('BonaInputTextFieldComponent', () => {
     expect(inputEl().getAttribute('type')).toBe('email');
   });
 
+  it('hides a password until the reveal button is pressed', () => {
+    fixture.componentRef.setInput('type', 'password');
+    fixture.detectChanges();
+
+    expect(inputEl().getAttribute('type')).toBe('password');
+    const toggle = revealButton();
+    expect(toggle).toBeTruthy();
+    if (!toggle) {
+      return;
+    }
+    expect(toggle.getAttribute('aria-label')).toBe(PASSWORD_FIELD_LITERALS.show);
+
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(inputEl().getAttribute('type')).toBe('text');
+    expect(toggle.getAttribute('aria-label')).toBe(PASSWORD_FIELD_LITERALS.hide);
+
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(inputEl().getAttribute('type')).toBe('password');
+  });
+
+  it('does not show a reveal button on non-password fields', () => {
+    expect(revealButton()).toBeNull();
+  });
+
   it('disables the native input', () => {
     fixture.componentRef.setInput('disabled', true);
     fixture.detectChanges();
@@ -91,5 +120,9 @@ describe('BonaInputTextFieldComponent', () => {
 
   function inputEl(): HTMLInputElement {
     return fixture.nativeElement.querySelector('input');
+  }
+
+  function revealButton(): HTMLButtonElement | null {
+    return fixture.nativeElement.querySelector('.bona-input__reveal');
   }
 });

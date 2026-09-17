@@ -3,12 +3,13 @@ from datetime import UTC, datetime
 from app.database import Database
 from app.identity import CurrentUser
 from app.models import Bono, BookingSettings, Client, ClientBono, Service, Trainer, TrainerSchedule, User
+from app.roles import UserRole
 
 
 def admin_user() -> CurrentUser:
     return CurrentUser(
         id="user-1",
-        role="admin",
+        role=UserRole.ADMIN,
         client_id=None,
         trainer_id="trainer-1",
         email="lucia@bonafit.com",
@@ -20,7 +21,7 @@ def admin_user() -> CurrentUser:
 def client_user(client_id: str = "client-1") -> CurrentUser:
     return CurrentUser(
         id="user-c",
-        role="client",
+        role=UserRole.CLIENT,
         client_id=client_id,
         trainer_id=None,
         email="marina.lopez@example.com",
@@ -35,7 +36,7 @@ def add_user(db: Database, password_hash: str, **overrides: object) -> None:
         "email": "marina.lopez@example.com",
         "password_hash": password_hash,
         "display_name": "Marina",
-        "role": "client",
+        "role": UserRole.CLIENT,
         "client_id": "client-1",
         "must_change_password": False,
     }

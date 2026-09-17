@@ -5,6 +5,7 @@ from sqlalchemy import (
     JSON,
     Boolean,
     DateTime,
+    Enum,
     ForeignKey,
     Integer,
     Numeric,
@@ -16,6 +17,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+from app.roles import UserRole
 
 
 def new_id() -> str:
@@ -57,7 +59,17 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    role: Mapped[UserRole] = mapped_column(
+        Enum(
+            UserRole,
+            native_enum=False,
+            length=20,
+            values_callable=lambda roles: [role.value for role in roles],
+            create_constraint=True,
+            name="user_role",
+        ),
+        nullable=False,
+    )
     trainer_id: Mapped[str | None] = mapped_column(ForeignKey("trainers.id"))
     client_id: Mapped[str | None] = mapped_column(ForeignKey("clients.id"))
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

@@ -4,10 +4,23 @@
   }
   <input
     matInput
-    [type]="type"
+    [type]="inputType()"
     [value]="value"
     [placeholder]="placeholder"
     [disabled]="disabled"
     (input)="onInput($event)"
     (blur)="onTouched()" />
+  @if (isPassword()) {
+    <button
+      mat-icon-button
+      matSuffix
+      type="button"
+      class="bona-input__reveal"
+      [attr.aria-label]="revealLabel()"
+      [attr.aria-pressed]="revealed()"
+      (mousedown)="$event.preventDefault()"
+      (click)="toggleReveal()">
+      <mat-icon>{{ revealed() ? 'visibility_off' : 'visibility' }}</mat-icon>
+    </button>
+  }
 </mat-form-field>

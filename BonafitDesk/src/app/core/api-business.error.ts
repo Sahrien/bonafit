@@ -19,6 +19,7 @@ export const BOOKING_ERROR_CODES = {
   invalidStatus: 'booking.invalidStatus',
   serviceInactive: 'booking.serviceInactive',
   mustChangePassword: 'auth.mustChangePassword',
+  invalidCurrentPassword: 'auth.invalidCurrentPassword',
 } as const;
 
 export type BookingErrorCode = (typeof BOOKING_ERROR_CODES)[keyof typeof BOOKING_ERROR_CODES];

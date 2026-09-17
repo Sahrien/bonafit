@@ -1,4 +1,4 @@
-import { UserRole } from '../../models/auth-session.dto';
+import { USER_ROLES, UserRole } from '../../models/auth-session.dto';
 
 export const AUTH_PATHS = {
   login: '/login',
@@ -13,5 +13,5 @@ export const AUTH_PATHS = {
 } as const;
 
 export function homeForRole(role: UserRole): string {
-  return role === 'admin' ? AUTH_PATHS.adminHome : AUTH_PATHS.clientHome;
+  return role === USER_ROLES.admin ? AUTH_PATHS.adminHome : AUTH_PATHS.clientHome;
 }

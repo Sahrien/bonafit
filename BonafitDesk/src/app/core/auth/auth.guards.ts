@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { map, take } from 'rxjs';
-import { UserRole } from '../../models/auth-session.dto';
+import { USER_ROLES, UserRole } from '../../models/auth-session.dto';
 import { AuthApiService } from '../../services/auth-api.service';
 import { AUTH_PATHS, homeForRole } from './auth.paths';
 
@@ -61,5 +61,5 @@ export const requireRole = (role: UserRole): CanActivateFn => {
   };
 };
 
-export const adminGuard = requireRole('admin');
-export const clientGuard = requireRole('client');
+export const adminGuard = requireRole(USER_ROLES.admin);
+export const clientGuard = requireRole(USER_ROLES.client);

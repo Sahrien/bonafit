@@ -94,4 +94,20 @@ describe('HTTP interceptors', () => {
       });
     });
   });
+
+  it('keeps the session on 401 from change-password', (done) => {
+    tokens.set('abc');
+    const req = new HttpRequest('POST', '/auth/change-password', {});
+    TestBed.runInInjectionContext(() => {
+      apiErrorInterceptor(req, () =>
+        throwError(() => new HttpErrorResponse({ status: 401, error: { detail: 'unauthorized' } })),
+      ).subscribe({
+        error: () => {
+          expect(tokens.get()).toBe('abc');
+          expect(router.navigateByUrl).not.toHaveBeenCalled();
+          done();
+        },
+      });
+    });
+  });
 });

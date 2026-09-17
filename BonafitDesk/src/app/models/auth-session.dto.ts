@@ -1,4 +1,9 @@
-export type UserRole = 'admin' | 'client';
+export const USER_ROLES = {
+  admin: 'admin',
+  client: 'client',
+} as const;
+
+export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
 export interface AuthUserDto {
   id: string;
@@ -21,6 +26,6 @@ export interface LoginRequestDto {
 }
 
 export interface ChangePasswordRequestDto {
-  currentPassword: string;
+  currentPassword?: string;
   newPassword: string;
 }

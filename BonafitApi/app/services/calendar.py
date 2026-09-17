@@ -32,6 +32,7 @@ from app.models import (
     Trainer,
     TrainerSchedule,
 )
+from app.roles import UserRole
 from app.schemas import (
     AppointmentOut,
     AppointmentWrite,
@@ -143,7 +144,7 @@ class CalendarService:
     ) -> list[AppointmentOut]:
         with self._session_factory() as db:
             query = select(Appointment)
-            if user.role == "client":
+            if user.role == UserRole.CLIENT:
                 query = query.where(Appointment.client_id == user.client_id)
             elif client_id:
                 query = query.where(Appointment.client_id == client_id)
@@ -169,7 +170,7 @@ class CalendarService:
             service = db.get(Service, service_id)
             if service is None:
                 raise NotFoundError("service", service_id)
-            if user.role == "client" and (not service.active or not service.bookable_by_client):
+            if user.role == UserRole.CLIENT and (not service.active or not service.bookable_by_client):
                 raise BusinessError(E["serviceNotBookable"])
             if not service.active:
                 return []
@@ -192,7 +193,7 @@ class CalendarService:
             row = db.get(Appointment, appointment_id)
             if row is None:
                 raise NotFoundError("appointment", appointment_id)
-            if user.role == "client" and row.client_id != user.client_id:
+            if user.role == UserRole.CLIENT and row.client_id != user.client_id:
                 raise NotFoundError("appointment", appointment_id)
             return appointment_out(row)
 
@@ -214,7 +215,7 @@ class CalendarService:
             previous = db.get(Appointment, appointment_id)
             if previous is None:
                 raise NotFoundError("appointment", appointment_id)
-            if user.role == "client" and previous.client_id != user.client_id:
+            if user.role == UserRole.CLIENT and previous.client_id != user.client_id:
                 raise NotFoundError("appointment", appointment_id)
             snapshot = _snapshot(previous)
             updated = _write_appointment(db, user, previous, payload)
@@ -227,7 +228,7 @@ class CalendarService:
             row = db.get(Appointment, appointment_id)
             if row is None:
                 raise NotFoundError("appointment", appointment_id)
-            if user.role == "client" and row.client_id != user.client_id:
+            if user.role == UserRole.CLIENT and row.client_id != user.client_id:
                 raise NotFoundError("appointment", appointment_id)
             cancelled = _snapshot(row)
             cancelled.status = "cancelled"

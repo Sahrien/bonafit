@@ -7,6 +7,7 @@ from app.database import SessionFactory
 from app.errors import BOOKING_ERROR_CODES, BusinessError, ForbiddenError, UnauthorizedError
 from app.identity import CurrentUser
 from app.models import User
+from app.roles import UserRole
 from app.schemas import AuthSessionOut, ChangePasswordRequest, LoginRequest
 from app.security import Security
 from app.serializers import user_out
@@ -36,8 +37,9 @@ class AuthService:
             user = self._load_user(db, authorization)
             if user is None:
                 raise UnauthorizedError()
-            if not self._security.verify_password(payload.currentPassword, user.password_hash):
-                raise UnauthorizedError("invalid credentials")
+            if not user.must_change_password:
+                if not self._security.verify_password(payload.currentPassword, user.password_hash):
+                    raise BusinessError(BOOKING_ERROR_CODES["invalidCurrentPassword"])
             user.password_hash = self._security.hash_password(payload.newPassword)
             user.must_change_password = False
             db.add(user)
@@ -64,7 +66,7 @@ class AuthService:
 
     def require_admin(self, authorization: str | None) -> CurrentUser:
         user = self.require_not_must_change(authorization)
-        if user.role != "admin":
+        if user.role != UserRole.ADMIN:
             raise ForbiddenError()
         return user
 

@@ -4,6 +4,7 @@ from app.database import SessionFactory
 from app.errors import BusinessError, NotFoundError
 from app.identity import CurrentUser
 from app.models import Appointment, Bono, ClientBono, Service
+from app.roles import UserRole
 from app.schemas import BonoOut, BonoWrite, ServiceOut, ServiceWrite
 from app.serializers import bono_out, service_out
 
@@ -17,14 +18,14 @@ class CatalogService:
     def list_services(self, user: CurrentUser) -> list[ServiceOut]:
         with self._session_factory() as db:
             query = select(Service).order_by(Service.name)
-            if user.role == "client":
+            if user.role == UserRole.CLIENT:
                 query = query.where(Service.active.is_(True))
             return [service_out(row) for row in db.scalars(query).all()]
 
     def get_service(self, service_id: str, user: CurrentUser) -> ServiceOut:
         with self._session_factory() as db:
             row = db.get(Service, service_id)
-            if row is None or (user.role == "client" and not row.active):
+            if row is None or (user.role == UserRole.CLIENT and not row.active):
                 raise NotFoundError("service", service_id)
             return service_out(row)
 

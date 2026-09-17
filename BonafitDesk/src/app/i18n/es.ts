@@ -1,3 +1,8 @@
+export const PASSWORD_FIELD_LITERALS = {
+  show: 'Mostrar contraseña',
+  hide: 'Ocultar contraseña',
+} as const;
+
 export const LOGIN_LITERALS = {
   brand: 'Bonafit',
   title: 'Iniciar sesión',
@@ -16,6 +21,8 @@ export const CHANGE_PASSWORD_LITERALS = {
   newPassword: 'Nueva contraseña',
   submit: 'Guardar',
   errorRequired: 'Completa ambos campos. La nueva contraseña debe tener al menos 8 caracteres.',
+  errorNewPassword: 'La nueva contraseña debe tener al menos 8 caracteres.',
+  errorCurrentPassword: 'La contraseña actual no es correcta.',
   errorSave: 'No se ha podido cambiar la contraseña.',
 } as const;
 

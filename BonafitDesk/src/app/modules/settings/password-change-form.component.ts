@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
+import { ApiBusinessError, BOOKING_ERROR_CODES } from '../../core/api-business.error';
 import { CHANGE_PASSWORD_LITERALS } from '../../i18n/es';
 import { AuthApiService } from '../../services/auth-api.service';
 
@@ -72,9 +73,13 @@ export class PasswordChangeFormComponent {
         this.formValue.set({ currentPassword: '', newPassword: '' });
         this.saved.emit();
       },
-      error: () => {
+      error: (error: unknown) => {
         this.submitting.set(false);
-        this.error.set(this.literals.errorSave);
+        this.error.set(
+          error instanceof ApiBusinessError && error.code === BOOKING_ERROR_CODES.invalidCurrentPassword
+            ? this.literals.errorCurrentPassword
+            : this.literals.errorSave,
+        );
       },
     });
   }

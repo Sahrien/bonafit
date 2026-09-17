@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "postgresql+psycopg://bonafit:bonafit@localhost:5432/bonafit"
-    jwt_secret: str = "change-this-in-production"
+    jwt_secret: str = "change-this-in-production-min-32b"
     jwt_expire_hours: int = 12
     bootstrap_password: str = "ChangeMe123!"
     cors_origins: str = (

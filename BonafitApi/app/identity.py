@@ -4,12 +4,13 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from app.models import User
+from app.roles import UserRole
 
 
 @dataclass(frozen=True, slots=True)
 class CurrentUser:
     id: str
-    role: str
+    role: UserRole
     client_id: str | None
     trainer_id: str | None
     email: str
@@ -20,7 +21,7 @@ class CurrentUser:
     def from_orm(cls, user: User) -> CurrentUser:
         return cls(
             id=user.id,
-            role=user.role,
+            role=UserRole(user.role),
             client_id=user.client_id,
             trainer_id=user.trainer_id,
             email=user.email,
@@ -29,8 +30,8 @@ class CurrentUser:
         )
 
 
-def actor_of(user: CurrentUser) -> str:
-    return "client" if user.role == "client" else "admin"
+def actor_of(user: CurrentUser) -> UserRole:
+    return UserRole.CLIENT if user.role == UserRole.CLIENT else UserRole.ADMIN
 
 
 def utcnow() -> datetime:

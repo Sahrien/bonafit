@@ -3,6 +3,7 @@ import pytest
 from app.database import Database
 from app.errors import BusinessError, ForbiddenError, UnauthorizedError
 from app.models import User
+from app.roles import UserRole
 from app.schemas import ChangePasswordRequest, LoginRequest
 from app.security import Security
 from app.services.auth import AuthService
@@ -17,7 +18,7 @@ def _add_user(db: Database, password_hash: str, **overrides: object) -> User:
         "email": ADMIN_EMAIL,
         "password_hash": password_hash,
         "display_name": "Alex",
-        "role": "admin",
+        "role": UserRole.ADMIN,
         "must_change_password": False,
     }
     values.update(overrides)
@@ -67,10 +68,45 @@ def test_change_password(auth_service: AuthService, db: Database, security: Secu
     _add_user(db, password_hash, must_change_password=True)
     assert auth_service.change_password(
         _bearer(security),
-        ChangePasswordRequest(currentPassword=PASSWORD, newPassword="new-secret"),
+        ChangePasswordRequest(newPassword="new-secret"),
     ) == {"ok": True}
     session = auth_service.login(LoginRequest(email=ADMIN_EMAIL, password="new-secret"))
     assert session.user.mustChangePassword is False
+
+
+def test_change_password_first_login_ignores_wrong_current(
+    auth_service: AuthService, db: Database, security: Security, password_hash: str
+) -> None:
+    _add_user(db, password_hash, must_change_password=True)
+    assert auth_service.change_password(
+        _bearer(security),
+        ChangePasswordRequest(currentPassword="not-the-temp", newPassword="new-secret"),
+    ) == {"ok": True}
+    auth_service.login(LoginRequest(email=ADMIN_EMAIL, password="new-secret"))
+
+
+def test_change_password_wrong_current(
+    auth_service: AuthService, db: Database, security: Security, password_hash: str
+) -> None:
+    _add_user(db, password_hash)
+    with pytest.raises(BusinessError) as exc:
+        auth_service.change_password(
+            _bearer(security),
+            ChangePasswordRequest(currentPassword="wrong", newPassword="new-secret"),
+        )
+    assert exc.value.code == "auth.invalidCurrentPassword"
+    assert exc.value.status_code == 409
+
+
+def test_change_password_with_current(
+    auth_service: AuthService, db: Database, security: Security, password_hash: str
+) -> None:
+    _add_user(db, password_hash)
+    assert auth_service.change_password(
+        _bearer(security),
+        ChangePasswordRequest(currentPassword=PASSWORD, newPassword="new-secret"),
+    ) == {"ok": True}
+    auth_service.login(LoginRequest(email=ADMIN_EMAIL, password="new-secret"))
 
 
 def test_change_password_unauthorized(auth_service: AuthService) -> None:
@@ -101,6 +137,6 @@ def test_require_admin(auth_service: AuthService, db: Database, security: Securi
 def test_require_admin_forbids_client(
     auth_service: AuthService, db: Database, security: Security, password_hash: str
 ) -> None:
-    _add_user(db, password_hash, id="user-c", role="client")
+    _add_user(db, password_hash, id="user-c", role=UserRole.CLIENT)
     with pytest.raises(ForbiddenError):
         auth_service.require_admin(_bearer(security, "user-c"))

@@ -2,6 +2,7 @@ import pytest
 
 from app.database import Database
 from app.models import User
+from app.roles import UserRole
 from scripts.seed import CONFIRM_PHRASE, main, prompt_force_confirmation, seed_database
 
 
@@ -37,7 +38,7 @@ def test_seed_then_skip() -> None:
                 email="extra@bonafit.com",
                 password_hash="x",
                 display_name="Extra",
-                role="admin",
+                role=UserRole.ADMIN,
                 must_change_password=False,
             )
         )
@@ -70,7 +71,7 @@ def test_force_clears_and_reseeds() -> None:
                 email="extra@bonafit.com",
                 password_hash="x",
                 display_name="Extra",
-                role="admin",
+                role=UserRole.ADMIN,
                 must_change_password=False,
             )
         )

@@ -29,6 +29,7 @@ from app.models import (
     TrainerSchedule,
     User,
 )
+from app.roles import UserRole
 from app.security import hash_password
 from app.serializers import questions_snapshot
 
@@ -79,7 +80,7 @@ def seed_if_empty(db: Session) -> None:
                 email="lucia@bonafit.com",
                 password_hash=password_hash,
                 display_name="Alex Martin",
-                role="admin",
+                role=UserRole.ADMIN,
                 trainer_id="trainer-1",
                 must_change_password=False,
             ),
@@ -88,7 +89,7 @@ def seed_if_empty(db: Session) -> None:
                 email="sam.ortega@bonafit.com",
                 password_hash=password_hash,
                 display_name="Sam Ortega",
-                role="admin",
+                role=UserRole.ADMIN,
                 trainer_id="trainer-2",
                 must_change_password=False,
             ),
@@ -97,7 +98,7 @@ def seed_if_empty(db: Session) -> None:
                 email="marina.lopez@example.com",
                 password_hash=password_hash,
                 display_name="Marina Lopez",
-                role="client",
+                role=UserRole.CLIENT,
                 client_id="client-1",
                 must_change_password=False,
             ),
@@ -106,7 +107,7 @@ def seed_if_empty(db: Session) -> None:
                 email="pablo.nieto@example.com",
                 password_hash=password_hash,
                 display_name="Pablo Nieto",
-                role="client",
+                role=UserRole.CLIENT,
                 client_id="client-2",
                 must_change_password=False,
             ),
@@ -115,7 +116,7 @@ def seed_if_empty(db: Session) -> None:
                 email="iris.vega@example.com",
                 password_hash=password_hash,
                 display_name="Iris Vega",
-                role="client",
+                role=UserRole.CLIENT,
                 client_id="client-3",
                 must_change_password=False,
             ),

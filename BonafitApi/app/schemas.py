@@ -4,9 +4,9 @@ from typing import Annotated, Literal, Self
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, PlainSerializer, model_validator
 
 from app.booking import to_utc_iso
+from app.roles import UserRole
 
 ServiceCategory = Literal["entrenamiento-personal", "hipopresivos", "masaje"]
-UserRole = Literal["admin", "client"]
 AppointmentStatus = Literal["pending", "confirmed", "completed", "cancelled"]
 FormQuestionType = Literal[
     "text",
@@ -98,7 +98,7 @@ class LoginRequest(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     model_config = camel_config()
-    currentPassword: str
+    currentPassword: str = ""
     newPassword: str = Field(min_length=8)
 
 

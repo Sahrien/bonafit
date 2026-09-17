@@ -15,6 +15,7 @@ from app.models import (
     FormQuestion,
     FormQuestionOption,
 )
+from app.roles import UserRole
 from app.schemas import (
     FORM_OPTION_TYPES,
     AssignFormIn,
@@ -103,13 +104,13 @@ class FormService:
     ) -> list[FormAssignmentOut]:
         with self._session_factory() as db:
             query = _assignment_query()
-            if mine or user.role == "client":
+            if mine or user.role == UserRole.CLIENT:
                 if not user.client_id:
                     raise NotFoundError("session", "me")
                 query = query.where(FormAssignment.client_id == user.client_id)
-            elif user.role != "admin":
+            elif user.role != UserRole.ADMIN:
                 raise ForbiddenError()
-            if form_id and user.role == "admin" and not mine:
+            if form_id and user.role == UserRole.ADMIN and not mine:
                 query = query.where(FormAssignment.form_id == form_id)
             rows = db.scalars(query.order_by(FormAssignment.assigned_at.desc())).all()
             return [assignment_out(row) for row in rows]
@@ -117,7 +118,7 @@ class FormService:
     def get_assignment(self, assignment_id: str, user: CurrentUser) -> FormAssignmentOut:
         with self._session_factory() as db:
             row = _assignment_or_404(db, assignment_id)
-            if user.role == "client" and row.client_id != user.client_id:
+            if user.role == UserRole.CLIENT and row.client_id != user.client_id:
                 raise NotFoundError("form-assignment", assignment_id)
             return assignment_out(row)
 
@@ -129,9 +130,9 @@ class FormService:
     ) -> FormAssignmentOut:
         with self._session_factory() as db:
             row = _assignment_or_404(db, assignment_id)
-            if user.role == "client" and row.client_id != user.client_id:
+            if user.role == UserRole.CLIENT and row.client_id != user.client_id:
                 raise NotFoundError("form-assignment", assignment_id)
-            if user.role != "client":
+            if user.role != UserRole.CLIENT:
                 raise ForbiddenError()
             if row.status == "completed":
                 raise BusinessError("form-assignment.alreadyCompleted")

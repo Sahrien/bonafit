@@ -21,15 +21,9 @@ export class ChangePasswordComponent {
   readonly literals = CHANGE_PASSWORD_LITERALS;
   readonly submitting = signal(false);
   readonly error = signal('');
-  readonly formValue = signal<BonaFormValue>({ currentPassword: '', newPassword: '' });
+  readonly formValue = signal<BonaFormValue>({ newPassword: '' });
 
   readonly fields: BonaFieldDefinition[] = [
-    {
-      key: 'currentPassword',
-      label: CHANGE_PASSWORD_LITERALS.currentPassword,
-      type: 'password',
-      required: true,
-    },
     {
       key: 'newPassword',
       label: CHANGE_PASSWORD_LITERALS.newPassword,
@@ -43,15 +37,14 @@ export class ChangePasswordComponent {
   }
 
   onSubmit(value: BonaFormValue): void {
-    const currentPassword = value['currentPassword'] ?? '';
     const newPassword = value['newPassword'] ?? '';
-    if (!currentPassword || newPassword.length < 8) {
-      this.error.set(this.literals.errorRequired);
+    if (newPassword.length < 8) {
+      this.error.set(this.literals.errorNewPassword);
       return;
     }
     this.submitting.set(true);
     this.error.set('');
-    this.auth.changePassword({ currentPassword, newPassword }).subscribe({
+    this.auth.changePassword({ newPassword }).subscribe({
       next: () => {
         this.auth.getSession().subscribe((session) => {
           this.submitting.set(false);

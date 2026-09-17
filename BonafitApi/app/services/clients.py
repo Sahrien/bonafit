@@ -8,6 +8,7 @@ from app.emailer import Emailer
 from app.errors import BusinessError, ForbiddenError, NotFoundError
 from app.identity import CurrentUser
 from app.models import Appointment, Bono, Client, ClientBono, FormAssignment, Service, User
+from app.roles import UserRole
 from app.schemas import (
     ClientBonoOut,
     ClientBonoPatch,
@@ -33,7 +34,7 @@ class ClientService:
 
     def list_clients(self, user: CurrentUser) -> list[ClientOut]:
         with self._session_factory() as db:
-            if user.role == "client":
+            if user.role == UserRole.CLIENT:
                 if not user.client_id:
                     return []
                 client = _client_or_404(db, user.client_id)
@@ -43,13 +44,13 @@ class ClientService:
 
     def get_client(self, client_id: str, user: CurrentUser) -> ClientOut:
         with self._session_factory() as db:
-            if user.role == "client" and user.client_id != client_id:
+            if user.role == UserRole.CLIENT and user.client_id != client_id:
                 raise ForbiddenError()
             return client_out(_client_or_404(db, client_id), hide_notes=_hide_notes(user))
 
     def session_balance(self, client_id: str, user: CurrentUser) -> list[SessionBalanceOut]:
         with self._session_factory() as db:
-            if user.role == "client" and user.client_id != client_id:
+            if user.role == UserRole.CLIENT and user.client_id != client_id:
                 raise ForbiddenError()
             _client_or_404(db, client_id)
             rows = db.scalars(
@@ -97,7 +98,7 @@ class ClientService:
                     email=email,
                     password_hash=self._security.hash_password(password),
                     display_name=display,
-                    role="client",
+                    role=UserRole.CLIENT,
                     client_id=client.id,
                     must_change_password=True,
                 )
@@ -111,7 +112,7 @@ class ClientService:
     def update_client(self, client_id: str, payload: ClientWrite, user: CurrentUser) -> ClientOut:
         with self._session_factory() as db:
             client = _client_or_404(db, client_id)
-            if user.role == "client":
+            if user.role == UserRole.CLIENT:
                 if user.client_id != client_id:
                     raise ForbiddenError()
                 client.first_name = payload.firstName.strip()
@@ -153,7 +154,7 @@ class ClientService:
 
     def list_client_bonos(self, client_id: str, user: CurrentUser) -> list[ClientBonoOut]:
         with self._session_factory() as db:
-            if user.role == "client" and user.client_id != client_id:
+            if user.role == UserRole.CLIENT and user.client_id != client_id:
                 raise ForbiddenError()
             _client_or_404(db, client_id)
             rows = db.scalars(
@@ -165,7 +166,7 @@ class ClientService:
 
     def contract_bono(self, payload: ContractBono, user: CurrentUser) -> ClientBonoOut:
         with self._session_factory() as db:
-            if user.role == "client" and user.client_id != payload.clientId:
+            if user.role == UserRole.CLIENT and user.client_id != payload.clientId:
                 raise ForbiddenError()
             client = _client_or_404(db, payload.clientId)
             bono = db.get(Bono, payload.bonoId)
@@ -205,4 +206,4 @@ def _client_or_404(db: Session, client_id: str) -> Client:
 
 
 def _hide_notes(user: CurrentUser) -> bool:
-    return user.role == "client"
+    return user.role == UserRole.CLIENT

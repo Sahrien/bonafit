@@ -37,7 +37,7 @@ def user_out(user: User) -> AuthUserOut:
     return AuthUserOut(
         id=user.id,
         displayName=user.display_name,
-        role=user.role,  # type: ignore[arg-type]
+        role=user.role,
         trainerId=user.trainer_id,
         clientId=user.client_id,
         email=user.email,
