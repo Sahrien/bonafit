@@ -10,10 +10,6 @@
       (action)="onSubmit(formValue())" />
   </ng-container>
 
-  @if (error()) {
-    <p class="page-error">{{ error() }}</p>
-  }
-
   @if (temporaryPassword()) {
     <p class="page-success" role="status">
       {{ literals.temporaryPassword }}: {{ temporaryPassword() }}.
@@ -69,11 +65,15 @@
     </section>
     <section class="page-nested page-nested--history" [class.page-nested--history-open]="historyOpen()">
       <header class="page-nested__header">
-        <h2>{{ literals.historyTitle }}</h2>
-        <app-bona-button
-          [text]="historyOpen() ? literals.hideHistory : literals.showHistory"
-          variant="secondary"
-          (action)="onToggleHistory()" />
+        <button
+          type="button"
+          class="history-toggle"
+          [attr.aria-expanded]="historyOpen()"
+          [attr.aria-label]="historyOpen() ? literals.hideHistory : literals.showHistory"
+          (click)="onToggleHistory()">
+          <h2>{{ literals.historyTitle }}</h2>
+          <mat-icon class="history-toggle__icon" aria-hidden="true">expand_more</mat-icon>
+        </button>
       </header>
       @if (historyOpen()) {
         <app-bona-grid
@@ -82,6 +82,7 @@
           [actions]="historyActions"
           [pageSize]="historyPageSize"
           [columnFilters]="true"
+          [columnSort]="true"
           [emptyMessage]="literals.emptyHistory"
           [emptyFilteredMessage]="literals.emptyHistoryFilter"
           (action)="onHistoryAction($event)" />

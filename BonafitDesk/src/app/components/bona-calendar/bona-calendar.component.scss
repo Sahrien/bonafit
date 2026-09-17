@@ -17,4 +17,12 @@
     text-decoration: line-through;
     pointer-events: none;
   }
+
+  ::ng-deep .fc-event.bona-cal-status-pending {
+    box-shadow: inset 0 0 0 2px var(--bona-color-warning);
+  }
+
+  ::ng-deep .fc-event.bona-cal-status-completed {
+    opacity: 0.72;
+  }
 }

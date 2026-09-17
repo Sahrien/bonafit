@@ -104,6 +104,8 @@ export class BonaCalendarComponent {
   readonly events = input<BonaCalendarEvent[]>([]);
   readonly locale = input('es');
   readonly selectable = input(true);
+  readonly showHeader = input(true);
+  readonly focusDate = input<Date | undefined>();
 
   readonly eventClick = output<BonaCalendarEvent>();
   readonly slotSelect = output<BonaCalendarSlotSelect>();
@@ -112,11 +114,13 @@ export class BonaCalendarComponent {
     plugins: [timeGridPlugin, interactionPlugin],
     initialView: viewName(this.view()),
     locale: this.locale() === 'es' ? esLocale : this.locale(),
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: '',
-    },
+    headerToolbar: this.showHeader()
+      ? {
+          left: 'prev,next today',
+          center: 'title',
+          right: '',
+        }
+      : false,
     events: this.events().map(toFullCalendarEvent),
     selectable: this.selectable(),
     selectMirror: true,
@@ -149,6 +153,17 @@ export class BonaCalendarComponent {
       const api = this.calendar()?.getApi();
       if (api && api.view.type !== nextView) {
         api.changeView(nextView);
+      }
+    });
+    effect(() => {
+      const date = this.focusDate();
+      const api = this.calendar()?.getApi();
+      if (!api || !date) {
+        return;
+      }
+      const current = api.getDate();
+      if (current.toDateString() !== date.toDateString()) {
+        api.gotoDate(date);
       }
     });
   }

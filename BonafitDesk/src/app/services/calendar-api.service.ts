@@ -13,7 +13,7 @@ import {
 } from '../models/appointment.dto';
 import { BookingSettingsDto, BookingSettingsWriteDto } from '../models/booking-settings.dto';
 import { TrainerScheduleDto, TrainerScheduleWriteDto } from '../models/trainer-schedule.dto';
-import { TrainerDto } from '../models/trainer.dto';
+import { TrainerDto, TrainerWriteDto } from '../models/trainer.dto';
 
 @Injectable({ providedIn: 'root' })
 export class CalendarApiService implements CalendarApi {
@@ -25,6 +25,10 @@ export class CalendarApiService implements CalendarApi {
 
   getTrainer(id: string): Observable<TrainerDto> {
     return this.http.get<TrainerDto>(apiUrl(API_PATHS.trainers, id));
+  }
+
+  updateTrainer(id: string, payload: TrainerWriteDto): Observable<TrainerDto> {
+    return this.http.put<TrainerDto>(apiUrl(API_PATHS.trainers, id), payload);
   }
 
   getAppointments(query?: AppointmentQuery): Observable<AppointmentDto[]> {

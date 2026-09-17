@@ -29,6 +29,7 @@ class Trainer(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    concurrent_capacity: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
 
     schedules: Mapped[list["TrainerSchedule"]] = relationship(back_populates="trainer")
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="trainer")

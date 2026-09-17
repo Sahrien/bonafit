@@ -84,8 +84,77 @@
   }
 }
 
+.calendar-today__hour {
+  margin: 0 0 var(--bona-space-2);
+  font-weight: 700;
+}
+
+.calendar-today__trainer {
+  margin: 0 0 var(--bona-space-1);
+  font-size: 0.875rem;
+  color: var(--bona-color-text-muted);
+}
+
+.calendar-today__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bona-space-2);
+}
+
 .calendar-view-tabs {
   grid-column: 1 / -1;
+}
+
+.calendar-trainer-filters {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bona-space-2);
+}
+
+.calendar-trainer-filters__chip {
+  min-height: 2.5rem;
+  padding: 0 var(--bona-space-3);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-md);
+  background: var(--bona-color-surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &.is-active {
+    border-color: var(--bona-color-primary);
+    background: color-mix(in srgb, var(--bona-color-primary) 16%, var(--bona-color-surface));
+  }
+}
+
+.calendar-day-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bona-space-2);
+  margin-bottom: var(--bona-space-3);
+
+  strong {
+    flex: 1;
+    text-transform: capitalize;
+  }
+}
+
+.calendar-day-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--bona-space-3);
+  overflow-x: auto;
+}
+
+.calendar-day-column {
+  min-width: 16rem;
+
+  h3 {
+    margin: 0 0 var(--bona-space-2);
+    font-size: 1rem;
+  }
 }
 
 .calendar-layout {
@@ -129,11 +198,6 @@
   gap: var(--bona-space-2);
 }
 
-.calendar-panel__error {
-  margin: 0 0 var(--bona-space-4);
-  color: var(--bona-color-danger);
-}
-
 .calendar-panel__actions {
   display: flex;
   flex-wrap: wrap;
@@ -147,6 +211,7 @@
   }
 
   .calendar-layout--panel .calendar-view-tabs,
+  .calendar-layout--panel .calendar-trainer-filters,
   .calendar-layout--panel .calendar-layout__main {
     display: none;
   }

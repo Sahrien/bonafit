@@ -18,7 +18,7 @@ import { BonaTabItem, BonaTabsComponent } from '../../components/bona-tabs/bona-
 import { BonaFieldDefinition, BonaFieldOption } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { ApiBusinessError } from '../../core/api-business.error';
-import { addMinutes, canAdminCancelAppointment, isBonoUsable, isGiftCredit, pickPreferredBono } from '../../core/booking';
+import { addMinutes, canAdminCancelAppointment, isBonoUsable, isGiftCredit, overlappingOccupancy, pickPreferredBono } from '../../core/booking';
 import { AppointmentDto, AppointmentStatus, AppointmentWriteDto } from '../../models/appointment.dto';
 import { BonoDto } from '../../models/bono.dto';
 import { BookingSettingsDto } from '../../models/booking-settings.dto';
@@ -45,12 +45,12 @@ const EMPTY_FORM: BonaFormValue = {
   notes: '',
 };
 
-const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  pending: 'var(--bona-color-warning)',
-  confirmed: 'var(--bona-color-primary)',
-  completed: 'var(--bona-color-text-muted)',
-  cancelled: 'var(--bona-color-border)',
-};
+const TRAINER_COLORS = [
+  'var(--bona-color-primary)',
+  'var(--bona-color-accent)',
+  'var(--bona-color-success)',
+  'var(--bona-color-warning)',
+] as const;
 
 @Component({
   selector: 'app-calendar',
@@ -86,11 +86,12 @@ export class CalendarComponent {
     { id: 'day', label: CALENDAR_LITERALS.day },
   ];
   readonly view = signal<BonaCalendarView>('week');
+  readonly selectedTrainerIds = signal<string[]>([]);
+  readonly focusDate = signal(new Date());
   readonly loading = signal(true);
   readonly formOpen = signal(false);
   readonly editingId = signal<string | null>(null);
   readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
-  readonly error = signal('');
   private readonly formBaseline = signal<BonaFormValue>({ ...EMPTY_FORM });
 
   private readonly trainers = signal<TrainerDto[]>([]);
@@ -101,30 +102,90 @@ export class CalendarComponent {
   private readonly appointments = signal<AppointmentDto[]>([]);
   private readonly settings = signal<BookingSettingsDto | null>(null);
 
-  readonly events = computed(() =>
-    this.appointments()
-      .filter((appointment) => appointment.status !== 'cancelled')
-      .map((appointment) => this.toCalendarEvent(appointment)),
+  readonly catalogTrainers = computed(() => this.trainers());
+
+  readonly visibleTrainers = computed(() => {
+    const selected = this.selectedTrainerIds();
+    const trainers = this.trainers();
+    if (!selected.length) {
+      return trainers;
+    }
+    return trainers.filter((trainer) => selected.includes(trainer.id));
+  });
+
+  readonly allTrainersSelected = computed(() => this.selectedTrainerIds().length === 0);
+
+  readonly dayTitle = computed(() =>
+    this.focusDate().toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }),
   );
 
-  readonly todayAppointments = computed(() => {
-    const todayKey = this.dayKey(new Date());
+  readonly events = computed(() => {
+    const visible = new Set(this.visibleTrainers().map((trainer) => trainer.id));
     return this.appointments()
+      .filter((appointment) => appointment.status !== 'cancelled' && visible.has(appointment.trainerId))
+      .map((appointment) => this.toCalendarEvent(appointment));
+  });
+
+  readonly todayGroups = computed(() => {
+    const todayKey = this.dayKey(new Date());
+    const rows = this.appointments()
       .filter(
         (appointment) =>
           appointment.status !== 'cancelled' &&
           appointment.status !== 'completed' &&
           this.dayKey(new Date(appointment.startsAt)) === todayKey,
       )
-      .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime())
-      .map((appointment) => ({
+      .sort((left, right) => {
+        const byTime = new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime();
+        if (byTime !== 0) {
+          return byTime;
+        }
+        return this.trainerName(left.trainerId).localeCompare(this.trainerName(right.trainerId), 'es');
+      });
+    const groups: {
+      time: string;
+      trainers: {
+        trainerId: string;
+        trainerName: string;
+        items: { id: string; title: string; status: string; statusKey: AppointmentStatus }[];
+      }[];
+    }[] = [];
+    for (const appointment of rows) {
+      const time = this.formatTime(appointment.startsAt);
+      let group = groups.find((item) => item.time === time);
+      if (!group) {
+        group = { time, trainers: [] };
+        groups.push(group);
+      }
+      let trainerGroup = group.trainers.find((item) => item.trainerId === appointment.trainerId);
+      if (!trainerGroup) {
+        trainerGroup = {
+          trainerId: appointment.trainerId,
+          trainerName: this.trainerName(appointment.trainerId),
+          items: [],
+        };
+        group.trainers.push(trainerGroup);
+      }
+      trainerGroup.items.push({
         id: appointment.id,
-        time: this.formatTime(appointment.startsAt),
         title: this.toCalendarEvent(appointment).title,
         status: this.statusLabel(appointment.status),
         statusKey: appointment.status,
-      }));
+      });
+    }
+    return groups;
   });
+
+  readonly todayCount = computed(() =>
+    this.todayGroups().reduce(
+      (total, group) => total + group.trainers.reduce((sum, trainer) => sum + trainer.items.length, 0),
+      0,
+    ),
+  );
 
   readonly editorTitle = computed(() =>
     this.editingId() ? this.literals.editAppointment : this.literals.newAppointment,
@@ -225,6 +286,44 @@ export class CalendarComponent {
     }
   }
 
+  selectAllTrainers(): void {
+    this.selectedTrainerIds.set([]);
+  }
+
+  toggleTrainer(trainerId: string): void {
+    const selected = this.selectedTrainerIds();
+    if (!selected.length) {
+      this.selectedTrainerIds.set([trainerId]);
+      return;
+    }
+    if (selected.includes(trainerId)) {
+      this.selectedTrainerIds.set(selected.filter((id) => id !== trainerId));
+      return;
+    }
+    this.selectedTrainerIds.set([...selected, trainerId]);
+  }
+
+  isTrainerFilterActive(trainerId: string): boolean {
+    const selected = this.selectedTrainerIds();
+    return selected.includes(trainerId);
+  }
+
+  eventsForTrainer(trainerId: string): BonaCalendarEvent[] {
+    return this.events().filter((event) => event.resourceId === trainerId);
+  }
+
+  onPrevDay(): void {
+    this.shiftFocusDate(-1);
+  }
+
+  onNextDay(): void {
+    this.shiftFocusDate(1);
+  }
+
+  onFocusToday(): void {
+    this.focusDate.set(new Date());
+  }
+
   onCreate(): void {
     this.openForm(null, {
       ...EMPTY_FORM,
@@ -259,7 +358,18 @@ export class CalendarComponent {
   onSlotSelect(slot: BonaCalendarSlotSelect): void {
     this.openForm(null, {
       ...EMPTY_FORM,
-      trainerId: this.defaultTrainerId(),
+      trainerId: this.visibleTrainers()[0]?.id ?? this.defaultTrainerId(),
+      startsAt: toDatetimeLocalValue(slot.start),
+      endsAt: toDatetimeLocalValue(slot.end),
+      location: this.settings()?.defaultLocation ?? '',
+      status: 'confirmed',
+    });
+  }
+
+  onSlotSelectForTrainer(trainerId: string, slot: BonaCalendarSlotSelect): void {
+    this.openForm(null, {
+      ...EMPTY_FORM,
+      trainerId,
       startsAt: toDatetimeLocalValue(slot.start),
       endsAt: toDatetimeLocalValue(slot.end),
       location: this.settings()?.defaultLocation ?? '',
@@ -313,7 +423,6 @@ export class CalendarComponent {
   onCancel(): void {
     this.formOpen.set(false);
     this.editingId.set(null);
-    this.error.set('');
   }
 
   onSubmit(value: BonaFormValue): void {
@@ -371,7 +480,7 @@ export class CalendarComponent {
         this.toast.success(this.literals.saved);
         this.loadAppointments();
       },
-      error: (error) => this.error.set(this.messageFor(error)),
+      error: (error) => this.toast.error(this.messageFor(error)),
     });
   }
 
@@ -396,7 +505,7 @@ export class CalendarComponent {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set(this.literals.errorLoad);
+          this.toast.error(this.literals.errorLoad);
           this.loading.set(false);
         },
       });
@@ -420,7 +529,6 @@ export class CalendarComponent {
     this.editingId.set(id);
     this.formValue.set(value);
     this.formBaseline.set({ ...value });
-    this.error.set('');
     this.formOpen.set(true);
     if (!value['clientId']) {
       this.clientBonos.set([]);
@@ -529,6 +637,16 @@ export class CalendarComponent {
       parts.push(this.literals.gift);
     }
     parts.push(this.statusLabel(appointment.status));
+    const occupancy = overlappingOccupancy(
+      this.appointments(),
+      appointment.trainerId,
+      new Date(appointment.startsAt),
+      new Date(appointment.endsAt),
+    );
+    const capacity = trainer?.concurrentCapacity ?? 1;
+    if (occupancy > 1) {
+      parts.push(`${occupancy}/${capacity}`);
+    }
     return {
       id: appointment.id,
       title: parts.join(' · '),
@@ -538,8 +656,25 @@ export class CalendarComponent {
       client: client ? this.clientLabel(client) : undefined,
       location: appointment.location,
       resourceId: appointment.trainerId,
-      color: STATUS_COLORS[appointment.status],
+      color: this.trainerColor(appointment.trainerId),
+      classNames: [`bona-cal-status-${appointment.status}`],
     };
+  }
+
+  private trainerName(trainerId: string): string {
+    return this.trainers().find((trainer) => trainer.id === trainerId)?.name ?? trainerId;
+  }
+
+  private trainerColor(trainerId: string): string {
+    const index = this.trainers().findIndex((trainer) => trainer.id === trainerId);
+    const paletteIndex = index >= 0 ? index % TRAINER_COLORS.length : 0;
+    return TRAINER_COLORS[paletteIndex];
+  }
+
+  private shiftFocusDate(days: number): void {
+    const next = new Date(this.focusDate());
+    next.setDate(next.getDate() + days);
+    this.focusDate.set(next);
   }
 
   private statusLabel(status: AppointmentStatus): string {
@@ -587,7 +722,7 @@ export class CalendarComponent {
     const location = (value['location'] ?? '').trim();
     const status = (value['status'] ?? 'confirmed') as AppointmentStatus;
     if (!trainerId || !clientId || !serviceId || !startsAt || !endsAt || !location) {
-      this.error.set(this.literals.errorRequired);
+      this.toast.error(this.literals.errorRequired);
       return null;
     }
     const clientBonoId = value['clientBonoId'] ?? '';

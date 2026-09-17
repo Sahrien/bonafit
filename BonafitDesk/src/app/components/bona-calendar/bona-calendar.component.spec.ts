@@ -91,6 +91,12 @@ describe('BonaCalendarComponent', () => {
       expect(options.events).toEqual([toFullCalendarEvent(sample)]);
     });
 
+    it('hides the FullCalendar toolbar when showHeader is false', () => {
+      fixture.componentRef.setInput('showHeader', false);
+      fixture.detectChanges();
+      expect(component.calendarOptions().headerToolbar).toBeFalse();
+    });
+
     it('emits eventClick with the original DTO', () => {
       const spy = jasmine.createSpy('eventClick');
       component.eventClick.subscribe(spy);

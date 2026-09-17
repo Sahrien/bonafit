@@ -72,10 +72,10 @@ html {
 
 .bona-toast--success {
   --mat-snackbar-container-color: var(--bona-color-success);
-  --mat-snackbar-supporting-text-color: var(--bona-color-primary-contrast);
+  --mat-snackbar-supporting-text-color: #ffffff;
 }
 
 .bona-toast--error {
   --mat-snackbar-container-color: var(--bona-color-danger);
-  --mat-snackbar-supporting-text-color: var(--mat-sys-on-error, #ffffff);
+  --mat-snackbar-supporting-text-color: #ffffff;
 }

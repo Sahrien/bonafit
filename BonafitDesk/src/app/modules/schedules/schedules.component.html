@@ -13,6 +13,18 @@
       (valueChange)="onFilterChange($event)" />
   </div>
 
+  <section class="schedules-capacity" [attr.aria-label]="literals.capacityTitle">
+    <h2>{{ literals.capacityTitle }}</h2>
+    <p>{{ literals.capacityHint }}</p>
+    @for (trainer of catalogTrainers(); track trainer.id) {
+      <app-bona-form
+        [fields]="capacityFields"
+        [value]="capacityFormValue(trainer)"
+        [submitText]="literals.saveCapacity"
+        (submitted)="onSaveCapacity(trainer, $event)" />
+    }
+  </section>
+
   @if (formOpen()) {
     <section class="page-nested">
       @if (error()) {

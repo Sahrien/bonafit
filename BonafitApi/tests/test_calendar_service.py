@@ -5,7 +5,7 @@ import pytest
 from app.database import Database
 from app.errors import BusinessError, NotFoundError
 from app.models import ClientBono
-from app.schemas import AppointmentWrite, BookingSettingsWrite, TrainerScheduleWrite
+from app.schemas import AppointmentWrite, BookingSettingsWrite, TrainerScheduleWrite, TrainerWrite
 from app.services.calendar import CalendarService
 from tests.factories import (
     add_appointment,
@@ -25,9 +25,17 @@ def test_trainers(calendar_service: CalendarService, db: Database) -> None:
     add_trainer(db)
     rows = calendar_service.list_trainers()
     assert rows[0].name == "Alex"
+    assert rows[0].concurrentCapacity == 1
     assert calendar_service.get_trainer("trainer-1").id == "trainer-1"
+    updated = calendar_service.update_trainer(
+        "trainer-1", TrainerWrite(name="Alex Martin", concurrentCapacity=2)
+    )
+    assert updated.concurrentCapacity == 2
+    assert calendar_service.get_trainer("trainer-1").name == "Alex Martin"
     with pytest.raises(NotFoundError):
         calendar_service.get_trainer("missing")
+    with pytest.raises(NotFoundError):
+        calendar_service.update_trainer("missing", TrainerWrite(name="X", concurrentCapacity=1))
 
 
 def test_booking_settings(calendar_service: CalendarService, db: Database) -> None:
@@ -420,6 +428,137 @@ def test_slot_taken(calendar_service: CalendarService, db: Database) -> None:
             admin_user(),
         )
     assert exc.value.code == "booking.slotTaken"
+
+
+def test_slot_taken_allows_second_client_when_capacity_is_two(
+    calendar_service: CalendarService, db: Database
+) -> None:
+    add_trainer(db, concurrent_capacity=2)
+    add_trainer(db, id="trainer-2", name="Sam")
+    add_client(db)
+    add_client(db, id="client-2", email="pablo@example.com")
+    add_client(db, id="client-3", email="iris@example.com")
+    add_settings(db)
+    add_service(db, id="svc-masaje", name="Masaje", shares_session_pool=False, allows_single_session=True)
+    add_bono(db, id="bono-m", service_id="svc-masaje", session_count=1)
+    start = datetime(2026, 9, 9, 8, 0, tzinfo=UTC)
+    end = datetime(2026, 9, 9, 9, 0, tzinfo=UTC)
+    first = AppointmentWrite(
+        trainerId="trainer-1",
+        clientId="client-1",
+        serviceId="svc-masaje",
+        clientBonoId=None,
+        startsAt=start,
+        endsAt=end,
+    )
+    calendar_service.create_appointment(first, admin_user())
+    second = calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-2",
+            serviceId="svc-masaje",
+            clientBonoId=None,
+            startsAt=start,
+            endsAt=end,
+        ),
+        admin_user(),
+    )
+    assert second.clientId == "client-2"
+    with pytest.raises(BusinessError) as third_exc:
+        calendar_service.create_appointment(
+            AppointmentWrite(
+                trainerId="trainer-1",
+                clientId="client-3",
+                serviceId="svc-masaje",
+                clientBonoId=None,
+                startsAt=start,
+                endsAt=end,
+            ),
+            admin_user(),
+        )
+    assert third_exc.value.code == "booking.slotTaken"
+    other = calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-2",
+            clientId="client-3",
+            serviceId="svc-masaje",
+            clientBonoId=None,
+            startsAt=start,
+            endsAt=end,
+        ),
+        admin_user(),
+    )
+    assert other.trainerId == "trainer-2"
+    with pytest.raises(BusinessError) as other_full:
+        calendar_service.create_appointment(
+            AppointmentWrite(
+                trainerId="trainer-2",
+                clientId="client-1",
+                serviceId="svc-masaje",
+                clientBonoId=None,
+                startsAt=start,
+                endsAt=end,
+            ),
+            admin_user(),
+        )
+    assert other_full.value.code == "booking.slotTaken"
+
+
+def test_availability_respects_concurrent_capacity(
+    calendar_service: CalendarService, db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "app.services.calendar.utcnow",
+        lambda: datetime(2026, 9, 9, 6, 0, tzinfo=UTC),
+    )
+    add_trainer(db, concurrent_capacity=2)
+    add_client(db)
+    add_client(db, id="client-2", email="pablo@example.com")
+    add_settings(db)
+    add_schedule(db)
+    add_service(db, id="svc-masaje", name="Masaje", shares_session_pool=False, allows_single_session=True)
+    add_bono(db, id="bono-m", service_id="svc-masaje", session_count=1)
+    start = datetime(2026, 9, 9, 8, 0, tzinfo=UTC)
+    calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-masaje",
+            clientBonoId=None,
+            startsAt=start,
+        ),
+        admin_user(),
+    )
+    slots_with_room = calendar_service.get_availability(
+        admin_user(),
+        service_id="svc-masaje",
+        from_="2026-09-09T00:00:00.000Z",
+        to="2026-09-09T23:59:59.000Z",
+    )
+    assert any(
+        slot.startsAt == "2026-09-09T08:00:00.000Z" and slot.trainerId == "trainer-1"
+        for slot in slots_with_room
+    )
+    calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-2",
+            serviceId="svc-masaje",
+            clientBonoId=None,
+            startsAt=start,
+        ),
+        admin_user(),
+    )
+    slots_full = calendar_service.get_availability(
+        admin_user(),
+        service_id="svc-masaje",
+        from_="2026-09-09T00:00:00.000Z",
+        to="2026-09-09T23:59:59.000Z",
+    )
+    assert not any(
+        slot.startsAt == "2026-09-09T08:00:00.000Z" and slot.trainerId == "trainer-1"
+        for slot in slots_full
+    )
 
 
 def test_list_appointments_scoped_to_client(calendar_service: CalendarService, db: Database) -> None:

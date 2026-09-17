@@ -4,11 +4,6 @@
   border-top: 1px solid var(--bona-color-border);
 }
 
-.page-error {
-  margin: 0 0 var(--bona-space-4);
-  color: var(--bona-color-danger);
-}
-
 .page-success {
   margin: 0 0 var(--bona-space-4);
   color: var(--bona-color-success);
@@ -44,6 +39,33 @@
   &:not(.page-nested--history-open) .page-nested__header {
     margin-bottom: 0;
   }
+}
+
+.history-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bona-space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.history-toggle__icon {
+  transition: transform 0.15s ease;
+}
+
+.page-nested--history-open .history-toggle__icon {
+  transform: rotate(180deg);
 }
 
 .page-nested__form {

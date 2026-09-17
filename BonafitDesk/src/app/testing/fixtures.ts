@@ -10,8 +10,8 @@ import { TrainerScheduleDto } from '../models/trainer-schedule.dto';
 import { TrainerDto } from '../models/trainer.dto';
 
 export const MOCK_TRAINERS: TrainerDto[] = [
-  { id: 'trainer-1', name: 'Alex Martin' },
-  { id: 'trainer-2', name: 'Sam Ortega' },
+  { id: 'trainer-1', name: 'Alex Martin', concurrentCapacity: 1 },
+  { id: 'trainer-2', name: 'Sam Ortega', concurrentCapacity: 1 },
 ];
 
 export const MOCK_CLIENTS: ClientDto[] = [

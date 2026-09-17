@@ -8,11 +8,12 @@ import {
 } from '../models/appointment.dto';
 import { BookingSettingsDto, BookingSettingsWriteDto } from '../models/booking-settings.dto';
 import { TrainerScheduleDto, TrainerScheduleWriteDto } from '../models/trainer-schedule.dto';
-import { TrainerDto } from '../models/trainer.dto';
+import { TrainerDto, TrainerWriteDto } from '../models/trainer.dto';
 
 export interface CalendarApi {
   getTrainers(): Observable<TrainerDto[]>;
   getTrainer(id: string): Observable<TrainerDto>;
+  updateTrainer(id: string, payload: TrainerWriteDto): Observable<TrainerDto>;
   getAppointments(query?: AppointmentQuery): Observable<AppointmentDto[]>;
   getAppointment(id: string): Observable<AppointmentDto>;
   createAppointment(payload: AppointmentWriteDto): Observable<AppointmentDto>;

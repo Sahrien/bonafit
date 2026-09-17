@@ -10,6 +10,7 @@ from app.schemas import (
     TrainerOut,
     TrainerScheduleOut,
     TrainerScheduleWrite,
+    TrainerWrite,
 )
 from app.wiring import AuthSvc, AuthorizationHeader, CalendarSvc
 
@@ -37,6 +38,19 @@ def get_trainer(
 ) -> TrainerOut:
     auth_service.require_not_must_change(authorization)
     return calendar_service.get_trainer(trainer_id)
+
+
+@router.put("/trainers/{trainer_id}", response_model=TrainerOut)
+@inject
+def update_trainer(
+    trainer_id: str,
+    payload: TrainerWrite,
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> TrainerOut:
+    auth_service.require_admin(authorization)
+    return calendar_service.update_trainer(trainer_id, payload)
 
 
 @router.get("/booking-settings", response_model=BookingSettingsOut)

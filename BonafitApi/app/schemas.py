@@ -43,11 +43,13 @@ class TrainerOut(BaseModel):
     model_config = camel_config()
     id: str
     name: str
+    concurrentCapacity: int = Field(ge=1, default=1)
 
 
 class TrainerWrite(BaseModel):
     model_config = camel_config()
     name: str
+    concurrentCapacity: int = Field(ge=1)
 
 
 class ClientOut(BaseModel):

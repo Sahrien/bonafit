@@ -143,6 +143,71 @@ describe('BonaGridComponent', () => {
     );
   });
 
+  it('sorts rows from the column header', () => {
+    fixture.componentRef.setInput('columnSort', true);
+    fixture.componentRef.setInput('data', [
+      { id: '1', nombre: 'Luis' },
+      { id: '2', nombre: 'Ana' },
+    ]);
+    fixture.detectChanges();
+
+    const sort = fixture.nativeElement.querySelector(
+      '.bona-grid__table .bona-grid__sort',
+    ) as HTMLButtonElement;
+    expect(sort.getAttribute('aria-label')).toBe(
+      GRID_LITERALS.sortColumn.replace('{column}', 'Nombre'),
+    );
+
+    sort.click();
+    fixture.detectChanges();
+    let cells = Array.from(
+      fixture.nativeElement.querySelectorAll('.bona-grid__table tr[mat-row] td') as NodeListOf<HTMLTableCellElement>,
+    ).map((cell) => cell.textContent?.trim());
+    expect(cells[0]).toBe('Ana');
+    expect(sort.getAttribute('aria-label')).toBe(
+      GRID_LITERALS.sortAsc.replace('{column}', 'Nombre'),
+    );
+
+    sort.click();
+    fixture.detectChanges();
+    cells = Array.from(
+      fixture.nativeElement.querySelectorAll('.bona-grid__table tr[mat-row] td') as NodeListOf<HTMLTableCellElement>,
+    ).map((cell) => cell.textContent?.trim());
+    expect(cells[0]).toBe('Luis');
+
+    sort.click();
+    fixture.detectChanges();
+    cells = Array.from(
+      fixture.nativeElement.querySelectorAll('.bona-grid__table tr[mat-row] td') as NodeListOf<HTMLTableCellElement>,
+    ).map((cell) => cell.textContent?.trim());
+    expect(cells[0]).toBe('Luis');
+    expect(cells[1]).toBe('Ana');
+  });
+
+  it('sorts date columns by sortField', () => {
+    fixture.componentRef.setInput('columnSort', true);
+    fixture.componentRef.setInput('columns', [
+      { field: 'whenLabel', header: 'Fecha', type: 'date', sortField: 'startsAt' },
+    ]);
+    fixture.componentRef.setInput('data', [
+      { id: '1', nombre: 'Ana', whenLabel: 'tarde', startsAt: '2026-01-02T10:00:00.000Z' },
+      { id: '2', nombre: 'Luis', whenLabel: 'temprano', startsAt: '2026-01-01T10:00:00.000Z' },
+    ]);
+    fixture.detectChanges();
+
+    const sort = fixture.nativeElement.querySelector(
+      '.bona-grid__table .bona-grid__sort',
+    ) as HTMLButtonElement;
+    sort.click();
+    fixture.detectChanges();
+
+    const cells = Array.from(
+      fixture.nativeElement.querySelectorAll('.bona-grid__table tr[mat-row] td') as NodeListOf<HTMLTableCellElement>,
+    ).map((cell) => cell.textContent?.trim());
+    expect(cells[0]).toBe('temprano');
+    expect(cells[1]).toBe('tarde');
+  });
+
   it('filters rows from the column header field', () => {
     fixture.componentRef.setInput('columnFilters', true);
     fixture.componentRef.setInput('data', [

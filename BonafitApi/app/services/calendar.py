@@ -16,12 +16,11 @@ from app.booking import (
     occupies_trainer_slot,
     parse_iso,
     pick_preferred_bono,
-    ranges_overlap,
     session_delta,
     slot_matches,
+    slot_taken_for_trainer,
     status_on_client_reschedule,
     status_on_create,
-    to_madrid,
 )
 from app.database import SessionFactory
 from app.errors import BOOKING_ERROR_CODES, BusinessError, NotFoundError
@@ -46,12 +45,17 @@ from app.schemas import (
     TrainerOut,
     TrainerScheduleOut,
     TrainerScheduleWrite,
+    TrainerWrite,
 )
 from app.serializers import appointment_out, ensure_aware, schedule_out, settings_out, trainer_out
 
 HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 E = BOOKING_ERROR_CODES
 SETTINGS_ID = "booking-settings"
+
+
+def _trainer_capacities(db: Session) -> dict[str, int]:
+    return {row.id: row.concurrent_capacity for row in db.scalars(select(Trainer)).all()}
 
 
 class CalendarService:
@@ -68,6 +72,15 @@ class CalendarService:
             row = db.get(Trainer, trainer_id)
             if row is None:
                 raise NotFoundError("trainer", trainer_id)
+            return trainer_out(row)
+
+    def update_trainer(self, trainer_id: str, payload: TrainerWrite) -> TrainerOut:
+        with self._session_factory() as db:
+            row = db.get(Trainer, trainer_id)
+            if row is None:
+                raise NotFoundError("trainer", trainer_id)
+            row.name = payload.name.strip()
+            row.concurrent_capacity = payload.concurrentCapacity
             return trainer_out(row)
 
     def get_booking_settings(self) -> BookingSettingsOut:
@@ -190,6 +203,7 @@ class CalendarService:
                 actor=actor_of(user),
                 trainer_id=trainer_id,
                 ignore_appointment_id=ignore_appointment_id,
+                trainer_capacities=_trainer_capacities(db),
             )
             return [AvailabilitySlotOut.model_validate(slot) for slot in slots]
 
@@ -374,6 +388,7 @@ def _assert_client_write(
         actor="client",
         trainer_id=payload.trainerId,
         ignore_appointment_id=previous.id if previous else None,
+        trainer_capacities=_trainer_capacities(db),
     )
     if not slot_matches(slots, payload.trainerId, starts_at, ends_at):
         raise BusinessError(E["cutoff"])
@@ -505,12 +520,9 @@ def _assert_slot_free(db: Session, appointment: Appointment, ignore_id: str | No
             Appointment.id != (ignore_id or ""),
         )
     ).all()
-    taken = any(
-        occupies_trainer_slot(row.status)
-        and ranges_overlap(start, end, to_madrid(row.starts_at), to_madrid(row.ends_at))
-        for row in busy
-    )
-    if taken:
+    trainer = db.get(Trainer, appointment.trainer_id)
+    capacity = trainer.concurrent_capacity if trainer is not None else 1
+    if slot_taken_for_trainer(busy, appointment.trainer_id, start, end, capacity):
         raise BusinessError(E["slotTaken"])
 
 

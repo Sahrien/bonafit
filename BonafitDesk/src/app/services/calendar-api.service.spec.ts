@@ -35,6 +35,15 @@ describe('CalendarApiService', () => {
     expect(await pending).toEqual(MOCK_TRAINERS[0]);
   });
 
+  it('PUT /trainers/:id', async () => {
+    const payload = { name: 'Alex Martin', concurrentCapacity: 2 };
+    const pending = firstValueFrom(api.updateTrainer('trainer-1', payload));
+    const req = http.expectOne({ method: 'PUT', url: apiUrl(API_PATHS.trainers, 'trainer-1') });
+    expect(req.request.body).toEqual(payload);
+    req.flush({ ...MOCK_TRAINERS[0], concurrentCapacity: 2 });
+    expect((await pending).concurrentCapacity).toBe(2);
+  });
+
   it('GET /appointments with query params', async () => {
     const pending = firstValueFrom(
       api.getAppointments({ trainerId: 'trainer-1', from: '2026-09-07T00:00:00.000Z' }),

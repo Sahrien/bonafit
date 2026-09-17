@@ -6,6 +6,9 @@ export const GRID_LITERALS = {
   nextPage: 'Siguiente',
   pageOf: 'Página {page} de {pages}',
   filter: 'Filtrar',
+  sortColumn: 'Ordenar {column}',
+  sortAsc: '{column} ascendente',
+  sortDesc: '{column} descendente',
 } as const;
 
 export const PASSWORD_FIELD_LITERALS = {

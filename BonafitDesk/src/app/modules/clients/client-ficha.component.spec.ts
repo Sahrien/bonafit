@@ -11,6 +11,7 @@ import {
   MOCK_SERVICES,
   MOCK_TRAINERS,
 } from '../../testing/fixtures';
+import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import { clickGridMenuAction } from '../../testing/grid-menu';
 import { CalendarApiService } from '../../services/calendar-api.service';
@@ -134,6 +135,26 @@ describe('ClientFichaComponent', () => {
     expect(text).toContain(CLIENTS_LITERALS.gift);
   });
 
+  it('toasts when the client is saved', async () => {
+    const toast = TestBed.inject(BonaToast) as jasmine.SpyObj<BonaToast>;
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
+
+    component.onSubmit({
+      firstName: 'Marina',
+      lastName: 'Lopez',
+      email: 'marina.lopez@example.com',
+      phone: '+34000000001',
+      notes: '',
+      instantConfirm: 'true',
+    });
+    harness.fixture.detectChanges();
+    await harness.fixture.whenStable();
+
+    expect(clientsApi.updateClient).toHaveBeenCalled();
+    expect(toast.success).toHaveBeenCalledWith(CLIENTS_LITERALS.saved);
+  });
+
   it('keeps the session history collapsed until asked', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
@@ -141,7 +162,9 @@ describe('ClientFichaComponent', () => {
     expect(calendarApi.getAppointments).not.toHaveBeenCalled();
     const text = harness.routeNativeElement?.textContent ?? '';
     expect(text).toContain(CLIENTS_LITERALS.historyTitle);
-    expect(text).toContain(CLIENTS_LITERALS.showHistory);
+    const toggle = harness.routeNativeElement?.querySelector('.history-toggle') as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-label')).toBe(CLIENTS_LITERALS.showHistory);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(text).not.toContain('Alex Martin');
     expect(text).not.toContain('Buena sesión de fuerza.');
   });
@@ -154,7 +177,9 @@ describe('ClientFichaComponent', () => {
     expect(calendarApi.getAppointments).toHaveBeenCalledWith({ clientId: 'client-1' });
     const text = harness.routeNativeElement?.textContent ?? '';
     expect(text).toContain(CLIENTS_LITERALS.historyTitle);
-    expect(text).toContain(CLIENTS_LITERALS.hideHistory);
+    expect(harness.routeNativeElement?.querySelector('.history-toggle')?.getAttribute('aria-label')).toBe(
+      CLIENTS_LITERALS.hideHistory,
+    );
     expect(text).toContain('Alex Martin');
     expect(text).toContain(CLIENTS_LITERALS.statusCompleted);
     expect(text).toContain('Buena sesión de fuerza.');
@@ -179,6 +204,23 @@ describe('ClientFichaComponent', () => {
     notesFilter!.value = 'fuerza';
     notesFilter!.dispatchEvent(new Event('input'));
     harness.fixture.detectChanges();
+    expect(harness.routeNativeElement?.textContent).toContain('Buena sesión de fuerza.');
+  });
+
+  it('sorts the session history from the column header', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
+    await openHistory(harness, component);
+
+    const sort = Array.from(
+      harness.routeNativeElement?.querySelectorAll('.bona-grid__table .bona-grid__sort') ?? [],
+    ).find((button) => button.getAttribute('aria-label')?.includes(CLIENTS_LITERALS.sessionWhen)) as
+      | HTMLButtonElement
+      | undefined;
+    expect(sort).toBeTruthy();
+    sort!.click();
+    harness.fixture.detectChanges();
+    expect(sort!.getAttribute('aria-label')).toContain(CLIENTS_LITERALS.sessionWhen);
     expect(harness.routeNativeElement?.textContent).toContain('Buena sesión de fuerza.');
   });
 

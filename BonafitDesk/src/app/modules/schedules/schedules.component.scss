@@ -11,3 +11,21 @@
 .page-nested {
   margin-top: var(--bona-space-4);
 }
+
+.schedules-capacity {
+  margin: 0 0 var(--bona-space-4);
+  padding: var(--bona-space-4);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-lg);
+  background: var(--bona-color-surface);
+
+  h2 {
+    margin: 0 0 var(--bona-space-2);
+    font-size: 1.125rem;
+  }
+
+  p {
+    margin: 0 0 var(--bona-space-3);
+    color: var(--bona-color-text-muted);
+  }
+}

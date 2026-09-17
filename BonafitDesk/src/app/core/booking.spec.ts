@@ -5,10 +5,12 @@ import {
   isBonoExpired,
   isClientStartAllowed,
   isGiftCredit,
+  listAvailabilitySlots,
   pickPreferredBono,
   remainingSessionsDelta,
   canAdminCancelAppointment,
   canCancelAppointment,
+  slotTakenForTrainer,
 } from './booking';
 
 describe('booking rules', () => {
@@ -114,5 +116,87 @@ describe('booking rules', () => {
     expect(canAdminCancelAppointment('confirmed')).toBeTrue();
     expect(canAdminCancelAppointment('completed')).toBeFalse();
     expect(canAdminCancelAppointment('cancelled')).toBeFalse();
+  });
+
+  it('blocks a second overlapping booking at capacity 1 and allows it at capacity 2', () => {
+    const start = new Date('2026-09-09T08:00:00.000Z');
+    const end = new Date('2026-09-09T09:00:00.000Z');
+    const busy = [
+      {
+        trainerId: 'trainer-1',
+        status: 'confirmed' as AppointmentStatus,
+        startsAt: '2026-09-09T08:00:00.000Z',
+        endsAt: '2026-09-09T09:00:00.000Z',
+      },
+    ];
+    expect(slotTakenForTrainer(busy, 'trainer-1', start, end, 1)).toBeTrue();
+    expect(slotTakenForTrainer(busy, 'trainer-1', start, end, 2)).toBeFalse();
+    expect(slotTakenForTrainer(busy, 'trainer-2', start, end, 1)).toBeFalse();
+    expect(
+      slotTakenForTrainer(
+        [
+          ...busy,
+          {
+            trainerId: 'trainer-1',
+            status: 'confirmed' as AppointmentStatus,
+            startsAt: '2026-09-09T08:00:00.000Z',
+            endsAt: '2026-09-09T09:00:00.000Z',
+          },
+        ],
+        'trainer-1',
+        start,
+        end,
+        2,
+      ),
+    ).toBeTrue();
+  });
+
+  it('keeps a slot available until the trainer concurrent capacity is full', () => {
+    const service = {
+      id: 'svc-ep',
+      name: 'EP',
+      durationMinutes: 60,
+      sharesSessionPool: true,
+      forcesSingleSession: false,
+      allowsSingleSession: false,
+      bookableByClient: true,
+      active: true,
+    };
+    const schedules = [
+      { id: 'sch-1', trainerId: 'trainer-1', weekday: 3, startTime: '10:00', endTime: '12:00' },
+    ];
+    const settings = { id: 'booking-settings', nextDayCutoffTime: '18:00', defaultLocation: 'studio' };
+    const appointments = [
+      {
+        id: 'apt-1',
+        trainerId: 'trainer-1',
+        clientId: 'client-1',
+        serviceId: 'svc-ep',
+        startsAt: '2026-09-09T08:00:00.000Z',
+        endsAt: '2026-09-09T09:00:00.000Z',
+        location: 'studio',
+        status: 'confirmed' as AppointmentStatus,
+      },
+    ];
+    const input = {
+      service,
+      schedules,
+      appointments,
+      settings,
+      now: new Date('2026-09-09T06:00:00.000Z'),
+      from: new Date('2026-09-09T00:00:00.000Z'),
+      to: new Date('2026-09-09T23:00:00.000Z'),
+      actor: 'trainer' as const,
+    };
+    const withRoom = listAvailabilitySlots({
+      ...input,
+      trainers: [{ id: 'trainer-1', concurrentCapacity: 2 }],
+    });
+    expect(withRoom.some((slot) => slot.startsAt === '2026-09-09T08:00:00.000Z')).toBeTrue();
+    const full = listAvailabilitySlots({
+      ...input,
+      trainers: [{ id: 'trainer-1', concurrentCapacity: 1 }],
+    });
+    expect(full.some((slot) => slot.startsAt === '2026-09-09T08:00:00.000Z')).toBeFalse();
   });
 });

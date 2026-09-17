@@ -22,6 +22,7 @@ import {
   BonaGridComponent,
 } from '../../components/bona-grid/bona-grid.component';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
+import { MatIcon } from '@angular/material/icon';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { ApiBusinessError } from '../../core/api-business.error';
 import { AppointmentDto, AppointmentStatus, AppointmentWriteDto } from '../../models/appointment.dto';
@@ -66,6 +67,7 @@ const HISTORY_PAGE_SIZE = 10;
     BonaFormComponent,
     BonaButtonComponent,
     BonaGridComponent,
+    MatIcon,
   ],
   templateUrl: './client-ficha.component.html',
   styleUrl: './client-ficha.component.scss',
@@ -83,7 +85,6 @@ export class ClientFichaComponent {
 
   readonly literals = CLIENTS_LITERALS;
   readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
-  readonly error = signal('');
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly temporaryPassword = signal('');
@@ -161,7 +162,12 @@ export class ClientFichaComponent {
   );
 
   readonly historyColumns: BonaGridColumn[] = [
-    { field: 'whenLabel', header: CLIENTS_LITERALS.sessionWhen },
+    {
+      field: 'whenLabel',
+      header: CLIENTS_LITERALS.sessionWhen,
+      sortField: 'startsAt',
+      type: 'date',
+    },
     { field: 'serviceName', header: CLIENTS_LITERALS.service },
     { field: 'trainerName', header: CLIENTS_LITERALS.trainer },
     { field: 'statusLabel', header: CLIENTS_LITERALS.sessionStatus },
@@ -184,6 +190,7 @@ export class ClientFichaComponent {
         const trainer = this.trainers().find((item) => item.id === row.trainerId);
         return {
           id: row.id,
+          startsAt: row.startsAt,
           whenLabel: this.formatSessionWhen(row.startsAt),
           serviceName: service?.name ?? '',
           trainerName: trainer?.name ?? '',
@@ -266,10 +273,11 @@ export class ClientFichaComponent {
           return;
         }
         this.formValue.set(this.toFormValue(client));
+        this.toast.success(this.literals.saved);
       },
       error: () => {
         this.saving.set(false);
-        this.error.set(this.literals.errorSave);
+        this.toast.error(this.literals.errorSave);
       },
     });
   }
@@ -367,7 +375,7 @@ export class ClientFichaComponent {
     }
     const remainingSessions = Number(value['remainingSessions']);
     if (Number.isNaN(remainingSessions) || remainingSessions < 0) {
-      this.error.set(this.literals.errorRequired);
+      this.toast.error(this.literals.errorRequired);
       return;
     }
     const expiresLocal = (value['expiresAt'] ?? '').trim();
@@ -383,8 +391,9 @@ export class ClientFichaComponent {
           this.bonoFormOpen.set(false);
           this.editingBonoId.set(null);
           this.loadBonos(this.clientId());
+          this.toast.success(this.literals.saved);
         },
-        error: () => this.error.set(this.literals.errorSave),
+        error: () => this.toast.error(this.literals.errorSave),
       });
   }
 
@@ -434,8 +443,9 @@ export class ClientFichaComponent {
             rows.map((row) => (row.id === updated.id ? updated : row)),
           );
           this.onCancelSessionNote();
+          this.toast.success(this.literals.saved);
         },
-        error: () => this.error.set(this.literals.errorSave),
+        error: () => this.toast.error(this.literals.errorSave),
       });
   }
 
@@ -476,7 +486,6 @@ export class ClientFichaComponent {
   }
 
   private load(id: string): void {
-    this.error.set('');
     this.bonoFormOpen.set(false);
     this.sessionNoteFormOpen.set(false);
     this.historyOpen.set(false);
@@ -511,7 +520,7 @@ export class ClientFichaComponent {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set(this.literals.errorLoad);
+          this.toast.error(this.literals.errorLoad);
           this.loading.set(false);
         },
       });
@@ -597,7 +606,7 @@ export class ClientFichaComponent {
     const serviceId = (value['serviceId'] ?? '').trim();
     const kind = value['kind'] ?? GIFT_PACK;
     if (!serviceId) {
-      this.error.set(this.literals.errorRequired);
+      this.toast.error(this.literals.errorRequired);
       return null;
     }
     if (kind === GIFT_SINGLE) {
@@ -605,7 +614,7 @@ export class ClientFichaComponent {
     }
     const bonoId = (value['bonoId'] ?? '').trim();
     if (!bonoId) {
-      this.error.set(this.literals.errorRequired);
+      this.toast.error(this.literals.errorRequired);
       return null;
     }
     return { clientId, bonoId, isGift: true };
@@ -627,7 +636,7 @@ export class ClientFichaComponent {
     const lastName = (value['lastName'] ?? '').trim();
     const email = (value['email'] ?? '').trim();
     if (!firstName || !lastName || !email) {
-      this.error.set(this.literals.errorRequired);
+      this.toast.error(this.literals.errorRequired);
       return null;
     }
     return {

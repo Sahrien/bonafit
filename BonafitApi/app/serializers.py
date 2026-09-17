@@ -46,7 +46,7 @@ def user_out(user: User) -> AuthUserOut:
 
 
 def trainer_out(row: Trainer) -> TrainerOut:
-    return TrainerOut(id=row.id, name=row.name)
+    return TrainerOut(id=row.id, name=row.name, concurrentCapacity=row.concurrent_capacity)
 
 
 def client_out(

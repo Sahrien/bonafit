@@ -4,6 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { BonaCalendarEvent } from '../../components/bona-calendar/bona-calendar.component';
 import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
+import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import { MOCK_APPOINTMENTS, MOCK_BOOKING_SETTINGS, MOCK_CLIENTS, MOCK_SERVICES, MOCK_TRAINERS } from '../../testing/fixtures';
 import { CalendarApiService } from '../../services/calendar-api.service';
@@ -140,12 +141,15 @@ describe('CalendarComponent', () => {
     fixture = TestBed.createComponent(CalendarComponent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.todayAppointments().map((row) => row.id)).toEqual([
+    expect(fixture.componentInstance.todayGroups().flatMap((group) =>
+      group.trainers.flatMap((trainer) => trainer.items.map((item) => item.id)),
+    )).toEqual([
       'today-confirmed',
     ]);
     const completedEvent = fixture.componentInstance.events().find((event) => event.id === 'today-completed');
     expect(completedEvent).toBeTruthy();
-    expect(completedEvent?.color).toBe('var(--bona-color-text-muted)');
+    expect(completedEvent?.color).toBe('var(--bona-color-primary)');
+    expect(completedEvent?.classNames).toContain('bona-cal-status-completed');
     fixture.destroy();
   });
 
@@ -157,7 +161,11 @@ describe('CalendarComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.events().some((event) => event.id === 'apt-cancelled')).toBeFalse();
-    expect(fixture.componentInstance.todayAppointments().some((row) => row.id === 'apt-cancelled')).toBeFalse();
+    expect(
+      fixture.componentInstance
+        .todayGroups()
+        .some((group) => group.trainers.some((trainer) => trainer.items.some((item) => item.id === 'apt-cancelled'))),
+    ).toBeFalse();
     fixture.destroy();
   });
 
@@ -205,7 +213,28 @@ describe('CalendarComponent', () => {
     expect(tabs.textContent).toContain(CALENDAR_LITERALS.day);
   });
 
-  it('switches to day view', () => {
+  it('groups today appointments by time and trainer', () => {
+    const start = new Date();
+    start.setHours(10, 0, 0, 0);
+    const iso = start.toISOString();
+    calendarApi.getAppointments.and.returnValue(
+      of([
+        { ...MOCK_APPOINTMENTS[2], id: 'today-a', trainerId: 'trainer-2', startsAt: iso, endsAt: iso, status: 'confirmed' },
+        { ...MOCK_APPOINTMENTS[2], id: 'today-b', trainerId: 'trainer-1', startsAt: iso, endsAt: iso, status: 'pending' },
+      ]),
+    );
+    fixture = TestBed.createComponent(CalendarComponent);
+    fixture.detectChanges();
+
+    const groups = fixture.componentInstance.todayGroups();
+    expect(groups.length).toBe(1);
+    expect(groups[0].trainers.map((trainer) => trainer.trainerId)).toEqual(['trainer-1', 'trainer-2']);
+    expect(fixture.nativeElement.textContent).toContain('Alex Martin');
+    expect(fixture.nativeElement.textContent).toContain('Sam Ortega');
+    fixture.destroy();
+  });
+
+  it('renders one day calendar column per trainer', () => {
     const buttons = Array.from(
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     );
@@ -213,6 +242,7 @@ describe('CalendarComponent', () => {
     day?.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.view()).toBe('day');
+    expect(fixture.nativeElement.querySelectorAll('app-bona-calendar').length).toBe(MOCK_TRAINERS.length);
   });
 
   it('opens the editor when an event is selected', () => {
@@ -350,6 +380,21 @@ describe('CalendarComponent', () => {
     expect(payload.status).toBe('completed');
   });
 
+  it('toasts when required appointment fields are missing', () => {
+    const toast = TestBed.inject(BonaToast) as jasmine.SpyObj<BonaToast>;
+    fixture.componentInstance.onSubmit({
+      trainerId: '',
+      clientId: '',
+      serviceId: '',
+      startsAt: '',
+      endsAt: '',
+      location: '',
+      status: 'confirmed',
+    });
+    expect(toast.error).toHaveBeenCalledWith(CALENDAR_LITERALS.errorRequired);
+    expect(calendarApi.createAppointment).not.toHaveBeenCalled();
+  });
+
   it('sends clientBonoId null to assign a gift appointment', () => {
     fixture.componentInstance.onSubmit({
       trainerId: 'trainer-1',
@@ -365,6 +410,8 @@ describe('CalendarComponent', () => {
     expect(calendarApi.createAppointment).toHaveBeenCalled();
     const payload = calendarApi.createAppointment.calls.mostRecent().args[0];
     expect(payload.clientBonoId).toBeNull();
+    const toast = TestBed.inject(BonaToast) as jasmine.SpyObj<BonaToast>;
+    expect(toast.success).toHaveBeenCalledWith(CALENDAR_LITERALS.saved);
   });
 
   it('sends the gift clientBonoId when booking a gifted session', () => {

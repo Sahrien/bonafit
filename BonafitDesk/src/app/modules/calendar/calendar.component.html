@@ -7,25 +7,30 @@
   <section class="calendar-today" [attr.aria-label]="literals.todayTitle">
     <header class="calendar-today__header">
       <h2>{{ literals.todayTitle }}</h2>
-      <span>{{ todayAppointments().length }}</span>
+      <span>{{ todayCount() }}</span>
     </header>
-    @if (todayAppointments().length === 0) {
+    @if (todayCount() === 0) {
       <p class="calendar-today__empty">{{ literals.emptyToday }}</p>
     } @else {
       <ul class="calendar-today__list">
-        @for (row of todayAppointments(); track row.id) {
-          <li>
-            <button
-              type="button"
-              class="calendar-today__item"
-              [attr.data-status]="row.statusKey"
-              (click)="onTodayClick(row.id)">
-              <span class="calendar-today__time">{{ row.time }}</span>
-              <span class="calendar-today__copy">
-                <strong>{{ row.title }}</strong>
-                <em>{{ row.status }}</em>
-              </span>
-            </button>
+        @for (group of todayGroups(); track group.time) {
+          <li class="calendar-today__group">
+            <p class="calendar-today__hour">{{ group.time }}</p>
+            @for (trainer of group.trainers; track trainer.trainerId) {
+              <p class="calendar-today__trainer">{{ trainer.trainerName }}</p>
+              @for (row of trainer.items; track row.id) {
+                <button
+                  type="button"
+                  class="calendar-today__item"
+                  [attr.data-status]="row.statusKey"
+                  (click)="onTodayClick(row.id)">
+                  <span class="calendar-today__copy">
+                    <strong>{{ row.title }}</strong>
+                    <em>{{ row.status }}</em>
+                  </span>
+                </button>
+              }
+            }
           </li>
         }
       </ul>
@@ -39,15 +44,59 @@
       [active]="view()"
       [label]="literals.viewLabel"
       (activeChange)="onView($event)" />
+    <div
+      class="calendar-trainer-filters"
+      role="group"
+      [attr.aria-label]="literals.trainerFilter">
+      <button
+        type="button"
+        class="calendar-trainer-filters__chip"
+        [class.is-active]="allTrainersSelected()"
+        (click)="selectAllTrainers()">
+        {{ literals.allTrainers }}
+      </button>
+      @for (trainer of catalogTrainers(); track trainer.id) {
+        <button
+          type="button"
+          class="calendar-trainer-filters__chip"
+          [class.is-active]="isTrainerFilterActive(trainer.id)"
+          (click)="toggleTrainer(trainer.id)">
+          {{ trainer.name }}
+        </button>
+      }
+    </div>
     <div class="calendar-layout__main">
-      <app-bona-calendar
-        [view]="view()"
-        [events]="events()"
-        (eventClick)="onEventClick($event)"
-        (slotSelect)="onSlotSelect($event)" />
+      @if (view() === 'week') {
+        <app-bona-calendar
+          [view]="view()"
+          [events]="events()"
+          (eventClick)="onEventClick($event)"
+          (slotSelect)="onSlotSelect($event)" />
+      } @else {
+        <div class="calendar-day-nav">
+          <app-bona-button [text]="literals.dayPrev" variant="secondary" (action)="onPrevDay()" />
+          <strong>{{ dayTitle() }}</strong>
+          <app-bona-button [text]="literals.dayToday" variant="secondary" (action)="onFocusToday()" />
+          <app-bona-button [text]="literals.dayNext" variant="secondary" (action)="onNextDay()" />
+        </div>
+        <div class="calendar-day-columns">
+          @for (trainer of visibleTrainers(); track trainer.id) {
+            <section class="calendar-day-column">
+              <h3>{{ trainer.name }}</h3>
+              <app-bona-calendar
+                view="day"
+                [showHeader]="false"
+                [focusDate]="focusDate()"
+                [events]="eventsForTrainer(trainer.id)"
+                (eventClick)="onEventClick($event)"
+                (slotSelect)="onSlotSelectForTrainer(trainer.id, $event)" />
+            </section>
+          }
+        </div>
+      }
     </div>
 
-    @if (formOpen()) {
+        @if (formOpen()) {
       <aside class="calendar-panel" [attr.aria-label]="editorTitle()">
         <header class="calendar-panel__header">
           <h2>{{ editorTitle() }}</h2>
@@ -59,9 +108,6 @@
             <app-bona-button [text]="literals.save" (action)="onSubmit(formValue())" />
           </div>
         </header>
-        @if (error()) {
-          <p class="calendar-panel__error">{{ error() }}</p>
-        }
         <app-bona-form
           [fields]="appointmentFields()"
           [value]="formValue()"

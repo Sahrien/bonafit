@@ -1,4 +1,4 @@
-<div class="bona-grid">
+<div class="bona-grid" [class.bona-grid--filters]="columnFilters">
   @if (data.length === 0) {
     <div class="bona-grid__empty-state">
       <p class="bona-grid__empty-title">{{ emptyTitle || GRID_LITERALS.emptyTitle }}</p>
@@ -8,16 +8,29 @@
       }
     </div>
   } @else {
+    <div class="bona-grid__body" [style.min-height]="bodyMinHeight">
     <table mat-table [dataSource]="pagedData" class="bona-grid__table">
       @for (column of columns; track column.field) {
         <ng-container [matColumnDef]="column.field">
           <th mat-header-cell *matHeaderCellDef>
             <div class="bona-grid__header">
-              <span>{{ column.header }}</span>
+              @if (columnSort) {
+                <button
+                  type="button"
+                  class="bona-grid__sort"
+                  [class.bona-grid__sort--active]="isSorted(column)"
+                  [attr.aria-label]="sortLabel(column)"
+                  (click)="onSort(column)">
+                  <span>{{ column.header }}</span>
+                  <mat-icon>{{ sortIcon(column) }}</mat-icon>
+                </button>
+              } @else {
+                <span>{{ column.header }}</span>
+              }
               @if (columnFilters) {
                 <input
                   class="bona-grid__filter"
-                  type="search"
+                  type="text"
                   [attr.aria-label]="filterLabel(column)"
                   [placeholder]="GRID_LITERALS.filter"
                   [value]="columnFilter(column.field)"
@@ -68,16 +81,28 @@
     @if (columnFilters) {
       <div class="bona-grid__card-filters">
         @for (column of columns; track column.field) {
-          <label class="bona-grid__card-filter">
-            <span>{{ column.header }}</span>
+          <div class="bona-grid__card-filter">
+            @if (columnSort) {
+              <button
+                type="button"
+                class="bona-grid__sort"
+                [class.bona-grid__sort--active]="isSorted(column)"
+                [attr.aria-label]="sortLabel(column)"
+                (click)="onSort(column)">
+                <span>{{ column.header }}</span>
+                <mat-icon>{{ sortIcon(column) }}</mat-icon>
+              </button>
+            } @else {
+              <span>{{ column.header }}</span>
+            }
             <input
               class="bona-grid__filter"
-              type="search"
+              type="text"
               [attr.aria-label]="filterLabel(column)"
               [placeholder]="GRID_LITERALS.filter"
               [value]="columnFilter(column.field)"
               (input)="onColumnFilter(column.field, $event)" />
-          </label>
+          </div>
         }
       </div>
     }
@@ -126,6 +151,7 @@
         </li>
       }
     </ul>
+    </div>
 
     @if (showPager) {
       <div class="bona-grid__pager">

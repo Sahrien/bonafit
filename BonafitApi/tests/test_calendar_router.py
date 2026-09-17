@@ -1,11 +1,11 @@
 from datetime import UTC, datetime
 from unittest import mock
 
-from app.schemas import AppointmentOut, AvailabilitySlotOut, BookingSettingsOut, TrainerOut
+from app.schemas import AppointmentOut, AvailabilitySlotOut, BookingSettingsOut, TrainerOut, TrainerWrite
 from app.services.calendar import CalendarService
 from tests.api import AUTH, api
 
-TRAINER = TrainerOut(id="trainer-1", name="Alex")
+TRAINER = TrainerOut(id="trainer-1", name="Alex", concurrentCapacity=1)
 APPOINTMENT = AppointmentOut(
     id="apt-1",
     trainerId="trainer-1",
@@ -25,6 +25,26 @@ def test_list_trainers() -> None:
         response = http.get("/trainers", headers=AUTH)
     assert response.status_code == 200
     assert response.json()[0]["name"] == "Alex"
+    assert response.json()[0]["concurrentCapacity"] == 1
+
+
+def test_update_trainer() -> None:
+    calendar = mock.Mock(spec=CalendarService)
+    calendar.update_trainer.return_value = TrainerOut(
+        id="trainer-1", name="Alex", concurrentCapacity=2
+    )
+    with api(calendar=calendar) as http:
+        response = http.put(
+            "/trainers/trainer-1",
+            json={"name": "Alex", "concurrentCapacity": 2},
+            headers=AUTH,
+        )
+    assert response.status_code == 200
+    assert response.json()["concurrentCapacity"] == 2
+    calendar.update_trainer.assert_called_once()
+    payload = calendar.update_trainer.call_args.args[1]
+    assert isinstance(payload, TrainerWrite)
+    assert payload.concurrentCapacity == 2
 
 
 def test_get_booking_settings() -> None:

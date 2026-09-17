@@ -24,6 +24,7 @@ class Database:
             self._engine = create_engine(db_url, pool_pre_ping=True)
         self._session_factory = sessionmaker(bind=self._engine, autoflush=False, autocommit=False)
         _ensure_appointment_notes(self._engine)
+        _ensure_trainer_concurrent_capacity(self._engine)
 
     @property
     def engine(self) -> Engine:
@@ -35,6 +36,7 @@ class Database:
         Base.metadata.create_all(self._engine)
         _flatten_legacy_categories(self._engine)
         _ensure_appointment_notes(self._engine)
+        _ensure_trainer_concurrent_capacity(self._engine)
 
     def clear_tables(self) -> None:
         import app.models  # noqa: F401
@@ -140,5 +142,19 @@ def _ensure_appointment_notes(engine: Engine) -> None:
         return
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE appointments ADD COLUMN notes TEXT NOT NULL DEFAULT ''"))
+
+
+def _ensure_trainer_concurrent_capacity(engine: Engine) -> None:
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    if "trainers" not in tables:
+        return
+    columns = {column["name"] for column in inspector.get_columns("trainers")}
+    if "concurrent_capacity" in columns:
+        return
+    with engine.begin() as connection:
+        connection.execute(
+            text("ALTER TABLE trainers ADD COLUMN concurrent_capacity INTEGER NOT NULL DEFAULT 1")
+        )
 
 

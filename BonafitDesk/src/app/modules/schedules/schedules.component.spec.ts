@@ -20,6 +20,7 @@ describe('SchedulesComponent', () => {
       'createTrainerSchedule',
       'updateTrainerSchedule',
       'deleteTrainerSchedule',
+      'updateTrainer',
     ]);
     calendarApi.getTrainers.and.returnValue(of(MOCK_TRAINERS));
     calendarApi.getTrainerSchedules.and.returnValue(of(MOCK_TRAINER_SCHEDULES));
@@ -33,6 +34,7 @@ describe('SchedulesComponent', () => {
       }),
     );
     calendarApi.deleteTrainerSchedule.and.returnValue(of(void 0));
+    calendarApi.updateTrainer.and.returnValue(of({ ...MOCK_TRAINERS[0], concurrentCapacity: 2 }));
 
     await TestBed.configureTestingModule({
       imports: [SchedulesComponent],
@@ -60,6 +62,23 @@ describe('SchedulesComponent', () => {
     expect(text).toContain('Alex Martin');
     expect(text).toContain(SCHEDULES_LITERALS.weekday1);
     expect(harness.routeNativeElement?.querySelector('app-bona-grid')).toBeTruthy();
+  });
+
+  it('saves concurrent capacity for a trainer', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/horarios', SchedulesComponent);
+    const text = harness.routeNativeElement?.textContent ?? '';
+    expect(text).toContain(SCHEDULES_LITERALS.capacityTitle);
+    expect(text).toContain(SCHEDULES_LITERALS.concurrentCapacity);
+
+    component.onSaveCapacity(MOCK_TRAINERS[0], { concurrentCapacity: '2' });
+    harness.fixture.detectChanges();
+    await harness.fixture.whenStable();
+
+    expect(calendarApi.updateTrainer).toHaveBeenCalledWith('trainer-1', {
+      name: 'Alex Martin',
+      concurrentCapacity: 2,
+    });
   });
 
   it('creates a weekly slot', async () => {

@@ -64,6 +64,37 @@ def occupies_trainer_slot(status: str) -> bool:
     return status in OCCUPIES_SLOT
 
 
+def concurrent_capacity_of(capacities: dict[str, int] | None, trainer_id: str) -> int:
+    value = (capacities or {}).get(trainer_id, 1)
+    return value if value >= 1 else 1
+
+
+def overlapping_occupancy(
+    busy: list,
+    trainer_id: str,
+    slot_start: datetime,
+    slot_end: datetime,
+) -> int:
+    return sum(
+        1
+        for row in busy
+        if row.trainer_id == trainer_id
+        and occupies_trainer_slot(row.status)
+        and ranges_overlap(slot_start, slot_end, to_madrid(row.starts_at), to_madrid(row.ends_at))
+    )
+
+
+def slot_taken_for_trainer(
+    busy: list,
+    trainer_id: str,
+    slot_start: datetime,
+    slot_end: datetime,
+    concurrent_capacity: int,
+) -> bool:
+    capacity = concurrent_capacity if concurrent_capacity >= 1 else 1
+    return overlapping_occupancy(busy, trainer_id, slot_start, slot_end) >= capacity
+
+
 def is_active_client_appointment(status: str) -> bool:
     return status in OCCUPIES_SLOT
 
@@ -138,6 +169,7 @@ def list_availability_slots(
     actor: str,
     trainer_id: str | None = None,
     ignore_appointment_id: str | None = None,
+    trainer_capacities: dict[str, int] | None = None,
 ) -> list[dict]:
     if duration_minutes <= 0:
         return []
@@ -169,10 +201,12 @@ def list_availability_slots(
             slot_start = window_start
             while add_minutes(slot_start, duration_minutes) <= window_end:
                 slot_end = add_minutes(slot_start, duration_minutes)
-                taken = any(
-                    row.trainer_id == schedule.trainer_id
-                    and ranges_overlap(slot_start, slot_end, to_madrid(row.starts_at), to_madrid(row.ends_at))
-                    for row in busy
+                taken = slot_taken_for_trainer(
+                    busy,
+                    schedule.trainer_id,
+                    slot_start,
+                    slot_end,
+                    concurrent_capacity_of(trainer_capacities, schedule.trainer_id),
                 )
                 if not taken:
                     slots.append(

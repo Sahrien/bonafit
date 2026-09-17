@@ -2,6 +2,7 @@ import { AppointmentDto, AppointmentStatus, AvailabilitySlotDto } from '../model
 import { BookingSettingsDto } from '../models/booking-settings.dto';
 import { ClientBonoDto } from '../models/client-bono.dto';
 import { ServiceDto } from '../models/service.dto';
+import { TrainerDto } from '../models/trainer.dto';
 import { TrainerScheduleDto } from '../models/trainer-schedule.dto';
 
 export type BookingActor = 'client' | 'trainer';
@@ -98,6 +99,37 @@ export function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date
   return aStart < bEnd && aEnd > bStart;
 }
 
+export function concurrentCapacityOf(trainerId: string, trainers?: Pick<TrainerDto, 'id' | 'concurrentCapacity'>[]): number {
+  const found = trainers?.find((row) => row.id === trainerId);
+  const value = found?.concurrentCapacity ?? 1;
+  return value >= 1 ? value : 1;
+}
+
+export function overlappingOccupancy(
+  busy: Pick<AppointmentDto, 'trainerId' | 'status' | 'startsAt' | 'endsAt'>[],
+  trainerId: string,
+  slotStart: Date,
+  slotEnd: Date,
+): number {
+  return busy.filter(
+    (row) =>
+      row.trainerId === trainerId &&
+      occupiesTrainerSlot(row.status) &&
+      rangesOverlap(slotStart, slotEnd, new Date(row.startsAt), new Date(row.endsAt)),
+  ).length;
+}
+
+export function slotTakenForTrainer(
+  busy: Pick<AppointmentDto, 'trainerId' | 'status' | 'startsAt' | 'endsAt'>[],
+  trainerId: string,
+  slotStart: Date,
+  slotEnd: Date,
+  concurrentCapacity: number,
+): boolean {
+  const capacity = concurrentCapacity >= 1 ? concurrentCapacity : 1;
+  return overlappingOccupancy(busy, trainerId, slotStart, slotEnd) >= capacity;
+}
+
 export function statusOnCreate(actor: BookingActor, instantConfirm: boolean): AppointmentStatus {
   if (actor === 'trainer' || instantConfirm) {
     return 'confirmed';
@@ -120,6 +152,7 @@ export interface AvailabilityInput {
   actor: BookingActor;
   trainerId?: string;
   ignoreAppointmentId?: string;
+  trainers?: Pick<TrainerDto, 'id' | 'concurrentCapacity'>[];
 }
 
 export function listAvailabilitySlots(input: AvailabilityInput): AvailabilitySlotDto[] {
@@ -157,10 +190,12 @@ export function listAvailabilitySlots(input: AvailabilityInput): AvailabilitySlo
       let slotStart = new Date(windowStart);
       while (addMinutes(slotStart, duration).getTime() <= windowEnd.getTime()) {
         const slotEnd = addMinutes(slotStart, duration);
-        const taken = busy.some(
-          (row) =>
-            row.trainerId === schedule.trainerId &&
-            rangesOverlap(slotStart, slotEnd, new Date(row.startsAt), new Date(row.endsAt)),
+        const taken = slotTakenForTrainer(
+          busy,
+          schedule.trainerId,
+          slotStart,
+          slotEnd,
+          concurrentCapacityOf(schedule.trainerId, input.trainers),
         );
         if (!taken) {
           slots.push({
