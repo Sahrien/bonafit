@@ -62,6 +62,56 @@ describe('BonaFieldComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Entrenador');
   });
 
+  it('emits the option id from a radio group', () => {
+    fixture = createField({
+      key: 'choice',
+      label: 'Elige',
+      type: 'radio',
+      options: [
+        { value: 'a', label: 'A' },
+        { value: 'b', label: 'B' },
+      ],
+    });
+    const spy = jasmine.createSpy('valueChange');
+    fixture.componentInstance.valueChange.subscribe(spy);
+
+    const radios = fixture.nativeElement.querySelectorAll('mat-radio-button') as NodeListOf<HTMLElement>;
+    expect(radios.length).toBe(2);
+    radios[1].querySelector('input')?.click();
+    fixture.detectChanges();
+
+    expect(spy).toHaveBeenCalledWith('b');
+  });
+
+  it('emits comma-separated ids from a checkbox group', () => {
+    fixture = createField({
+      key: 'goals',
+      label: 'Objetivos',
+      type: 'checkbox-group',
+      options: [
+        { value: 'a', label: 'A' },
+        { value: 'b', label: 'B' },
+      ],
+    });
+    const spy = jasmine.createSpy('valueChange');
+    fixture.componentInstance.valueChange.subscribe(spy);
+
+    const boxes = fixture.nativeElement.querySelectorAll(
+      'input[type="checkbox"]',
+    ) as NodeListOf<HTMLInputElement>;
+    expect(boxes.length).toBe(2);
+    boxes[0].click();
+    fixture.detectChanges();
+    expect(spy.calls.mostRecent().args[0]).toBe('a');
+
+    fixture.componentRef.setInput('value', 'a');
+    fixture.detectChanges();
+    boxes[1].click();
+    fixture.detectChanges();
+
+    expect(spy.calls.mostRecent().args[0]).toBe('a,b');
+  });
+
   function createField(
     definition: BonaFieldDefinition,
     value = '',

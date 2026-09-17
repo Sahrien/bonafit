@@ -1,14 +1,32 @@
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, PlainSerializer
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, PlainSerializer, model_validator
 
 from app.booking import to_utc_iso
 
 ServiceCategory = Literal["entrenamiento-personal", "hipopresivos", "masaje"]
 UserRole = Literal["admin", "client"]
 AppointmentStatus = Literal["pending", "confirmed", "completed", "cancelled"]
-FormQuestionType = Literal["text", "yesno", "singleChoice"]
+FormQuestionType = Literal[
+    "text",
+    "shortText",
+    "fullName",
+    "email",
+    "phone",
+    "date",
+    "number",
+    "address",
+    "yesno",
+    "dropdown",
+    "singleChoice",
+    "multipleChoice",
+    "ranking",
+    "terms",
+]
+FORM_OPTION_TYPES: frozenset[str] = frozenset(
+    {"dropdown", "singleChoice", "multipleChoice", "ranking"}
+)
 FormAssignmentStatus = Literal["pending", "completed"]
 
 
@@ -231,6 +249,14 @@ class FormQuestionIn(BaseModel):
     required: bool = False
     sortOrder: int
     options: list[FormQuestionOptionIn] | None = None
+
+    @model_validator(mode="after")
+    def option_types_need_choices(self) -> Self:
+        if self.type in FORM_OPTION_TYPES:
+            filled = [option for option in (self.options or []) if option.label.strip()]
+            if len(filled) < 2:
+                raise ValueError("choice questions need at least two options")
+        return self
 
 
 class FormWrite(BaseModel):

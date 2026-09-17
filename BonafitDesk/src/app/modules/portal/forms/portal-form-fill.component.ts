@@ -12,7 +12,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { BonaButtonComponent } from '../../../components/bona-button/bona-button.component';
-import { BonaFormComponent, BonaFormValue } from '../../../components/bona-form/bona-form.component';
+import { BonaFormValue } from '../../../components/bona-form/bona-form.component';
 import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
 import { FormAssignmentDto } from '../../../models/form.dto';
 import { FormsApiService } from '../../../services/forms-api.service';
@@ -21,6 +21,7 @@ import {
   mapToAnswers,
   missingRequiredAnswers,
 } from '../../../core/form-answers';
+import { FormFillViewComponent } from '../../forms/form-fill-view.component';
 import {
   formatQuestionAnswer,
   orderedQuestions,
@@ -31,7 +32,7 @@ import { PORTAL_FORMS_LITERALS } from './portal-forms.literals';
 @Component({
   selector: 'app-portal-form-fill',
   standalone: true,
-  imports: [BonaPageComponent, BonaFormComponent, BonaButtonComponent],
+  imports: [BonaPageComponent, FormFillViewComponent, BonaButtonComponent],
   templateUrl: './portal-form-fill.component.html',
   styleUrl: './portal-form-fill.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,6 +66,10 @@ export class PortalFormFillComponent {
     return questionsToFields(assignment.questions, {
       yes: this.literals.yes,
       no: this.literals.no,
+      firstName: this.literals.firstName,
+      lastName: this.literals.lastName,
+      moveUp: this.literals.moveUp,
+      moveDown: this.literals.moveDown,
     });
   });
 
@@ -77,6 +82,10 @@ export class PortalFormFillComponent {
       yes: this.literals.yes,
       no: this.literals.no,
       empty: this.literals.emptyAnswer,
+      firstName: this.literals.firstName,
+      lastName: this.literals.lastName,
+      moveUp: this.literals.moveUp,
+      moveDown: this.literals.moveDown,
     };
     return orderedQuestions(assignment.questions).map((question) => ({
       id: question.id,

@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+.form-fill-view__banner {
+  margin: 0 0 var(--bona-space-4);
+  color: var(--bona-color-text-muted);
+}
+
+.form-fill-view__error {
+  margin: 0 0 var(--bona-space-4);
+  color: var(--bona-color-danger);
+}

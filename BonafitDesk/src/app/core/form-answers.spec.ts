@@ -1,4 +1,10 @@
-import { answerValue, answersToMap, mapToAnswers, missingRequiredAnswers } from './form-answers';
+import {
+  answerValue,
+  answersToMap,
+  encodeFullName,
+  mapToAnswers,
+  missingRequiredAnswers,
+} from './form-answers';
 import { FormQuestionDto } from '../models/form.dto';
 
 describe('form answers persistence helpers', () => {
@@ -17,5 +23,17 @@ describe('form answers persistence helpers', () => {
   it('detects missing required answers', () => {
     expect(missingRequiredAnswers(questions, [])).toEqual(['q-1']);
     expect(missingRequiredAnswers(questions, [{ questionId: 'q-1', value: 'no' }])).toEqual([]);
+  });
+
+  it('requires both parts of a full name', () => {
+    const nameQuestion: FormQuestionDto[] = [
+      { id: 'q-name', prompt: 'Nombre', type: 'fullName', required: true, sortOrder: 0 },
+    ];
+    expect(missingRequiredAnswers(nameQuestion, [])).toEqual(['q-name']);
+    expect(
+      missingRequiredAnswers(nameQuestion, [
+        { questionId: 'q-name', value: encodeFullName({ firstName: 'Ana', lastName: 'Ruiz' }) },
+      ]),
+    ).toEqual([]);
   });
 });

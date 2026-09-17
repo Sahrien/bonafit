@@ -18,6 +18,82 @@
       [required]="definition().required ?? false"
       (input)="onTextareaInput($event)"></textarea>
   </mat-form-field>
+} @else if (definition().type === 'radio') {
+  <fieldset class="bona-field__group">
+    <legend class="bona-field__legend">{{ definition().label }}</legend>
+    <mat-radio-group
+      class="bona-field__choices"
+      [value]="value()"
+      [disabled]="definition().disabled ?? false"
+      [required]="definition().required ?? false"
+      (change)="onRadioChange($event)">
+      @for (option of definition().options ?? []; track option.value) {
+        <mat-radio-button [value]="option.value">{{ option.label }}</mat-radio-button>
+      }
+    </mat-radio-group>
+  </fieldset>
+} @else if (definition().type === 'checkbox') {
+  <mat-checkbox
+    class="bona-field__terms"
+    [checked]="isTermsChecked()"
+    [disabled]="definition().disabled ?? false"
+    [required]="definition().required ?? false"
+    (change)="onTermsChange($event)">
+    {{ definition().label }}
+  </mat-checkbox>
+} @else if (definition().type === 'checkbox-group') {
+  <fieldset class="bona-field__group">
+    <legend class="bona-field__legend">{{ definition().label }}</legend>
+    <div class="bona-field__choices">
+      @for (option of definition().options ?? []; track option.value) {
+        <mat-checkbox
+          [checked]="isOptionSelected(option.value)"
+          [disabled]="definition().disabled ?? false"
+          (change)="onOptionToggle(option.value, $event)">
+          {{ option.label }}
+        </mat-checkbox>
+      }
+    </div>
+  </fieldset>
+} @else if (definition().type === 'ranking') {
+  <fieldset class="bona-field__group">
+    <legend class="bona-field__legend">{{ definition().label }}</legend>
+    <ol class="bona-field__rank-list">
+      @for (option of rankedOptions(); track option.value; let index = $index; let last = $last) {
+        <li class="bona-field__rank">
+          <span>{{ option.label }}</span>
+          <span class="bona-field__rank-actions">
+            <app-bona-button
+              [text]="definition().moveUpLabel ?? 'Subir'"
+              variant="secondary"
+              [disabled]="(definition().disabled ?? false) || index === 0"
+              (action)="onMoveRank(index, -1)" />
+            <app-bona-button
+              [text]="definition().moveDownLabel ?? 'Bajar'"
+              variant="secondary"
+              [disabled]="(definition().disabled ?? false) || last"
+              (action)="onMoveRank(index, 1)" />
+          </span>
+        </li>
+      }
+    </ol>
+  </fieldset>
+} @else if (definition().type === 'fullName') {
+  <fieldset class="bona-field__group">
+    <legend class="bona-field__legend">{{ definition().label }}</legend>
+    <div class="bona-field__name">
+      <app-bona-input-text-field
+        [label]="definition().firstNameLabel ?? 'Nombre'"
+        [value]="fullName().firstName"
+        [disabled]="definition().disabled ?? false"
+        (valueChange)="onFirstNameChange($event)" />
+      <app-bona-input-text-field
+        [label]="definition().lastNameLabel ?? 'Apellidos'"
+        [value]="fullName().lastName"
+        [disabled]="definition().disabled ?? false"
+        (valueChange)="onLastNameChange($event)" />
+    </div>
+  </fieldset>
 } @else {
   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bona-field">
     <mat-label>{{ definition().label }}</mat-label>

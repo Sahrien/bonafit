@@ -1,9 +1,28 @@
-<app-bona-page [title]="pageTitle()" [subtitle]="literals.subtitle" [loading]="loading()">
-  <app-bona-button
-    bonaPageActions
-    [text]="literals.back"
-    variant="secondary"
-    (action)="onBack()" />
+<app-bona-page
+  [title]="previewing() ? previewPageTitle() : pageTitle()"
+  [subtitle]="previewing() ? description() : literals.subtitle"
+  [loading]="loading()">
+  @if (previewing()) {
+    <app-bona-button
+      bonaPageActions
+      [text]="literals.closePreview"
+      variant="secondary"
+      (action)="onClosePreview()" />
+  } @else {
+    <ng-container bonaPageActions>
+      <app-bona-button
+        [text]="literals.back"
+        variant="secondary"
+        (action)="onBack()" />
+      @if (isNew() || tab() === 'template') {
+        <app-bona-button
+          [text]="literals.preview"
+          variant="secondary"
+          [disabled]="questions().length === 0"
+          (action)="onPreview()" />
+      }
+    </ng-container>
+  }
 
   @if (error()) {
     <p class="page-error">{{ error() }}</p>
@@ -12,106 +31,116 @@
     <p class="page-feedback">{{ feedback() }}</p>
   }
 
-  <app-bona-tabs [tabs]="tabs" [active]="tab()" (activeChange)="onTabChange($event)" />
+  @if (previewing()) {
+    <app-form-fill-view
+      [banner]="literals.previewBanner"
+      [fields]="previewFields()"
+      [value]="previewValue()"
+      [submitText]="literals.previewSubmit"
+      [error]="previewError()"
+      (valueChange)="onPreviewValue($event)"
+      (submitted)="onPreviewSubmit($event)" />
+  } @else {
+    @if (!isNew()) {
+      <app-bona-tabs [tabs]="tabs" [active]="tab()" (activeChange)="onTabChange($event)" />
+    }
 
-  @if (tab() === 'template') {
-    <section class="page-section">
-      <h2>{{ literals.templateSection }}</h2>
-      <app-bona-input-text-field
-        [label]="literals.formTitle"
-        [value]="title()"
-        (valueChange)="onTitleChange($event)" />
-      <app-bona-field
-        [definition]="descriptionField"
-        [value]="description()"
-        (valueChange)="onDescriptionChange($event)" />
+    @if (isNew() || tab() === 'template') {
+      <section class="page-section">
+        <h2>{{ literals.templateSection }}</h2>
+        <app-bona-input-text-field
+          [label]="literals.formTitle"
+          [value]="title()"
+          (valueChange)="onTitleChange($event)" />
+        <app-bona-field
+          [definition]="descriptionField"
+          [value]="description()"
+          (valueChange)="onDescriptionChange($event)" />
 
-      <header class="page-section__header">
-        <h3>{{ literals.questionsSection }}</h3>
-        <app-bona-button [text]="literals.addQuestion" (action)="onAddQuestion()" />
-      </header>
+        <h3 class="questions-heading">{{ literals.questionsSection }}</h3>
 
-      <ol class="question-list">
-        @for (question of questions(); track question.id; let index = $index; let last = $last) {
-          <li class="question-card">
-            <app-bona-input-text-field
-              [label]="literals.prompt"
-              [value]="question.prompt"
-              (valueChange)="onPromptChange(question.id, $event)" />
-            <div class="question-card__row">
-              <app-bona-field
-                [definition]="typeField"
-                [value]="question.type"
-                (valueChange)="onTypeChange(question.id, $event)" />
-              <app-bona-field
-                [definition]="requiredField"
-                [value]="question.required ? 'true' : 'false'"
-                (valueChange)="onRequiredChange(question.id, $event)" />
-            </div>
-
-            @if (question.type === 'singleChoice') {
-              <div class="question-card__options">
-                <p>{{ literals.options }}</p>
-                @for (option of question.options ?? []; track option.id) {
-                  <div class="question-card__option">
-                    <app-bona-input-text-field
-                      [label]="literals.optionLabel"
-                      [value]="option.label"
-                      (valueChange)="onOptionLabelChange(question.id, option.id, $event)" />
-                    <app-bona-button
-                      [text]="literals.remove"
-                      variant="secondary"
-                      (action)="onRemoveOption(question.id, option.id)" />
-                  </div>
-                }
-                <app-bona-button
-                  [text]="literals.addOption"
-                  variant="secondary"
-                  (action)="onAddOption(question.id)" />
+        <ol class="question-list">
+          @for (question of questions(); track question.id; let index = $index; let last = $last) {
+            <li class="question-card">
+              <app-bona-input-text-field
+                [label]="literals.prompt"
+                [value]="question.prompt"
+                (valueChange)="onPromptChange(question.id, $event)" />
+              <div class="question-card__row">
+                <app-bona-field
+                  [definition]="typeField"
+                  [value]="question.type"
+                  (valueChange)="onTypeChange(question.id, $event)" />
+                <app-bona-field
+                  [definition]="requiredField"
+                  [value]="question.required ? 'true' : 'false'"
+                  (valueChange)="onRequiredChange(question.id, $event)" />
               </div>
-            }
 
-            <div class="question-card__actions">
-              <app-bona-button
-                [text]="literals.moveUp"
-                variant="secondary"
-                [disabled]="index === 0"
-                (action)="onMoveQuestion(question.id, -1)" />
-              <app-bona-button
-                [text]="literals.moveDown"
-                variant="secondary"
-                [disabled]="last"
-                (action)="onMoveQuestion(question.id, 1)" />
-              <app-bona-button
-                [text]="literals.remove"
-                variant="secondary"
-                (action)="onRemoveQuestion(question.id)" />
-            </div>
-          </li>
-        }
-      </ol>
+              @if (hasOptions(question.type)) {
+                <div class="question-card__options">
+                  <p>{{ literals.options }}</p>
+                  @for (option of question.options ?? []; track option.id) {
+                    <div class="question-card__option">
+                      <app-bona-input-text-field
+                        [label]="literals.optionLabel"
+                        [value]="option.label"
+                        (valueChange)="onOptionLabelChange(question.id, option.id, $event)" />
+                      <app-bona-button
+                        [text]="literals.remove"
+                        variant="secondary"
+                        (action)="onRemoveOption(question.id, option.id)" />
+                    </div>
+                  }
+                  <app-bona-button
+                    [text]="literals.addOption"
+                    variant="secondary"
+                    (action)="onAddOption(question.id)" />
+                </div>
+              }
 
-      <div class="page-actions">
-        <app-bona-button
-          [text]="literals.save"
-          [disabled]="saving()"
-          (action)="onSave()" />
-        @if (!isNew()) {
+              <div class="question-card__actions">
+                <app-bona-button
+                  [text]="literals.moveUp"
+                  variant="secondary"
+                  [disabled]="index === 0"
+                  (action)="onMoveQuestion(question.id, -1)" />
+                <app-bona-button
+                  [text]="literals.moveDown"
+                  variant="secondary"
+                  [disabled]="last"
+                  (action)="onMoveQuestion(question.id, 1)" />
+                <app-bona-button
+                  [text]="literals.remove"
+                  variant="secondary"
+                  (action)="onRemoveQuestion(question.id)" />
+              </div>
+            </li>
+          }
+        </ol>
+
+        <div class="question-list__add">
+          <app-bona-button [text]="literals.addQuestion" (action)="onAddQuestion()" />
+        </div>
+
+        <div class="page-actions">
           <app-bona-button
-            [text]="literals.delete"
-            variant="secondary"
-            (action)="onDelete()" />
-        }
-      </div>
-    </section>
-  }
+            [text]="literals.save"
+            [disabled]="saving()"
+            (action)="onSave()" />
+          @if (!isNew()) {
+            <app-bona-button
+              [text]="literals.delete"
+              variant="secondary"
+              (action)="onDelete()" />
+          }
+        </div>
+      </section>
+    }
 
-  @if (tab() === 'assign') {
-    <section class="page-section">
-      <h2>{{ literals.assignSection }}</h2>
-      @if (isNew()) {
-        <p class="page-hint">{{ literals.assignHint }}</p>
-      } @else {
+    @if (!isNew() && tab() === 'assign') {
+      <section class="page-section">
+        <h2>{{ literals.assignSection }}</h2>
         <div class="page-toolbar">
           <app-bona-input-text-field
             [label]="literals.clientSearch"
@@ -144,38 +173,38 @@
             [disabled]="assigning() || selectedClientIds().size === 0"
             (action)="onAssign()" />
         </div>
-      }
-    </section>
-  }
+      </section>
+    }
 
-  @if (tab() === 'responses' && !isNew()) {
-    <section class="page-section">
-      <h2>{{ literals.responsesSection }}</h2>
-      <app-bona-grid
-        [data]="assignmentRows()"
-        [columns]="assignmentColumns"
-        [actions]="assignmentActions"
-        [emptyMessage]="literals.emptyAssignments"
-        (action)="onAssignmentAction($event)"
-        (rowClick)="onAssignmentRowClick($event)" />
+    @if (!isNew() && tab() === 'responses') {
+      <section class="page-section">
+        <h2>{{ literals.responsesSection }}</h2>
+        <app-bona-grid
+          [data]="assignmentRows()"
+          [columns]="assignmentColumns"
+          [actions]="assignmentActions"
+          [emptyMessage]="literals.emptyAssignments"
+          (action)="onAssignmentAction($event)"
+          (rowClick)="onAssignmentRowClick($event)" />
 
-      @if (selectedAnswers(); as answers) {
-        <div class="answers">
-          <header class="page-section__header">
-            <h3>{{ literals.answersTitle }} · {{ answers.clientName }}</h3>
-            <app-bona-button
-              [text]="literals.closeAnswers"
-              variant="secondary"
-              (action)="onCloseAnswers()" />
-          </header>
-          <dl class="answers__list">
-            @for (item of answers.items; track item.id) {
-              <dt>{{ item.prompt }}</dt>
-              <dd>{{ item.answer }}</dd>
-            }
-          </dl>
-        </div>
-      }
-    </section>
+        @if (selectedAnswers(); as answers) {
+          <div class="answers">
+            <header class="page-section__header">
+              <h3>{{ literals.answersTitle }} · {{ answers.clientName }}</h3>
+              <app-bona-button
+                [text]="literals.closeAnswers"
+                variant="secondary"
+                (action)="onCloseAnswers()" />
+            </header>
+            <dl class="answers__list">
+              @for (item of answers.items; track item.id) {
+                <dt>{{ item.prompt }}</dt>
+                <dd>{{ item.answer }}</dd>
+              }
+            </dl>
+          </div>
+        }
+      </section>
+    }
   }
 </app-bona-page>

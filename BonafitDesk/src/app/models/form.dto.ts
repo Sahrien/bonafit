@@ -1,4 +1,29 @@
-export type FormQuestionType = 'text' | 'yesno' | 'singleChoice';
+export type FormQuestionType =
+  | 'text'
+  | 'shortText'
+  | 'fullName'
+  | 'email'
+  | 'phone'
+  | 'date'
+  | 'number'
+  | 'address'
+  | 'yesno'
+  | 'dropdown'
+  | 'singleChoice'
+  | 'multipleChoice'
+  | 'ranking'
+  | 'terms';
+
+export const FORM_OPTION_TYPES: ReadonlySet<FormQuestionType> = new Set([
+  'dropdown',
+  'singleChoice',
+  'multipleChoice',
+  'ranking',
+]);
+
+export function questionHasOptions(type: FormQuestionType): boolean {
+  return FORM_OPTION_TYPES.has(type);
+}
 
 export type FormAssignmentStatus = 'pending' | 'completed';
 

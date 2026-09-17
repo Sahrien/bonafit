@@ -8,7 +8,12 @@ export type BonaFieldControlType =
   | 'date'
   | 'time'
   | 'textarea'
-  | 'select';
+  | 'select'
+  | 'radio'
+  | 'checkbox'
+  | 'checkbox-group'
+  | 'ranking'
+  | 'fullName';
 
 export interface BonaFieldOption {
   value: string;
@@ -23,10 +28,28 @@ export interface BonaFieldDefinition {
   required?: boolean;
   disabled?: boolean;
   options?: BonaFieldOption[];
+  firstNameLabel?: string;
+  lastNameLabel?: string;
+  moveUpLabel?: string;
+  moveDownLabel?: string;
 }
+
+const TEXT_INPUT_TYPES: ReadonlySet<BonaFieldControlType> = new Set([
+  'text',
+  'email',
+  'tel',
+  'number',
+  'password',
+  'datetime-local',
+  'date',
+  'time',
+]);
 
 export function isBonaTextInputType(
   type: BonaFieldControlType | undefined,
-): type is Exclude<BonaFieldControlType, 'textarea' | 'select'> {
-  return type !== 'textarea' && type !== 'select';
+): type is Exclude<
+  BonaFieldControlType,
+  'textarea' | 'select' | 'radio' | 'checkbox' | 'checkbox-group' | 'ranking' | 'fullName'
+> {
+  return TEXT_INPUT_TYPES.has(type ?? 'text');
 }

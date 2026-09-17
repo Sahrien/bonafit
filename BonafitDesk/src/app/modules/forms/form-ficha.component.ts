@@ -25,16 +25,20 @@ import { BonaInputTextFieldComponent } from '../../components/bona-input-text-fi
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
 import { BonaTabsComponent, BonaTabItem } from '../../components/bona-tabs/bona-tabs.component';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
+import { BonaFormValue } from '../../components/bona-form/bona-form.component';
+import { mapToAnswers, missingRequiredAnswers } from '../../core/form-answers';
 import { ClientDto } from '../../models/client.dto';
 import {
   FormAssignmentDto,
   FormQuestionDto,
   FormQuestionType,
   FormWriteDto,
+  questionHasOptions,
 } from '../../models/form.dto';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { FormsApiService } from '../../services/forms-api.service';
-import { formatQuestionAnswer, orderedQuestions } from './form-question.mapper';
+import { FormFillViewComponent } from './form-fill-view.component';
+import { formatQuestionAnswer, orderedQuestions, questionsToFields } from './form-question.mapper';
 import { FORMS_LITERALS } from './forms.literals';
 
 const NEW_FORM_ID = 'new';
@@ -44,9 +48,20 @@ const TYPE_FIELD: BonaFieldDefinition = {
   label: FORMS_LITERALS.type,
   type: 'select',
   options: [
+    { value: 'shortText', label: FORMS_LITERALS.typeShortText },
+    { value: 'fullName', label: FORMS_LITERALS.typeFullName },
+    { value: 'email', label: FORMS_LITERALS.typeEmail },
+    { value: 'phone', label: FORMS_LITERALS.typePhone },
+    { value: 'date', label: FORMS_LITERALS.typeDate },
+    { value: 'number', label: FORMS_LITERALS.typeNumber },
+    { value: 'address', label: FORMS_LITERALS.typeAddress },
     { value: 'text', label: FORMS_LITERALS.typeText },
     { value: 'yesno', label: FORMS_LITERALS.typeYesNo },
+    { value: 'dropdown', label: FORMS_LITERALS.typeDropdown },
     { value: 'singleChoice', label: FORMS_LITERALS.typeSingleChoice },
+    { value: 'multipleChoice', label: FORMS_LITERALS.typeMultipleChoice },
+    { value: 'ranking', label: FORMS_LITERALS.typeRanking },
+    { value: 'terms', label: FORMS_LITERALS.typeTerms },
   ],
 };
 
@@ -76,6 +91,7 @@ const DESCRIPTION_FIELD: BonaFieldDefinition = {
     BonaInputTextFieldComponent,
     BonaPageComponent,
     BonaTabsComponent,
+    FormFillViewComponent,
   ],
   templateUrl: './form-ficha.component.html',
   styleUrl: './form-ficha.component.scss',
@@ -105,6 +121,9 @@ export class FormFichaComponent {
   readonly clientSearch = signal('');
   readonly saving = signal(false);
   readonly assigning = signal(false);
+  readonly previewing = signal(false);
+  readonly previewValue = signal<BonaFormValue>({});
+  readonly previewError = signal('');
   readonly selectedClientIds = signal<Set<string>>(new Set());
   readonly selectedAssignmentId = signal<string | null>(null);
 
@@ -120,6 +139,17 @@ export class FormFichaComponent {
   readonly pageTitle = computed(() =>
     this.isNew() ? this.literals.fichaNewTitle : this.literals.fichaTitle,
   );
+  readonly previewPageTitle = computed(() => this.title().trim() || this.pageTitle());
+  readonly fieldLabels = {
+    yes: FORMS_LITERALS.yes,
+    no: FORMS_LITERALS.no,
+    firstName: FORMS_LITERALS.firstName,
+    lastName: FORMS_LITERALS.lastName,
+    moveUp: FORMS_LITERALS.moveUp,
+    moveDown: FORMS_LITERALS.moveDown,
+  };
+  readonly previewFields = computed(() => questionsToFields(this.questions(), this.fieldLabels));
+  readonly hasOptions = questionHasOptions;
 
   readonly pendingClientIds = computed(() => {
     const pending = new Set<string>();
@@ -191,6 +221,10 @@ export class FormFichaComponent {
       yes: this.literals.yes,
       no: this.literals.no,
       empty: this.literals.emptyAnswer,
+      firstName: this.literals.firstName,
+      lastName: this.literals.lastName,
+      moveUp: this.literals.moveUp,
+      moveDown: this.literals.moveDown,
     };
     const client = this.clients().find((row) => row.id === assignment.clientId);
     return {
@@ -254,7 +288,7 @@ export class FormFichaComponent {
         if (question.id !== questionId) {
           return question;
         }
-        if (type === 'singleChoice') {
+        if (questionHasOptions(type)) {
           const options =
             question.options && question.options.length >= 2
               ? question.options
@@ -456,6 +490,37 @@ export class FormFichaComponent {
     this.selectedAssignmentId.set(null);
   }
 
+  onPreview(): void {
+    if (this.questions().length === 0) {
+      return;
+    }
+    this.previewing.set(true);
+    this.previewValue.set({});
+    this.previewError.set('');
+    this.error.set('');
+    this.feedback.set('');
+  }
+
+  onClosePreview(): void {
+    this.previewing.set(false);
+    this.previewError.set('');
+  }
+
+  onPreviewValue(value: BonaFormValue): void {
+    this.previewValue.set(value);
+  }
+
+  onPreviewSubmit(value: BonaFormValue): void {
+    const answers = mapToAnswers(this.questions(), value);
+    if (missingRequiredAnswers(this.questions(), answers).length > 0) {
+      this.previewError.set(this.literals.requiredError);
+      this.feedback.set('');
+      return;
+    }
+    this.previewError.set('');
+    this.feedback.set(this.literals.previewSubmitted);
+  }
+
   private patchQuestion(questionId: string, patch: Partial<FormQuestionDto>): void {
     this.questions.update((list) =>
       list.map((question) => (question.id === questionId ? { ...question, ...patch } : question)),
@@ -476,7 +541,7 @@ export class FormFichaComponent {
         this.error.set(this.literals.errorQuestion);
         return null;
       }
-      if (question.type === 'singleChoice') {
+      if (questionHasOptions(question.type)) {
         const options = (question.options ?? [])
           .map((option) => ({ ...option, label: option.label.trim() }))
           .filter((option) => option.label.length > 0)
@@ -510,6 +575,9 @@ export class FormFichaComponent {
     this.selectedClientIds.set(new Set());
     this.tab.set('template');
     this.clientSearch.set('');
+    this.previewing.set(false);
+    this.previewValue.set({});
+    this.previewError.set('');
     if (!id || id === NEW_FORM_ID) {
       this.title.set('');
       this.description.set('');

@@ -15,6 +15,7 @@ from app.models import (
     User,
 )
 from app.schemas import (
+    FORM_OPTION_TYPES,
     AppointmentOut,
     AuthUserOut,
     BonoOut,
@@ -136,7 +137,7 @@ def schedule_out(row: TrainerSchedule) -> TrainerScheduleOut:
 
 def question_out(row: FormQuestion) -> FormQuestionOut:
     options = None
-    if row.type == "singleChoice":
+    if row.type in FORM_OPTION_TYPES:
         options = [
             FormQuestionOptionOut(id=option.id, label=option.label, sortOrder=option.sort_order)
             for option in sorted(row.options, key=lambda item: item.sort_order)
@@ -166,7 +167,7 @@ def questions_snapshot(row: Form) -> list[dict]:
             "required": question.required,
             "sortOrder": question.sort_order,
         }
-        if question.type == "singleChoice":
+        if question.type in FORM_OPTION_TYPES:
             item["options"] = [
                 {"id": option.id, "label": option.label, "sortOrder": option.sort_order}
                 for option in sorted(question.options, key=lambda opt: opt.sort_order)

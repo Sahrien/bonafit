@@ -34,6 +34,10 @@
     margin: 0;
     font-size: 1rem;
   }
+
+  .questions-heading {
+    margin: var(--bona-space-5) 0 var(--bona-space-4);
+  }
 }
 
 .page-section__header {
@@ -42,6 +46,10 @@
   justify-content: space-between;
   gap: var(--bona-space-4);
   margin: var(--bona-space-5) 0 var(--bona-space-4);
+}
+
+.question-list__add {
+  margin-top: var(--bona-space-4);
 }
 
 .page-actions {

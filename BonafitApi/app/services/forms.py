@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -14,7 +15,14 @@ from app.models import (
     FormQuestion,
     FormQuestionOption,
 )
-from app.schemas import AssignFormIn, FormAssignmentOut, FormOut, FormWrite, SubmitFormIn
+from app.schemas import (
+    FORM_OPTION_TYPES,
+    AssignFormIn,
+    FormAssignmentOut,
+    FormOut,
+    FormWrite,
+    SubmitFormIn,
+)
 from app.serializers import assignment_out, form_out, questions_snapshot
 
 
@@ -163,13 +171,60 @@ def _assignment_or_404(db: Session, assignment_id: str) -> FormAssignment:
     return row
 
 
+def _question_field(question: object, name: str):
+    if isinstance(question, dict):
+        return question.get(name)
+    return getattr(question, name, None)
+
+
+def _option_ids(question: object) -> list[str]:
+    options = _question_field(question, "options") or []
+    ids: list[str] = []
+    for option in options:
+        option_id = option.get("id") if isinstance(option, dict) else getattr(option, "id", None)
+        if option_id:
+            ids.append(option_id)
+    return ids
+
+
+def _full_name_complete(raw: str) -> bool:
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return False
+    if not isinstance(data, dict):
+        return False
+    first = str(data.get("firstName", "")).strip()
+    last = str(data.get("lastName", "")).strip()
+    return bool(first and last)
+
+
+def _ranking_complete(question: object, raw: str) -> bool:
+    ids = _option_ids(question)
+    given = [part for part in raw.split(",") if part]
+    return len(given) == len(ids) and sorted(given) == sorted(ids)
+
+
 def _missing_required(questions: list, answers: list) -> list[str]:
     values = {item.questionId: (item.value or "").strip() for item in answers}
     missing = []
     for question in questions:
-        required = question.get("required") if isinstance(question, dict) else question.required
-        question_id = question.get("id") if isinstance(question, dict) else question.id
-        if required and not values.get(question_id, "").strip():
+        required = _question_field(question, "required")
+        question_id = _question_field(question, "id")
+        if not required:
+            continue
+        raw = values.get(question_id, "").strip()
+        qtype = _question_field(question, "type")
+        if qtype == "ranking":
+            if not _ranking_complete(question, raw):
+                missing.append(question_id)
+        elif qtype == "fullName":
+            if not _full_name_complete(raw):
+                missing.append(question_id)
+        elif qtype == "terms":
+            if raw != "yes":
+                missing.append(question_id)
+        elif not raw:
             missing.append(question_id)
     return missing
 
@@ -186,7 +241,7 @@ def _replace_questions(db: Session, form: Form, payload: FormWrite) -> None:
         )
         if item.id:
             question.id = item.id
-        if item.type == "singleChoice":
+        if item.type in FORM_OPTION_TYPES:
             for option in item.options or []:
                 row = FormQuestionOption(label=option.label.strip(), sort_order=option.sortOrder)
                 if option.id:

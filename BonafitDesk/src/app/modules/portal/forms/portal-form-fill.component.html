@@ -21,14 +21,12 @@
       }
     </dl>
   } @else if (assignment()) {
-    @if (error()) {
-      <p class="portal-page__status portal-page__status--error">{{ error() }}</p>
-    }
-    <app-bona-form
+    <app-form-fill-view
       [fields]="fields()"
       [value]="formValue()"
       [submitText]="literals.submit"
       [disabled]="saving()"
+      [error]="error()"
       (valueChange)="onFormChange($event)"
       (submitted)="onSubmit($event)" />
     @if (feedback()) {

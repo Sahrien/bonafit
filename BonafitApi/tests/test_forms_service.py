@@ -1,8 +1,17 @@
 import pytest
 
+from pydantic import ValidationError
+
 from app.database import Database
 from app.errors import BusinessError, ForbiddenError, NotFoundError
-from app.schemas import AssignFormIn, FormQuestionIn, FormWrite, SubmitFormIn, FormAnswerIn
+from app.schemas import (
+    AssignFormIn,
+    FormAnswerIn,
+    FormQuestionIn,
+    FormQuestionOptionIn,
+    FormWrite,
+    SubmitFormIn,
+)
 from app.services.forms import FormService
 from tests.factories import add_client, admin_user, client_user
 
@@ -99,3 +108,44 @@ def test_delete_form(form_service: FormService) -> None:
     form_service.delete_form(form.id)
     with pytest.raises(NotFoundError):
         form_service.get_form(form.id)
+
+
+def test_create_form_with_email_and_multiple_choice(form_service: FormService) -> None:
+    created = form_service.create_form(
+        FormWrite(
+            title="Intake extra",
+            description="",
+            questions=[
+                FormQuestionIn(prompt="Email?", type="email", required=True, sortOrder=0),
+                FormQuestionIn(
+                    prompt="Goals?",
+                    type="multipleChoice",
+                    required=True,
+                    sortOrder=1,
+                    options=[
+                        FormQuestionOptionIn(label="Fuerza", sortOrder=0),
+                        FormQuestionOptionIn(label="Movilidad", sortOrder=1),
+                    ],
+                ),
+            ],
+        )
+    )
+    assert created.questions[0].type == "email"
+    assert created.questions[0].options is None
+    assert created.questions[1].type == "multipleChoice"
+    assert [option.label for option in created.questions[1].options or []] == ["Fuerza", "Movilidad"]
+
+    loaded = form_service.get_form(created.id)
+    assert loaded.questions[1].options is not None
+    assert len(loaded.questions[1].options) == 2
+
+
+def test_option_type_requires_two_choices() -> None:
+    with pytest.raises(ValidationError):
+        FormQuestionIn(
+            prompt="Goals?",
+            type="multipleChoice",
+            required=True,
+            sortOrder=0,
+            options=[FormQuestionOptionIn(label="Only", sortOrder=0)],
+        )

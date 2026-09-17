@@ -100,4 +100,43 @@ describe('FormFichaComponent', () => {
     expect(text).toContain(FORMS_LITERALS.answersTitle);
     expect(text).toContain('Molestia de rodilla');
   });
+
+  it('hides assignment tabs when creating a form', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/admin/forms/new', FormFichaComponent);
+
+    expect(formsApi.getForm).not.toHaveBeenCalled();
+    const text = harness.routeNativeElement?.textContent ?? '';
+    expect(text).toContain(FORMS_LITERALS.fichaNewTitle);
+    expect(text).toContain(FORMS_LITERALS.templateSection);
+    expect(text).not.toContain(FORMS_LITERALS.tabAssign);
+    expect(text).not.toContain(FORMS_LITERALS.tabResponses);
+  });
+
+  it('opens a client preview from an unsaved draft without calling APIs', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/forms/new', FormFichaComponent);
+
+    component.onTitleChange('Borrador');
+    component.onAddQuestion();
+    const question = component.questions()[0];
+    component.onPromptChange(question.id, '¿Cómo te llamas?');
+    harness.fixture.detectChanges();
+
+    const preview = Array.from(
+      harness.routeNativeElement?.querySelectorAll('button') ?? [],
+    ).find((button) => button.textContent?.includes(FORMS_LITERALS.preview)) as
+      | HTMLButtonElement
+      | undefined;
+    expect(preview).toBeTruthy();
+    preview?.click();
+    harness.fixture.detectChanges();
+
+    const text = harness.routeNativeElement?.textContent ?? '';
+    expect(text).toContain(FORMS_LITERALS.previewBanner);
+    expect(text).toContain('¿Cómo te llamas?');
+    expect(harness.routeNativeElement?.querySelector('app-form-fill-view')).toBeTruthy();
+    expect(formsApi.createForm).not.toHaveBeenCalled();
+    expect(formsApi.assignForm).not.toHaveBeenCalled();
+  });
 });

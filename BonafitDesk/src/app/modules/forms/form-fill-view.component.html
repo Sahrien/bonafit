@@ -1,0 +1,13 @@
+@if (banner()) {
+  <p class="form-fill-view__banner">{{ banner() }}</p>
+}
+@if (error()) {
+  <p class="form-fill-view__error">{{ error() }}</p>
+}
+<app-bona-form
+  [fields]="fields()"
+  [value]="value()"
+  [submitText]="submitText()"
+  [disabled]="disabled()"
+  (valueChange)="valueChange.emit($event)"
+  (submitted)="submitted.emit($event)" />

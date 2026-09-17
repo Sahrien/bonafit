@@ -22,4 +22,8 @@ export const PORTAL_FORMS_LITERALS = {
   yes: 'Sí',
   no: 'No',
   emptyAnswer: 'Sin respuesta',
+  firstName: 'Nombre',
+  lastName: 'Apellidos',
+  moveUp: 'Subir',
+  moveDown: 'Bajar',
 } as const;

@@ -6,3 +6,60 @@
   width: 100%;
   font-family: var(--bona-font-family);
 }
+
+.bona-field__group {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bona-space-3);
+}
+
+.bona-field__legend {
+  padding: 0;
+  font-weight: 600;
+  color: var(--bona-color-text);
+}
+
+.bona-field__choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bona-space-2);
+  align-items: flex-start;
+}
+
+.bona-field__terms {
+  white-space: normal;
+}
+
+.bona-field__rank-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bona-space-2);
+}
+
+.bona-field__rank {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bona-space-3);
+  padding: var(--bona-space-3);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-md);
+}
+
+.bona-field__rank-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bona-space-2);
+}
+
+.bona-field__name {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--bona-space-4);
+}
