@@ -7,32 +7,8 @@ const loadLogin = () =>
 const loadChangePassword = () =>
   import('./modules/login/change-password.component').then((m) => m.ChangePasswordComponent);
 
-const loadAdminShell = () =>
-  import('./modules/admin/admin-shell.component').then((m) => m.AdminShellComponent);
-
 const loadPortalShell = () =>
   import('./modules/portal/portal-shell.component').then((m) => m.PortalShellComponent);
-
-const loadCalendar = () =>
-  import('./modules/calendar/calendar.component').then((m) => m.CalendarComponent);
-
-const loadClients = () =>
-  import('./modules/clients/clients.component').then((m) => m.ClientsComponent);
-
-const loadClientFicha = () =>
-  import('./modules/clients/client-ficha.component').then((m) => m.ClientFichaComponent);
-
-const loadServices = () =>
-  import('./modules/services/services.component').then((m) => m.ServicesComponent);
-
-const loadForms = () =>
-  import('./modules/forms/forms.component').then((m) => m.FormsComponent);
-
-const loadFormFicha = () =>
-  import('./modules/forms/form-ficha.component').then((m) => m.FormFichaComponent);
-
-const loadAdminSettings = () =>
-  import('./modules/settings/admin-settings.component').then((m) => m.AdminSettingsComponent);
 
 const loadPortalProfile = () =>
   import('./modules/portal/profile/profile.component').then((m) => m.ProfileComponent);
@@ -72,17 +48,7 @@ export const routes: Routes = [
   {
     path: 'admin',
     canActivate: [adminGuard],
-    loadComponent: loadAdminShell,
-    children: [
-      { path: '', pathMatch: 'full', redirectTo: 'calendar' },
-      { path: 'calendar', loadComponent: loadCalendar },
-      { path: 'clients', loadComponent: loadClients },
-      { path: 'clients/:id', loadComponent: loadClientFicha },
-      { path: 'services', loadComponent: loadServices },
-      { path: 'forms', loadComponent: loadForms },
-      { path: 'forms/:id', loadComponent: loadFormFicha },
-      { path: 'ajustes', loadComponent: loadAdminSettings },
-    ],
+    loadChildren: () => import('./modules/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
   },
   {
     path: 'app',

@@ -1,34 +1,40 @@
 .page-toolbar {
-  margin-bottom: var(--bona-space-5);
+  margin-bottom: var(--bona-space-3);
   max-width: 22rem;
 }
 
 .page-error {
-  margin: 0 0 var(--bona-space-4);
+  margin: 0 0 var(--bona-space-3);
   color: var(--bona-color-danger);
 }
 
 .services-split {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--bona-space-5);
+  gap: var(--bona-space-4);
   align-items: start;
 }
 
 .services-split--detail {
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+}
+
+.services-split__list,
+.services-split__editor {
+  min-width: 0;
 }
 
 .services-split__editor {
-  padding: var(--bona-space-5);
+  padding: var(--bona-space-4);
   background: var(--bona-color-surface);
   border: 1px solid var(--bona-color-border);
   border-radius: var(--bona-radius-lg);
+  box-shadow: var(--bona-shadow-card);
 
   h2,
   h3,
   h4 {
-    margin: 0 0 var(--bona-space-4);
+    margin: 0 0 var(--bona-space-3);
   }
 
   h2 {
@@ -43,12 +49,12 @@
 .page-editor__extra {
   display: flex;
   gap: var(--bona-space-2);
-  margin-top: var(--bona-space-4);
+  margin-top: var(--bona-space-3);
 }
 
 .page-nested {
-  margin-top: var(--bona-space-6);
-  padding-top: var(--bona-space-5);
+  margin-top: var(--bona-space-4);
+  padding-top: var(--bona-space-4);
   border-top: 1px solid var(--bona-color-border);
 }
 
@@ -56,8 +62,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--bona-space-4);
-  margin-bottom: var(--bona-space-4);
+  gap: var(--bona-space-3);
+  margin-bottom: var(--bona-space-3);
 
   h3 {
     margin: 0;
@@ -65,7 +71,7 @@
 }
 
 .page-nested__form {
-  margin-top: var(--bona-space-5);
+  margin-top: var(--bona-space-4);
 }
 
 @media (max-width: 56rem) {

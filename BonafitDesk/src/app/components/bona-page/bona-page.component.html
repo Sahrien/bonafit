@@ -12,8 +12,11 @@
   </header>
 
   @if (loading()) {
-    <div class="bona-page__loading" role="status">
-      <mat-progress-spinner diameter="36" mode="indeterminate" />
+    <div class="bona-page__skeleton" role="status" aria-busy="true" aria-live="polite">
+      <span class="bona-page__skeleton-label">{{ loadingLabel() }}</span>
+      <div class="bona-page__skeleton-block"></div>
+      <div class="bona-page__skeleton-block"></div>
+      <div class="bona-page__skeleton-block bona-page__skeleton-block--short"></div>
     </div>
   } @else {
     <ng-content />

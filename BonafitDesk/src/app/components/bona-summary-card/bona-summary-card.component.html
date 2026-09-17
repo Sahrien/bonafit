@@ -1,0 +1,15 @@
+<article class="bona-summary-card">
+  @if (kicker) {
+    <p class="bona-summary-card__kicker">{{ kicker }}</p>
+  }
+  <h2 class="bona-summary-card__title">{{ title }}</h2>
+  @if (meta) {
+    <p class="bona-summary-card__meta">{{ meta }}</p>
+  }
+  @if (hint) {
+    <p class="bona-summary-card__hint">{{ hint }}</p>
+  }
+  @if (actionLabel) {
+    <app-bona-button [text]="actionLabel" [variant]="actionVariant" (action)="action.emit()" />
+  }
+</article>

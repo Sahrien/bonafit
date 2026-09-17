@@ -6,6 +6,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { MOCK_FORM_ASSIGNMENTS, MOCK_FORMS } from '../../testing/fixtures';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
+import { clickGridMenuAction } from '../../testing/grid-menu';
 import { FormsApiService } from '../../services/forms-api.service';
 import { FormsComponent } from './forms.component';
 import { FORMS_LITERALS } from './forms.literals';
@@ -61,12 +62,7 @@ describe('FormsComponent', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/admin/forms', FormsComponent);
 
-    const buttons = Array.from(
-      harness.routeNativeElement?.querySelectorAll('button') ?? [],
-    ) as HTMLButtonElement[];
-    const edit = buttons.find((button) => button.textContent?.includes(FORMS_LITERALS.edit));
-    expect(edit).toBeTruthy();
-    edit?.click();
+    clickGridMenuAction(harness.routeNativeElement, FORMS_LITERALS.edit);
     await harness.fixture.whenStable();
 
     expect(router.url).toBe('/admin/forms/form-1');

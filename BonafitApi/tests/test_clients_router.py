@@ -75,6 +75,14 @@ def test_delete_client() -> None:
     clients.delete_client.assert_called_once()
 
 
+def test_delete_client_bono() -> None:
+    clients = mock.Mock(spec=ClientService)
+    with api(clients=clients) as http:
+        response = http.delete("/client-bonos/cb-1", headers=AUTH)
+    assert response.status_code == 204
+    clients.delete_client_bono.assert_called_once_with("cb-1")
+
+
 def test_clients_unauthorized_without_token() -> None:
     response = TestClient(app).get("/clients")
     assert response.status_code == 401

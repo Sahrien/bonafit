@@ -25,4 +25,11 @@ describe('BonaTabsComponent', () => {
     buttons[1].click();
     expect(spy).toHaveBeenCalledWith('assign');
   });
+
+  it('labels the tablist when a label is provided', () => {
+    fixture.componentRef.setInput('label', 'Vista');
+    fixture.detectChanges();
+    const tablist = fixture.nativeElement.querySelector('[role="tablist"]') as HTMLElement;
+    expect(tablist.getAttribute('aria-label')).toBe('Vista');
+  });
 });

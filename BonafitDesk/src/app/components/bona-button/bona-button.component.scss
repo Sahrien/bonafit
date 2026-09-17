@@ -4,5 +4,12 @@
 
 button {
   font-family: var(--bona-font-family);
-  min-height: 2.5rem;
+  min-height: 2.75rem;
+}
+
+button.mdc-button--outlined {
+  --mdc-outlined-button-outline-color: var(--bona-color-border);
+  --mdc-outlined-button-label-text-color: var(--bona-color-text);
+  --mdc-outlined-button-container-color: var(--bona-color-surface);
+  background: var(--bona-color-surface);
 }

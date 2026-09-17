@@ -13,9 +13,27 @@
 }
 
 .page-nested {
-  margin-top: var(--bona-space-6);
+  margin-top: var(--bona-space-4);
+}
+
+.page-nested__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bona-space-3);
+  margin-bottom: var(--bona-space-3);
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
 }
 
 .page-nested__form {
   margin-top: var(--bona-space-4);
+
+  h3 {
+    margin: 0 0 var(--bona-space-3);
+    font-size: 1rem;
+  }
 }

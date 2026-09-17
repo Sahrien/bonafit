@@ -26,12 +26,14 @@
 
   @if (!isNew()) {
     <section class="page-nested">
-      <h2>{{ literals.bonosTitle }}</h2>
+      <header class="page-nested__header">
+        <h2>{{ literals.assignedTitle }}</h2>
+      </header>
       <app-bona-grid
         [data]="bonoRows()"
         [columns]="bonoColumns"
         [actions]="bonoActions"
-        [emptyMessage]="literals.emptyBonos"
+        [emptyMessage]="literals.emptyAssigned"
         (action)="onBonoAction($event)" />
       @if (bonoFormOpen()) {
         <div class="page-nested__form">
@@ -47,6 +49,16 @@
             (action)="onCancelBono()" />
         </div>
       }
+
+      <div class="page-nested__form">
+        <h3>{{ literals.giftTitle }}</h3>
+        <app-bona-form
+          [fields]="giftFields()"
+          [value]="giftForm()"
+          [submitText]="literals.gift"
+          (valueChange)="onGiftFormChange($event)"
+          (submitted)="onGiftSubmit($event)" />
+      </div>
     </section>
     <div class="page-actions">
       <app-bona-button

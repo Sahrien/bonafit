@@ -1,7 +1,12 @@
 from dependency_injector.wiring import inject
 from fastapi import APIRouter, Response, status
 
-from app.schemas import BonoOut, BonoWrite, ServiceOut, ServiceWrite
+from app.schemas import (
+    BonoOut,
+    BonoWrite,
+    ServiceOut,
+    ServiceWrite,
+)
 from app.wiring import AuthSvc, AuthorizationHeader, CatalogSvc
 
 router = APIRouter(tags=["services"])

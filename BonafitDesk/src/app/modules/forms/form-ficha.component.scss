@@ -20,10 +20,11 @@
 
 .page-section {
   margin-bottom: var(--bona-space-6);
-  padding: var(--bona-space-5);
+  padding: var(--bona-space-4);
   background: var(--bona-color-surface);
   border: 1px solid var(--bona-color-border);
   border-radius: var(--bona-radius-lg);
+  box-shadow: var(--bona-shadow-card);
 
   h2 {
     margin: 0 0 var(--bona-space-4);
@@ -105,6 +106,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--bona-space-2);
+
+  button {
+    min-height: 2.75rem;
+  }
 }
 
 .client-picker {

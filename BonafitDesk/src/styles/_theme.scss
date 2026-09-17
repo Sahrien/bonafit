@@ -21,6 +21,8 @@ html {
     filled-container-shape: var(--bona-radius-md),
     outlined-container-shape: var(--bona-radius-md),
     protected-container-shape: var(--bona-radius-md),
+    outlined-outline-color: var(--mat-sys-outline),
+    outlined-label-text-color: var(--mat-sys-on-surface),
   ));
 
   @include mat.form-field-overrides((
@@ -30,11 +32,13 @@ html {
 
 :root {
   --bona-font-family: Inter, 'Segoe UI', Roboto, sans-serif;
-  --bona-color-bg: var(--mat-sys-surface);
+  --bona-color-bg: var(--mat-sys-surface-container);
   --bona-color-surface: var(--mat-sys-surface-container-lowest);
+  --bona-color-header: var(--mat-sys-surface-container-high);
+  --bona-color-nested: var(--mat-sys-surface-container-low);
   --bona-color-text: var(--mat-sys-on-surface);
   --bona-color-text-muted: var(--mat-sys-on-surface-variant);
-  --bona-color-border: var(--mat-sys-outline-variant);
+  --bona-color-border: var(--mat-sys-outline);
   --bona-color-primary: var(--mat-sys-primary);
   --bona-color-primary-contrast: var(--mat-sys-on-primary);
   --bona-color-secondary: var(--mat-sys-surface-container-lowest);
@@ -46,16 +50,24 @@ html {
   --bona-color-warning: #d97706;
   --bona-radius-sm: var(--mat-sys-corner-extra-small, 4px);
   --bona-radius-md: var(--mat-sys-corner-small, 8px);
-  --bona-radius-lg: var(--mat-sys-corner-large, 16px);
+  --bona-radius-lg: var(--mat-sys-corner-large, 20px);
   --bona-space-1: 0.25rem;
   --bona-space-2: 0.5rem;
   --bona-space-3: 0.75rem;
   --bona-space-4: 1rem;
   --bona-space-5: 1.5rem;
   --bona-space-6: 2rem;
-  --bona-shadow-card: var(--mat-sys-level2, 0 8px 24px rgba(28, 25, 23, 0.08));
+  --bona-shadow-card: 0 1px 2px rgba(28, 25, 23, 0.06), 0 6px 16px rgba(28, 25, 23, 0.08);
   --bona-header-height: 3.5rem;
+  --bona-bottom-nav-height: 4.25rem;
+  --bona-page-title-size: 1.35rem;
   --bona-focus-ring: 0 0 0 3px color-mix(in srgb, var(--bona-color-primary) 35%, transparent);
+}
+
+@media (max-width: 48rem) {
+  :root {
+    --bona-page-title-size: 1.45rem;
+  }
 }
 
 .bona-toast--success {

@@ -5,6 +5,9 @@
     <app-bona-grid
       [data]="rows()"
       [columns]="columns"
-      [emptyMessage]="literals.empty" />
+      [emptyMessage]="literals.empty"
+      [emptyTitle]="literals.emptyTitle"
+      [emptyActionLabel]="literals.catalogCta"
+      (emptyAction)="onGoCatalog()" />
   }
 </app-bona-page>

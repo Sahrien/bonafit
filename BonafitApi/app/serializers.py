@@ -71,8 +71,9 @@ def service_out(row: Service) -> ServiceOut:
     price = float(row.single_session_price) if row.single_session_price is not None else None
     return ServiceOut(
         id=row.id,
-        category=row.category,  # type: ignore[arg-type]
         name=row.name,
+        sharesSessionPool=row.shares_session_pool,
+        forcesSingleSession=row.forces_single_session,
         allowsSingleSession=row.allows_single_session,
         singleSessionPrice=price,
         durationMinutes=row.duration_minutes,

@@ -10,6 +10,7 @@ import { AuthApiService } from '../../../services/auth-api.service';
 import { FormsApiService } from '../../../services/forms-api.service';
 import { PortalFormsComponent } from './portal-forms.component';
 import { PORTAL_FORMS_LITERALS } from './portal-forms.literals';
+import { clickGridMenuAction } from '../../../testing/grid-menu';
 
 @Component({
   selector: 'app-portal-form-fill-stub',
@@ -71,14 +72,7 @@ describe('PortalFormsComponent', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/app/formularios', PortalFormsComponent);
 
-    const buttons = Array.from(
-      harness.routeNativeElement?.querySelectorAll('button') ?? [],
-    ) as HTMLButtonElement[];
-    const open = buttons.find((button) =>
-      button.textContent?.includes(PORTAL_FORMS_LITERALS.open),
-    );
-    expect(open).toBeTruthy();
-    open?.click();
+    clickGridMenuAction(harness.routeNativeElement, PORTAL_FORMS_LITERALS.open);
     await harness.fixture.whenStable();
 
     expect(router.url).toBe('/app/formularios/fa-1');

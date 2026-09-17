@@ -79,4 +79,4 @@ Prefer adding tests next to the module you change rather than leaving booking/au
 
 Update BonafitDesk in the same change: `models/*.dto.ts`, `core/*-api.ts`, `*-api.service.ts`, and `API_PATHS` if the path is new.
 
-Masaje may have bonos (including `sessionCount: 1`). Admin walk-in without a voucher is allowed only when `allowsSingleSession` and there is no usable client bono.
+Masaje may have bonos (including `sessionCount: 1`). Admin walk-in without a voucher is allowed only when `allowsSingleSession` and there is no usable client bono. Session-pool / walk-in behaviour comes from `services.sharesSessionPool` and `forcesSingleSession`, not from hardcoded names.

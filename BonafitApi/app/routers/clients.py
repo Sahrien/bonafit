@@ -122,3 +122,16 @@ def update_client_bono(
 ) -> ClientBonoOut:
     auth_service.require_admin(authorization)
     return client_service.update_client_bono(bono_id, payload)
+
+
+@router.delete("/client-bonos/{bono_id}", status_code=status.HTTP_204_NO_CONTENT)
+@inject
+def delete_client_bono(
+    bono_id: str,
+    client_service: ClientSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> Response:
+    auth_service.require_admin(authorization)
+    client_service.delete_client_bono(bono_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

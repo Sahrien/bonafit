@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { EMPTY, forkJoin, map, switchMap, take } from 'rxjs';
 import {
   BonaGridColumn,
@@ -25,6 +26,7 @@ export class BonosComponent {
   private readonly auth = inject(AuthApiService);
   private readonly clientsApi = inject(ClientsApiService);
   private readonly servicesApi = inject(ServicesApiService);
+  private readonly router = inject(Router);
 
   readonly literals = BONOS_LITERALS;
   readonly loading = signal(true);
@@ -68,6 +70,10 @@ export class BonosComponent {
           this.loading.set(false);
         },
       });
+  }
+
+  onGoCatalog(): void {
+    void this.router.navigateByUrl('/app/catalogo');
   }
 
   private toRows(clientBonos: ClientBonoDto[], bonos: BonoDto[]): Record<string, unknown>[] {

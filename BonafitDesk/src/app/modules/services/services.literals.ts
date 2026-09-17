@@ -1,8 +1,7 @@
-import { ServiceCategory } from '../../models/service.dto';
-
 export const SERVICES_LITERALS = {
   title: 'Servicios y bonos',
-  subtitle: 'Catálogo comercial del estudio',
+  subtitle: 'Lo que ofreces: duración, reserva y packs de sesiones',
+  emptyServicesTitle: 'Todavía no hay servicios',
   newService: 'Nuevo servicio',
   newBono: 'Nuevo bono',
   edit: 'Editar',
@@ -12,13 +11,14 @@ export const SERVICES_LITERALS = {
   cancel: 'Cancelar',
   emptyServices: 'Sin servicios',
   emptyBonos: 'Este servicio no tiene bonos',
+  kind: 'Tipo',
+  kindService: 'Servicio',
+  kindBono: 'Bono',
   name: 'Nombre',
-  category: 'Categoría',
   allowsSingleSession: 'Permite sesión suelta',
   bookableByClient: 'Reservable por el cliente',
   active: 'Activo',
   durationMinutes: 'Duración (minutos)',
-  singleSessionPrice: 'Precio sesión suelta',
   sessionCount: 'Sesiones',
   price: 'Precio',
   description: 'Descripción',
@@ -30,16 +30,13 @@ export const SERVICES_LITERALS = {
   errorRequired: 'Completa los campos obligatorios.',
   errorSave: 'No se ha podido guardar.',
   confirmDeleteServiceTitle: 'Eliminar servicio',
-  confirmDeleteServiceMessage: 'Se eliminará el servicio y sus bonos.',
+  confirmDeleteServiceMessage: 'Se eliminará el servicio. Primero debes eliminar sus bonos.',
   confirmDeleteBonoTitle: 'Eliminar bono',
   confirmDeleteBonoMessage: 'Se eliminará este bono del catálogo.',
   deleted: 'Eliminado.',
+  errorAssigned: 'No se puede eliminar: hay citas, bonos o está asignado a un cliente.',
   search: 'Buscar',
   searchPlaceholder: 'Nombre del servicio',
+  sharesSessionPool: 'Comparte bono de sesiones',
+  forcesSingleSession: 'Fuerza sesión suelta',
 } as const;
-
-export const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
-  'entrenamiento-personal': 'Entrenamiento personal',
-  hipopresivos: 'Hipopresivos',
-  masaje: 'Masaje',
-};

@@ -1,0 +1,40 @@
+:host {
+  display: block;
+}
+
+.bona-summary-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bona-space-2);
+  padding: var(--bona-space-4);
+  background: var(--bona-color-surface);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-lg);
+  box-shadow: var(--bona-shadow-card);
+}
+
+.bona-summary-card__kicker {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bona-color-primary);
+}
+
+.bona-summary-card__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.bona-summary-card__meta,
+.bona-summary-card__hint {
+  margin: 0;
+  color: var(--bona-color-text-muted);
+}
+
+.bona-summary-card app-bona-button {
+  margin-top: var(--bona-space-2);
+}

@@ -4,13 +4,22 @@ from app.database import Database
 from app.errors import BusinessError, NotFoundError
 from app.schemas import BonoWrite, ServiceWrite
 from app.services.catalog import CatalogService
-from tests.factories import add_bono, add_client, add_client_bono, add_service, admin_user, client_user
+from tests.factories import (
+    add_appointment,
+    add_bono,
+    add_client,
+    add_client_bono,
+    add_service,
+    add_trainer,
+    admin_user,
+    client_user,
+)
 
 
 def _service(**overrides: object) -> ServiceWrite:
     values: dict[str, object] = {
-        "category": "entrenamiento-personal",
         "name": "EP",
+        "sharesSessionPool": True,
         "allowsSingleSession": False,
         "durationMinutes": 60,
         "bookableByClient": True,
@@ -27,9 +36,9 @@ def test_create_and_list_services(catalog_service: CatalogService) -> None:
     assert rows[0].name == "EP"
 
 
-def test_masaje_forces_single_session_and_not_bookable(catalog_service: CatalogService) -> None:
+def test_forced_single_session_is_not_bookable(catalog_service: CatalogService) -> None:
     created = catalog_service.create_service(
-        _service(category="masaje", allowsSingleSession=False, bookableByClient=True)
+        _service(forcesSingleSession=True, allowsSingleSession=False, bookableByClient=True)
     )
     assert created.allowsSingleSession is True
     assert created.bookableByClient is False
@@ -63,9 +72,29 @@ def test_delete_bono_blocked_when_contracted(catalog_service: CatalogService, db
     assert exc.value.code == "bono.hasRelations"
 
 
+def test_delete_bono_without_assignment(catalog_service: CatalogService, db: Database) -> None:
+    add_service(db)
+    add_bono(db)
+    catalog_service.delete_bono("bono-1")
+    with pytest.raises(NotFoundError):
+        catalog_service.get_bono("bono-1")
+
+
 def test_delete_service_blocked_when_has_bono(catalog_service: CatalogService, db: Database) -> None:
     add_service(db)
     add_bono(db)
+    with pytest.raises(BusinessError) as exc:
+        catalog_service.delete_service("svc-1")
+    assert exc.value.code == "service.hasRelations"
+    assert catalog_service.get_service("svc-1", admin_user()).id == "svc-1"
+    assert catalog_service.get_bono("bono-1").id == "bono-1"
+
+
+def test_delete_service_blocked_when_has_appointment(catalog_service: CatalogService, db: Database) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_service(db)
+    add_appointment(db)
     with pytest.raises(BusinessError) as exc:
         catalog_service.delete_service("svc-1")
     assert exc.value.code == "service.hasRelations"
@@ -76,3 +105,9 @@ def test_delete_service(catalog_service: CatalogService, db: Database) -> None:
     catalog_service.delete_service("svc-1")
     with pytest.raises(NotFoundError):
         catalog_service.get_service("svc-1", admin_user())
+
+
+def test_create_service_keeps_pool_flag(catalog_service: CatalogService) -> None:
+    created = catalog_service.create_service(_service())
+    assert created.sharesSessionPool is True
+    assert created.forcesSingleSession is False

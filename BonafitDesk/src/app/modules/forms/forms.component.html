@@ -14,6 +14,9 @@
     [columns]="columns"
     [actions]="actions"
     [emptyMessage]="literals.empty"
+    [emptyTitle]="literals.emptyTitle"
+    [emptyActionLabel]="literals.newForm"
+    (emptyAction)="onCreate()"
     (action)="onRowAction($event)"
     (rowClick)="onRowClick($event)" />
 </app-bona-page>

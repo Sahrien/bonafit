@@ -2,11 +2,27 @@
   @if (error()) {
     <p class="portal-page__status portal-page__status--error">{{ error() }}</p>
   } @else {
+    <section class="portal-agenda__hero">
+      <app-bona-summary-card
+        [kicker]="literals.nextAppointment"
+        [title]="nextAppointmentTitle()"
+        [meta]="nextAppointmentMeta()"
+        [actionLabel]="bookableServices().length > 0 ? literals.bookCta : literals.catalogCta"
+        (action)="bookableServices().length > 0 ? onOpenBooking() : onGoCatalog()" />
+      <app-bona-summary-card
+        [kicker]="literals.remainingSessions"
+        [title]="remainingHint()"
+        [hint]="bookableServices().length === 0 ? literals.noService : ''"
+        [actionLabel]="bookableServices().length === 0 ? literals.catalogCta : ''"
+        actionVariant="secondary"
+        (action)="onGoCatalog()" />
+    </section>
+
     @if (changingId()) {
       <p class="portal-agenda__banner" role="status">{{ literals.changingBanner }}</p>
     }
 
-    <section class="portal-agenda__section">
+    <section class="portal-agenda__home">
       <header class="portal-agenda__section-header">
         <h2>{{ literals.myAppointments }}</h2>
         @if (changingId()) {
@@ -20,26 +36,56 @@
         [data]="appointmentRows()"
         [columns]="appointmentColumns"
         [actions]="appointmentActions"
+        [emptyTitle]="literals.emptyAppointmentsTitle"
         [emptyMessage]="literals.emptyAppointments"
+        [emptyActionLabel]="bookableServices().length > 0 ? literals.bookCta : literals.catalogCta"
+        (emptyAction)="bookableServices().length > 0 ? onOpenBooking() : onGoCatalog()"
         (action)="onAppointmentAction($event)" />
     </section>
 
-    <section class="portal-agenda__section">
-      <h2>{{ literals.slots }}</h2>
+    <section class="portal-agenda__book">
+      <header class="portal-agenda__section-header">
+        <h2>{{ changingId() ? literals.changingBanner : literals.slots }}</h2>
+        <app-bona-button
+          class="portal-agenda__back"
+          [text]="literals.backToAgenda"
+          variant="secondary"
+          (action)="onCloseChange()" />
+      </header>
+
       @if (bookableServices().length === 0) {
         <p class="portal-page__status">{{ literals.noService }}</p>
       } @else {
+        <h3 class="portal-agenda__step">{{ literals.pickService }}</h3>
         <app-bona-form
           [fields]="filterFields()"
           [value]="filterValue()"
           [showSubmit]="false"
           (valueChange)="onFilterChange($event)" />
-        <app-bona-grid
-          [data]="visibleSlots()"
-          [columns]="slotColumns"
-          [actions]="changingId() ? changeSlotActions : slotActions"
-          [emptyMessage]="literals.emptySlots"
-          (action)="onSlotAction($event)" />
+
+        <h3 class="portal-agenda__step">{{ literals.pickSlot }}</h3>
+        @if (slotGroups().length === 0) {
+          <p class="portal-page__status">{{ literals.emptySlots }}</p>
+        } @else {
+          @for (group of slotGroups(); track group.key) {
+            <section class="portal-agenda__day">
+              <h4>{{ group.label }}</h4>
+              <ul class="portal-agenda__slots">
+                @for (slot of group.slots; track slot.id) {
+                  <li class="portal-agenda__slot">
+                    <div>
+                      <p class="portal-agenda__slot-time">{{ slot.timeLabel }}</p>
+                      <p class="portal-agenda__slot-meta">{{ slot.trainerLabel }}</p>
+                    </div>
+                    <app-bona-button
+                      [text]="changingId() ? literals.saveChange : literals.book"
+                      (action)="onBookSlot(slot)" />
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+        }
       }
     </section>
   }

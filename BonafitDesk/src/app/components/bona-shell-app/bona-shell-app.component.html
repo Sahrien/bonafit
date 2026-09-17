@@ -1,6 +1,11 @@
 <div class="bona-shell-app">
   <mat-toolbar class="bona-shell-app__bar">
-    <a class="bona-shell-app__brand" routerLink="/">{{ brand() }}</a>
+    <a class="bona-shell-app__brand" routerLink="/">
+      <span class="bona-shell-app__brand-name">{{ brand() }}</span>
+      @if (brandSubtitle()) {
+        <span class="bona-shell-app__brand-role">{{ brandSubtitle() }}</span>
+      }
+    </a>
 
     <nav class="bona-shell-app__nav" [attr.aria-label]="menuLabel()">
       @for (item of navItems(); track item.id) {
@@ -13,20 +18,6 @@
         </a>
       }
     </nav>
-
-    <button
-      mat-icon-button
-      class="bona-shell-app__nav-toggle"
-      type="button"
-      [matMenuTriggerFor]="navMenu"
-      [attr.aria-label]="menuLabel()">
-      <mat-icon>menu</mat-icon>
-    </button>
-    <mat-menu #navMenu="matMenu">
-      @for (item of navItems(); track item.id) {
-        <a mat-menu-item [routerLink]="item.link">{{ item.label }}</a>
-      }
-    </mat-menu>
 
     <div class="bona-shell-app__profile">
       <button
@@ -52,4 +43,18 @@
   <div class="bona-shell-app__content">
     <ng-content />
   </div>
+
+  @if (navItems().length > 0) {
+    <nav class="bona-shell-app__bottom" [attr.aria-label]="menuLabel()">
+      @for (item of navItems(); track item.id) {
+        <a
+          class="bona-shell-app__bottom-link"
+          [routerLink]="item.link"
+          routerLinkActive="bona-shell-app__bottom-link--active">
+          <mat-icon>{{ item.icon || 'circle' }}</mat-icon>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+  }
 </div>

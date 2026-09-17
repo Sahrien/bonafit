@@ -9,7 +9,9 @@ export interface ClientBonoDto {
 
 export interface ContractBonoDto {
   clientId: string;
-  bonoId: string;
+  bonoId?: string;
+  serviceId?: string;
+  remainingSessions?: number;
 }
 
 export interface ClientBonoPatchDto {

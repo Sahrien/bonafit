@@ -42,7 +42,7 @@ export class CatalogoComponent {
     { field: 'serviceName', header: CATALOGO_LITERALS.service },
     { field: 'offerName', header: CATALOGO_LITERALS.offer },
     { field: 'sessionCount', header: CATALOGO_LITERALS.sessions, type: 'number' },
-    { field: 'priceLabel', header: CATALOGO_LITERALS.price },
+    { field: 'price', header: CATALOGO_LITERALS.price, type: 'currency' },
   ];
 
   readonly actions: BonaGridAction[] = [
@@ -130,15 +130,11 @@ export class CatalogoComponent {
           serviceName: service.name,
           offerName: bono.name,
           sessionCount: bono.sessionCount,
-          priceLabel: this.formatPrice(bono.price),
+          price: bono.price,
         });
       }
     }
 
     return rows;
-  }
-
-  private formatPrice(amount: number): string {
-    return amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
   }
 }

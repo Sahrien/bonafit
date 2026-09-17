@@ -11,8 +11,14 @@
   color: var(--bona-color-danger);
 }
 
+.portal-agenda__hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--bona-space-3);
+}
+
 .portal-agenda__banner {
-  margin: 0 0 var(--bona-space-4);
+  margin: var(--bona-space-4) 0 0;
   padding: var(--bona-space-3) var(--bona-space-4);
   background: color-mix(in srgb, var(--bona-color-warning) 16%, var(--bona-color-surface));
   border: 1px solid var(--bona-color-warning);
@@ -20,13 +26,9 @@
   color: var(--bona-color-text);
 }
 
-.portal-agenda__section {
-  margin-top: var(--bona-space-6);
-
-  h2 {
-    margin: 0 0 var(--bona-space-4);
-    font-size: 1.125rem;
-  }
+.portal-agenda__home,
+.portal-agenda__book {
+  margin-top: var(--bona-space-5);
 }
 
 .portal-agenda__section-header {
@@ -38,5 +40,69 @@
 
   h2 {
     margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.portal-agenda__back {
+  display: none;
+}
+
+.portal-agenda__step {
+  margin: var(--bona-space-4) 0 var(--bona-space-3);
+  font-size: 0.95rem;
+}
+
+.portal-agenda__day {
+  margin-top: var(--bona-space-3);
+
+  h4 {
+    margin: 0 0 var(--bona-space-2);
+    text-transform: capitalize;
+  }
+}
+
+.portal-agenda__slots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bona-space-2);
+}
+
+.portal-agenda__slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bona-space-3);
+  min-height: 2.75rem;
+  padding: var(--bona-space-3);
+  background: var(--bona-color-surface);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-md);
+}
+
+.portal-agenda__slot-time {
+  margin: 0;
+  font-weight: 700;
+}
+
+.portal-agenda__slot-meta {
+  margin: var(--bona-space-1) 0 0;
+  color: var(--bona-color-text-muted);
+}
+
+@media (max-width: 48rem) {
+  .portal-agenda__back {
+    display: inline-block;
+  }
+
+  :host:not(.portal-agenda--booking) .portal-agenda__book {
+    display: none;
+  }
+
+  :host.portal-agenda--booking .portal-agenda__home {
+    display: none;
   }
 }

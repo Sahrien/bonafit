@@ -1,0 +1,43 @@
+<app-bona-page [title]="literals.title" [subtitle]="literals.subtitle" [loading]="loading()">
+  <app-bona-button bonaPageActions [text]="literals.newSchedule" (action)="onCreate()" />
+
+  @if (error() && !formOpen()) {
+    <p class="page-error">{{ error() }}</p>
+  }
+
+  <div class="page-toolbar">
+    <app-bona-form
+      [fields]="filterFields()"
+      [value]="filterValue()"
+      [showSubmit]="false"
+      (valueChange)="onFilterChange($event)" />
+  </div>
+
+  <app-bona-grid
+    [data]="rows()"
+    [columns]="columns"
+    [actions]="actions"
+    [emptyMessage]="literals.empty"
+    [emptyTitle]="literals.emptyTitle"
+    [emptyActionLabel]="literals.newSchedule"
+    (emptyAction)="onCreate()"
+    (action)="onRowAction($event)" />
+
+  @if (formOpen()) {
+    <section class="page-nested">
+      @if (error()) {
+        <p class="page-error">{{ error() }}</p>
+      }
+      <app-bona-form
+        [fields]="formFields()"
+        [value]="formValue()"
+        [submitText]="literals.save"
+        (valueChange)="onFormChange($event)"
+        (submitted)="onSave($event)" />
+      <app-bona-button
+        [text]="literals.cancel"
+        variant="secondary"
+        (action)="onCancel()" />
+    </section>
+  }
+</app-bona-page>

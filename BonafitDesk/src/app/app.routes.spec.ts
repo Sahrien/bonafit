@@ -1,5 +1,5 @@
 import { Type } from '@angular/core';
-import { Route } from '@angular/router';
+import { Route, Routes } from '@angular/router';
 import { routes } from './app.routes';
 
 interface LoadedRoute {
@@ -11,7 +11,10 @@ function joinPath(prefix: string, segment: string | undefined): string {
   return [prefix, segment ?? ''].filter((part) => part !== '').join('/');
 }
 
-function collectLoaders(items: Route[], prefix = ''): Array<{ path: string; load: () => Promise<Type<unknown>> }> {
+async function collectLoaders(
+  items: Route[],
+  prefix = '',
+): Promise<Array<{ path: string; load: () => Promise<Type<unknown>> }>> {
   const loaders: Array<{ path: string; load: () => Promise<Type<unknown>> }> = [];
   for (const item of items) {
     const path = joinPath(prefix, item.path);
@@ -19,7 +22,12 @@ function collectLoaders(items: Route[], prefix = ''): Array<{ path: string; load
       loaders.push({ path, load: item.loadComponent as () => Promise<Type<unknown>> });
     }
     if (item.children) {
-      loaders.push(...collectLoaders(item.children, path));
+      loaders.push(...(await collectLoaders(item.children, path)));
+    }
+    if (item.loadChildren) {
+      const loaded = await item.loadChildren();
+      const children = (Array.isArray(loaded) ? loaded : []) as Routes;
+      loaders.push(...(await collectLoaders(children, path)));
     }
   }
   return loaders;
@@ -30,7 +38,7 @@ describe('app routes', () => {
 
   beforeAll(async () => {
     loaded = await Promise.all(
-      collectLoaders(routes).map(async (item) => ({
+      (await collectLoaders(routes)).map(async (item) => ({
         path: item.path,
         name: (await item.load()).name,
       })),
@@ -44,6 +52,7 @@ describe('app routes', () => {
   it('wires admin shell, CRUD modules, and settings', () => {
     expect(loaded).toContain(jasmine.objectContaining({ path: 'admin', name: 'AdminShellComponent' }));
     expect(loaded).toContain(jasmine.objectContaining({ path: 'admin/calendar', name: 'CalendarComponent' }));
+    expect(loaded).toContain(jasmine.objectContaining({ path: 'admin/horarios', name: 'SchedulesComponent' }));
     expect(loaded).toContain(jasmine.objectContaining({ path: 'admin/clients', name: 'ClientsComponent' }));
     expect(loaded).toContain(
       jasmine.objectContaining({ path: 'admin/clients/:id', name: 'ClientFichaComponent' }),

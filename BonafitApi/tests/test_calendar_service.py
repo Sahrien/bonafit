@@ -62,7 +62,7 @@ def test_admin_masaje_walk_in(calendar_service: CalendarService, db: Database) -
     add_trainer(db)
     add_client(db)
     add_settings(db)
-    add_service(db, id="svc-masaje", category="masaje", name="Masaje", allows_single_session=True)
+    add_service(db, id="svc-masaje", name="Masaje", shares_session_pool=False, allows_single_session=True)
     created = calendar_service.create_appointment(
         AppointmentWrite(
             trainerId="trainer-1",
@@ -77,6 +77,56 @@ def test_admin_masaje_walk_in(calendar_service: CalendarService, db: Database) -
     assert created.location == "Studio"
 
 
+def test_admin_explicit_walk_in_does_not_consume_masaje_bono(
+    calendar_service: CalendarService, db: Database
+) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_settings(db)
+    add_service(db, id="svc-masaje", name="Masaje", shares_session_pool=False, allows_single_session=True)
+    add_bono(db, id="bono-m", service_id="svc-masaje", session_count=1)
+    add_client_bono(db, bono_id="bono-m", remaining_sessions=1)
+    created = calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-masaje",
+            clientBonoId=None,
+            startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+        ),
+        admin_user(),
+    )
+    assert created.clientBonoId is None
+    with db.session() as session:
+        bono = session.get(ClientBono, "cb-1")
+        assert bono is not None
+        assert bono.remaining_sessions == 1
+
+
+def test_admin_explicit_bono_id_is_used(calendar_service: CalendarService, db: Database) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_settings(db)
+    add_service(db)
+    add_bono(db)
+    add_client_bono(db, remaining_sessions=2)
+    created = calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-1",
+            clientBonoId="cb-1",
+            startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+        ),
+        admin_user(),
+    )
+    assert created.clientBonoId == "cb-1"
+    with db.session() as session:
+        bono = session.get(ClientBono, "cb-1")
+        assert bono is not None
+        assert bono.remaining_sessions == 1
+
+
 def test_entrenamiento_requires_bono(calendar_service: CalendarService, db: Database) -> None:
     add_trainer(db)
     add_client(db)
@@ -88,6 +138,112 @@ def test_entrenamiento_requires_bono(calendar_service: CalendarService, db: Data
                 trainerId="trainer-1",
                 clientId="client-1",
                 serviceId="svc-1",
+                startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+            ),
+            admin_user(),
+        )
+    assert exc.value.code == "booking.bonoRequired"
+
+
+def test_admin_explicit_single_session_gifts_entrenamiento(
+    calendar_service: CalendarService, db: Database
+) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_settings(db)
+    add_service(db)
+    add_bono(db, session_count=10)
+    add_client_bono(db, remaining_sessions=0)
+    created = calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-1",
+            clientBonoId=None,
+            startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+        ),
+        admin_user(),
+    )
+    assert created.clientBonoId is not None
+    assert created.clientBonoId != "cb-1"
+    with db.session() as session:
+        gifted = session.get(ClientBono, created.clientBonoId)
+        pack = session.get(ClientBono, "cb-1")
+        assert gifted is not None
+        assert gifted.remaining_sessions == 0
+        assert pack is not None
+        assert pack.remaining_sessions == 0
+
+
+def test_admin_explicit_single_session_reuses_gift(
+    calendar_service: CalendarService, db: Database
+) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_settings(db)
+    add_service(db)
+    add_bono(db, session_count=10)
+    add_client_bono(db, remaining_sessions=1)
+    created = calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-1",
+            clientBonoId=None,
+            startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+        ),
+        admin_user(),
+    )
+    assert created.clientBonoId == "cb-1"
+    with db.session() as session:
+        gifted = session.get(ClientBono, "cb-1")
+        assert gifted is not None
+        assert gifted.remaining_sessions == 0
+
+
+def test_admin_explicit_single_session_does_not_consume_pack(
+    calendar_service: CalendarService, db: Database
+) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_settings(db)
+    add_service(db)
+    add_bono(db, session_count=10)
+    add_client_bono(db, remaining_sessions=7)
+    created = calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-1",
+            clientBonoId=None,
+            startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+        ),
+        admin_user(),
+    )
+    assert created.clientBonoId != "cb-1"
+    with db.session() as session:
+        pack = session.get(ClientBono, "cb-1")
+        gifted = session.get(ClientBono, created.clientBonoId)
+        assert pack is not None
+        assert pack.remaining_sessions == 7
+        assert gifted is not None
+        assert gifted.remaining_sessions == 0
+
+
+def test_admin_explicit_single_session_requires_catalog_bono(
+    calendar_service: CalendarService, db: Database
+) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_settings(db)
+    add_service(db)
+    with pytest.raises(BusinessError) as exc:
+        calendar_service.create_appointment(
+            AppointmentWrite(
+                trainerId="trainer-1",
+                clientId="client-1",
+                serviceId="svc-1",
+                clientBonoId=None,
                 startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
             ),
             admin_user(),
@@ -123,7 +279,7 @@ def test_slot_taken(calendar_service: CalendarService, db: Database) -> None:
     add_client(db)
     add_client(db, id="client-2", email="pablo@example.com")
     add_settings(db)
-    add_service(db, id="svc-masaje", category="masaje", name="Masaje", allows_single_session=True)
+    add_service(db, id="svc-masaje", name="Masaje", shares_session_pool=False, allows_single_session=True)
     payload = AppointmentWrite(
         trainerId="trainer-1",
         clientId="client-1",
@@ -151,7 +307,7 @@ def test_list_appointments_scoped_to_client(calendar_service: CalendarService, d
     add_client(db)
     add_client(db, id="client-2", email="pablo@example.com")
     add_settings(db)
-    add_service(db, id="svc-masaje", category="masaje", name="Masaje", allows_single_session=True)
+    add_service(db, id="svc-masaje", name="Masaje", shares_session_pool=False, allows_single_session=True)
     calendar_service.create_appointment(
         AppointmentWrite(
             trainerId="trainer-1",

@@ -1,12 +1,8 @@
-export type ServiceCategory =
-  | 'entrenamiento-personal'
-  | 'hipopresivos'
-  | 'masaje';
-
 export interface ServiceDto {
   id: string;
-  category: ServiceCategory;
   name: string;
+  sharesSessionPool: boolean;
+  forcesSingleSession: boolean;
   allowsSingleSession: boolean;
   singleSessionPrice?: number;
   durationMinutes: number;

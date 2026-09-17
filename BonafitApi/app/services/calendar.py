@@ -6,15 +6,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.booking import (
-    POOL_CATEGORIES,
     add_minutes,
     is_active_client_appointment,
+    is_bono_usable,
     list_availability_slots,
     occupies_trainer_slot,
     parse_iso,
     pick_preferred_bono,
     ranges_overlap,
     session_delta,
+    shares_session_pool,
     slot_matches,
     status_on_client_reschedule,
     status_on_create,
@@ -32,6 +33,7 @@ from app.models import (
     Trainer,
     TrainerSchedule,
 )
+from app.services.clients import catalog_bono_for_service
 from app.roles import UserRole
 from app.schemas import (
     AppointmentOut,
@@ -291,7 +293,15 @@ def _write_appointment(
     if actor == "client":
         _assert_client_write(db, user, previous, payload, service, now, starts_at, ends_at)
 
-    client_bono = _resolve_bono(db, actor, payload.clientId, service, now)
+    client_bono = _resolve_bono(
+        db,
+        actor,
+        payload.clientId,
+        service,
+        now,
+        payload.clientBonoId,
+        explicit="clientBonoId" in payload.model_fields_set,
+    )
     status_value = _resolve_status(actor, previous, payload, client.instant_confirm)
 
     if previous is None:
@@ -369,23 +379,74 @@ def _resolve_bono(
     client_id: str,
     service: Service,
     now: datetime,
+    requested_id: str | None = None,
+    *,
+    explicit: bool = False,
 ) -> ClientBono | None:
+    if requested_id == "":
+        requested_id = None
+        explicit = True
+    if explicit and requested_id:
+        row = db.get(ClientBono, requested_id, options=(selectinload(ClientBono.bono),))
+        if row is None or row.client_id != client_id or row.bono.service_id != service.id:
+            raise NotFoundError("client-bono", requested_id)
+        if not is_bono_usable(row.remaining_sessions, row.expires_at, now):
+            if row.remaining_sessions <= 0:
+                raise BusinessError(E["noSessions"])
+            raise BusinessError(E["expiredBono"])
+        return row
     rows = db.scalars(
         select(ClientBono)
         .options(selectinload(ClientBono.bono))
         .where(ClientBono.client_id == client_id)
     ).all()
     matching = [row for row in rows if row.bono.service_id == service.id]
+    if explicit and actor == "admin" and not requested_id:
+        return _admin_single_session(db, client_id, service, now, matching)
     picked = pick_preferred_bono(matching, now)
     if picked:
         return picked
-    if service.category not in POOL_CATEGORIES and service.allows_single_session and actor == "admin":
+    if not shares_session_pool(service) and service.allows_single_session and actor == "admin":
         return None
     if not matching:
         raise BusinessError(E["bonoRequired"])
     if any(row.remaining_sessions > 0 for row in matching):
         raise BusinessError(E["expiredBono"])
     raise BusinessError(E["noSessions"])
+
+
+def _is_gift_credit(row: ClientBono) -> bool:
+    return row.remaining_sessions == 1 and row.bono.session_count != 1
+
+
+def _admin_single_session(
+    db: Session,
+    client_id: str,
+    service: Service,
+    now: datetime,
+    matching: list[ClientBono],
+) -> ClientBono | None:
+    if service.allows_single_session:
+        return None
+    gifts = [
+        row
+        for row in matching
+        if _is_gift_credit(row) and is_bono_usable(row.remaining_sessions, row.expires_at, now)
+    ]
+    picked = pick_preferred_bono(gifts, now)
+    if picked:
+        return picked
+    catalog = catalog_bono_for_service(db, service.id)
+    row = ClientBono(
+        client_id=client_id,
+        bono_id=catalog.id,
+        remaining_sessions=1,
+        purchased_at=now,
+        expires_at=None,
+    )
+    db.add(row)
+    db.flush()
+    return row
 
 
 def _resolve_status(

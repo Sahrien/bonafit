@@ -5,6 +5,7 @@ export const AUTH_PATHS = {
   changePassword: '/cambiar-clave',
   admin: '/admin',
   adminHome: '/admin/calendar',
+  adminSchedules: '/admin/horarios',
   adminSettings: '/admin/ajustes',
   client: '/app',
   clientHome: '/app/agenda',

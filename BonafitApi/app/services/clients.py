@@ -1,8 +1,9 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session, selectinload
 
+from app.booking import shares_session_pool
 from app.database import SessionFactory
 from app.emailer import Emailer
 from app.errors import BusinessError, ForbiddenError, NotFoundError
@@ -55,14 +56,17 @@ class ClientService:
             _client_or_404(db, client_id)
             rows = db.scalars(
                 select(ClientBono)
-                .options(selectinload(ClientBono.bono).selectinload(Bono.service))
+                .options(
+                    selectinload(ClientBono.bono)
+                    .selectinload(Bono.service)
+                )
                 .where(ClientBono.client_id == client_id)
             ).all()
             totals: dict[str, int] = {}
             now = datetime.now(UTC)
             for row in rows:
                 service = row.bono.service
-                if service.category not in {"entrenamiento-personal", "hipopresivos"}:
+                if not shares_session_pool(service):
                     continue
                 if row.remaining_sessions <= 0:
                     continue
@@ -169,18 +173,23 @@ class ClientService:
             if user.role == UserRole.CLIENT and user.client_id != payload.clientId:
                 raise ForbiddenError()
             client = _client_or_404(db, payload.clientId)
-            bono = db.get(Bono, payload.bonoId)
-            if bono is None:
-                raise NotFoundError("bono", payload.bonoId)
+            bono = _resolve_contract_bono(db, payload, user)
             service = db.get(Service, bono.service_id)
             if service is None:
                 raise NotFoundError("service", bono.service_id)
             if not service.active:
                 raise BusinessError("booking.serviceInactive")
+            remaining = bono.session_count
+            if (
+                user.role == UserRole.ADMIN
+                and payload.bonoId is None
+                and payload.serviceId
+            ):
+                remaining = payload.remainingSessions or 1
             row = ClientBono(
                 client_id=client.id,
                 bono_id=bono.id,
-                remaining_sessions=bono.session_count,
+                remaining_sessions=remaining,
                 purchased_at=datetime.now(UTC),
                 expires_at=None,
             )
@@ -197,12 +206,58 @@ class ClientService:
             row.expires_at = payload.expiresAt
             return client_bono_out(row)
 
+    def delete_client_bono(self, bono_id: str) -> None:
+        with self._session_factory() as db:
+            row = db.get(ClientBono, bono_id)
+            if row is None:
+                raise NotFoundError("client-bono", bono_id)
+            upcoming = db.scalar(
+                select(Appointment.id)
+                .where(
+                    Appointment.client_bono_id == bono_id,
+                    Appointment.status.in_(("pending", "confirmed")),
+                )
+                .limit(1)
+            )
+            if upcoming:
+                raise BusinessError("client-bono.hasRelations")
+            db.execute(
+                update(Appointment)
+                .where(Appointment.client_bono_id == bono_id)
+                .values(client_bono_id=None)
+            )
+            db.delete(row)
+
 
 def _client_or_404(db: Session, client_id: str) -> Client:
     client = db.get(Client, client_id)
     if client is None:
         raise NotFoundError("client", client_id)
     return client
+
+
+def _resolve_contract_bono(db: Session, payload: ContractBono, user: CurrentUser) -> Bono:
+    if payload.bonoId:
+        bono = db.get(Bono, payload.bonoId)
+        if bono is None:
+            raise NotFoundError("bono", payload.bonoId)
+        return bono
+    if user.role != UserRole.ADMIN or not payload.serviceId:
+        raise BusinessError("booking.bonoRequired")
+    service = db.get(Service, payload.serviceId)
+    if service is None:
+        raise NotFoundError("service", payload.serviceId)
+    return catalog_bono_for_service(db, service.id)
+
+
+def catalog_bono_for_service(db: Session, service_id: str) -> Bono:
+    bonos = list(
+        db.scalars(select(Bono).where(Bono.service_id == service_id).order_by(Bono.id)).all()
+    )
+    if not bonos:
+        raise BusinessError("booking.bonoRequired")
+    single = next((item for item in bonos if item.session_count == 1), None)
+    return single or bonos[0]
 
 
 def _hide_notes(user: CurrentUser) -> bool:

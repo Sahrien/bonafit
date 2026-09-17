@@ -1,39 +1,94 @@
 <div class="bona-grid">
-  <table mat-table [dataSource]="data" class="bona-grid__table">
-    @for (column of columns; track column.field) {
-      <ng-container [matColumnDef]="column.field">
-        <th mat-header-cell *matHeaderCellDef>{{ column.header }}</th>
-        <td mat-cell *matCellDef="let row">{{ formatCell(row, column) }}</td>
-      </ng-container>
-    }
+  @if (data.length === 0) {
+    <div class="bona-grid__empty-state">
+      <p class="bona-grid__empty-title">{{ emptyTitle || GRID_LITERALS.emptyTitle }}</p>
+      <p class="bona-grid__empty">{{ emptyMessage }}</p>
+      @if (emptyActionLabel) {
+        <app-bona-button [text]="emptyActionLabel" (action)="emptyAction.emit()" />
+      }
+    </div>
+  } @else {
+    <table mat-table [dataSource]="data" class="bona-grid__table">
+      @for (column of columns; track column.field) {
+        <ng-container [matColumnDef]="column.field">
+          <th mat-header-cell *matHeaderCellDef>{{ column.header }}</th>
+          <td mat-cell *matCellDef="let row">{{ formatCell(row, column) }}</td>
+        </ng-container>
+      }
 
-    @if (actions.length > 0) {
-      <ng-container matColumnDef="_actions">
-        <th mat-header-cell *matHeaderCellDef>Acciones</th>
-        <td mat-cell *matCellDef="let row" (click)="$event.stopPropagation()">
-          <div class="bona-grid__actions">
-            @for (gridAction of actions; track gridAction.action) {
-              <app-bona-button
-                [text]="gridAction.label"
-                variant="secondary"
-                (action)="onAction(gridAction, row)" />
+      @if (actions.length > 0) {
+        <ng-container matColumnDef="_actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row" (click)="$event.stopPropagation()">
+            <button
+              mat-icon-button
+              type="button"
+              [matMenuTriggerFor]="actionsMenu"
+              [attr.aria-label]="actionsLabel">
+              <mat-icon>more_horiz</mat-icon>
+            </button>
+            <mat-menu #actionsMenu="matMenu">
+              @for (gridAction of actions; track gridAction.action) {
+                <button mat-menu-item type="button" (click)="onAction(gridAction, row)">
+                  {{ gridAction.label }}
+                </button>
+              }
+            </mat-menu>
+          </td>
+        </ng-container>
+      }
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="bona-grid__row"
+        [class.bona-grid__row--parent]="isParent(row)"
+        [class.bona-grid__row--nested]="isNested(row)"
+        tabindex="0"
+        (click)="onRowClick(row)"
+        (keydown.enter)="onRowClick(row)"></tr>
+    </table>
+
+    <ul class="bona-grid__cards">
+      @for (row of data; track rowKey(row, $index)) {
+        <li
+          class="bona-grid__card"
+          [class.bona-grid__card--nested]="isNested(row)"
+          tabindex="0"
+          (click)="onRowClick(row)"
+          (keydown.enter)="onRowClick(row)">
+          <div class="bona-grid__card-body">
+            @if (titleColumn) {
+              <p class="bona-grid__card-title">{{ formatCell(row, titleColumn) }}</p>
+            }
+            @for (column of metaColumns; track column.field) {
+              <p class="bona-grid__card-meta">
+                <span>{{ column.header }}</span>
+                {{ formatCell(row, column) }}
+              </p>
             }
           </div>
-        </td>
-      </ng-container>
-    }
-
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr
-      mat-row
-      *matRowDef="let row; columns: displayedColumns"
-      class="bona-grid__row"
-      tabindex="0"
-      (click)="onRowClick(row)"
-      (keydown.enter)="onRowClick(row)"></tr>
-
-    <tr class="bona-grid__empty-row" *matNoDataRow>
-      <td class="bona-grid__empty" [attr.colspan]="displayedColumns.length">{{ emptyMessage }}</td>
-    </tr>
-  </table>
+          @if (actions.length > 0) {
+            <div class="bona-grid__card-actions" (click)="$event.stopPropagation()">
+              <button
+                mat-icon-button
+                type="button"
+                [matMenuTriggerFor]="cardMenu"
+                [attr.aria-label]="actionsLabel">
+                <mat-icon>more_horiz</mat-icon>
+              </button>
+              <mat-menu #cardMenu="matMenu">
+                @for (gridAction of actions; track gridAction.action) {
+                  <button mat-menu-item type="button" (click)="onAction(gridAction, row)">
+                    {{ gridAction.label }}
+                  </button>
+                }
+              </mat-menu>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
 </div>

@@ -47,8 +47,9 @@ export const MOCK_CLIENTS: ClientDto[] = [
 export const MOCK_SERVICES: ServiceDto[] = [
   {
     id: 'svc-ep',
-    category: 'entrenamiento-personal',
-    name: 'entrenamiento-personal',
+    name: 'Entrenamiento personal',
+    sharesSessionPool: true,
+    forcesSingleSession: false,
     allowsSingleSession: false,
     durationMinutes: 60,
     bookableByClient: true,
@@ -56,8 +57,9 @@ export const MOCK_SERVICES: ServiceDto[] = [
   },
   {
     id: 'svc-hipo',
-    category: 'hipopresivos',
-    name: 'hipopresivos',
+    name: 'Hipopresivos',
+    sharesSessionPool: true,
+    forcesSingleSession: false,
     allowsSingleSession: false,
     durationMinutes: 45,
     bookableByClient: true,
@@ -65,8 +67,9 @@ export const MOCK_SERVICES: ServiceDto[] = [
   },
   {
     id: 'svc-masaje',
-    category: 'masaje',
-    name: 'masaje',
+    name: 'Masaje',
+    sharesSessionPool: false,
+    forcesSingleSession: true,
     allowsSingleSession: true,
     singleSessionPrice: 45,
     durationMinutes: 60,

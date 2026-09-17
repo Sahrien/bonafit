@@ -1,6 +1,7 @@
 export const PORTAL_FORMS_LITERALS = {
   title: 'Formularios',
-  subtitle: 'Encuestas y cuestionarios que te ha enviado el estudio',
+  subtitle: 'Cuestionarios que te ha enviado el estudio',
+  emptyTitle: 'No hay formularios pendientes',
   loading: 'Cargando…',
   empty: 'No tienes formularios',
   loadError: 'No se han podido cargar los formularios.',

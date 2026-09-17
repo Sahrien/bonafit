@@ -125,8 +125,9 @@ def seed_if_empty(db: Session) -> None:
 
     ep = Service(
         id="svc-ep",
-        category="entrenamiento-personal",
-        name="entrenamiento-personal",
+        name="Entrenamiento personal",
+        shares_session_pool=True,
+        forces_single_session=False,
         allows_single_session=False,
         duration_minutes=60,
         bookable_by_client=True,
@@ -134,8 +135,9 @@ def seed_if_empty(db: Session) -> None:
     )
     hipo = Service(
         id="svc-hipo",
-        category="hipopresivos",
-        name="hipopresivos",
+        name="Hipopresivos",
+        shares_session_pool=True,
+        forces_single_session=False,
         allows_single_session=False,
         duration_minutes=45,
         bookable_by_client=True,
@@ -143,8 +145,9 @@ def seed_if_empty(db: Session) -> None:
     )
     masaje = Service(
         id="svc-masaje",
-        category="masaje",
-        name="masaje",
+        name="Masaje",
+        shares_session_pool=False,
+        forces_single_session=True,
         allows_single_session=True,
         single_session_price=45,
         duration_minutes=60,
@@ -341,6 +344,23 @@ def already_seeded(db: Session) -> bool:
     return db.scalar(select(Trainer.id).where(Trainer.id == "trainer-1")) is not None
 
 
+def ensure_demo_service_names(db: Session) -> None:
+    for service_id, name, shares_session_pool, forces_single_session in (
+        ("svc-ep", "Entrenamiento personal", True, False),
+        ("svc-hipo", "Hipopresivos", True, False),
+        ("svc-masaje", "Masaje", False, True),
+    ):
+        row = db.get(Service, service_id)
+        if row is None:
+            continue
+        row.name = name
+        row.shares_session_pool = shares_session_pool
+        row.forces_single_session = forces_single_session
+        if forces_single_session:
+            row.allows_single_session = True
+            row.bookable_by_client = False
+
+
 def ensure_masaje_single_session_bono(db: Session) -> None:
     if db.get(Bono, "bono-masaje-1") is not None:
         return
@@ -384,6 +404,7 @@ def prompt_force_confirmation(read_line: Callable[[str], str] = input) -> bool:
 def seed_database(database: Database) -> str:
     with database.session() as db:
         if already_seeded(db):
+            ensure_demo_service_names(db)
             ensure_masaje_single_session_bono(db)
             ensure_demo_trainer_emails(db)
             return "Database already seeded."

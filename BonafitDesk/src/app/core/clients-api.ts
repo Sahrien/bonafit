@@ -11,4 +11,5 @@ export interface ClientsApi {
   getClientBonos(clientId: string): Observable<ClientBonoDto[]>;
   contractBono(payload: ContractBonoDto): Observable<ClientBonoDto>;
   updateClientBono(id: string, payload: ClientBonoPatchDto): Observable<ClientBonoDto>;
+  deleteClientBono(id: string): Observable<void>;
 }

@@ -1,6 +1,8 @@
 export const BONOS_LITERALS = {
   title: 'Bonos contratados',
-  subtitle: 'Sesiones que tienes disponibles',
+  subtitle: 'Sesiones que tienes disponibles en el estudio',
+  emptyTitle: 'Sin bonos todavía',
+  catalogCta: 'Ver catálogo',
   loading: 'Cargando tus bonos…',
   loadError: 'No se pudieron cargar tus bonos.',
   noSession: 'No hay un cliente asociado a esta sesión.',

@@ -7,8 +7,8 @@ from tests.api import AUTH, api
 
 SERVICE = ServiceOut(
     id="svc-1",
-    category="entrenamiento-personal",
     name="EP",
+    sharesSessionPool=True,
     allowsSingleSession=False,
     singleSessionPrice=None,
     durationMinutes=60,
@@ -32,8 +32,8 @@ def test_create_service() -> None:
         response = http.post(
             "/services",
             json={
-                "category": "entrenamiento-personal",
                 "name": "EP",
+                "sharesSessionPool": True,
                 "allowsSingleSession": False,
                 "durationMinutes": 60,
                 "bookableByClient": True,

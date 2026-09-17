@@ -7,7 +7,6 @@ MADRID = ZoneInfo(settings.timezone)
 
 OCCUPIES_SLOT = {"pending", "confirmed"}
 CONSUMES_SESSION = {"confirmed", "completed"}
-POOL_CATEGORIES = {"entrenamiento-personal", "hipopresivos"}
 
 
 def to_madrid(value: datetime) -> datetime:
@@ -51,6 +50,10 @@ def earliest_bookable_local_date(now: datetime, cutoff_time: str) -> datetime:
 
 def ranges_overlap(a_start: datetime, a_end: datetime, b_start: datetime, b_end: datetime) -> bool:
     return a_start < b_end and a_end > b_start
+
+
+def shares_session_pool(service: object) -> bool:
+    return bool(getattr(service, "shares_session_pool", False))
 
 
 def occupies_trainer_slot(status: str) -> bool:

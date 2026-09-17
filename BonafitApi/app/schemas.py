@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, PlainSerializer, mo
 from app.booking import to_utc_iso
 from app.roles import UserRole
 
-ServiceCategory = Literal["entrenamiento-personal", "hipopresivos", "masaje"]
 AppointmentStatus = Literal["pending", "confirmed", "completed", "cancelled"]
 FormQuestionType = Literal[
     "text",
@@ -105,8 +104,9 @@ class ChangePasswordRequest(BaseModel):
 class ServiceOut(BaseModel):
     model_config = camel_config()
     id: str
-    category: ServiceCategory
     name: str
+    sharesSessionPool: bool = False
+    forcesSingleSession: bool = False
     allowsSingleSession: bool
     singleSessionPrice: float | None = None
     durationMinutes: int
@@ -116,8 +116,9 @@ class ServiceOut(BaseModel):
 
 class ServiceWrite(BaseModel):
     model_config = camel_config()
-    category: ServiceCategory
     name: str
+    sharesSessionPool: bool = False
+    forcesSingleSession: bool = False
     allowsSingleSession: bool = False
     singleSessionPrice: float | None = None
     durationMinutes: int = Field(gt=0)
@@ -157,7 +158,9 @@ class ClientBonoOut(BaseModel):
 class ContractBono(BaseModel):
     model_config = camel_config()
     clientId: str
-    bonoId: str
+    bonoId: str | None = None
+    serviceId: str | None = None
+    remainingSessions: int | None = Field(default=None, ge=1)
 
 
 class ClientBonoPatch(BaseModel):

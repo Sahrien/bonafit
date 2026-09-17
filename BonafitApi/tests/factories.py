@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from app.database import Database
 from app.identity import CurrentUser
-from app.models import Bono, BookingSettings, Client, ClientBono, Service, Trainer, TrainerSchedule, User
+from app.models import Appointment, Bono, BookingSettings, Client, ClientBono, Service, Trainer, TrainerSchedule, User
 from app.roles import UserRole
 
 
@@ -70,8 +70,9 @@ def add_trainer(db: Database, **overrides: object) -> None:
 def add_service(db: Database, **overrides: object) -> None:
     values: dict[str, object] = {
         "id": "svc-1",
-        "category": "entrenamiento-personal",
         "name": "EP",
+        "shares_session_pool": True,
+        "forces_single_session": False,
         "allows_single_session": False,
         "single_session_price": None,
         "duration_minutes": 60,
@@ -133,3 +134,19 @@ def add_schedule(db: Database, **overrides: object) -> None:
     values.update(overrides)
     with db.session() as session:
         session.add(TrainerSchedule(**values))
+
+
+def add_appointment(db: Database, **overrides: object) -> None:
+    values: dict[str, object] = {
+        "id": "apt-1",
+        "trainer_id": "trainer-1",
+        "client_id": "client-1",
+        "service_id": "svc-1",
+        "starts_at": datetime(2026, 9, 9, 10, 0, tzinfo=UTC),
+        "ends_at": datetime(2026, 9, 9, 11, 0, tzinfo=UTC),
+        "location": "Studio",
+        "status": "confirmed",
+    }
+    values.update(overrides)
+    with db.session() as session:
+        session.add(Appointment(**values))

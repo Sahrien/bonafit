@@ -5,7 +5,7 @@ import { MOCK_BONOS, MOCK_SERVICES } from '../../testing/fixtures';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import { ServicesApiService } from '../../services/services-api.service';
 import { ServicesComponent } from './services.component';
-import { SERVICE_CATEGORY_LABELS, SERVICES_LITERALS } from './services.literals';
+import { SERVICES_LITERALS } from './services.literals';
 
 describe('ServicesComponent', () => {
   let fixture: ComponentFixture<ServicesComponent>;
@@ -45,21 +45,23 @@ describe('ServicesComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain(SERVICES_LITERALS.title);
     expect(text).toContain(SERVICES_LITERALS.name);
-    expect(text).toContain(SERVICES_LITERALS.category);
     expect(text).toContain(SERVICES_LITERALS.durationMinutes);
-    expect(text).toContain(SERVICES_LITERALS.allowsSingleSession);
-    expect(text).toContain(SERVICES_LITERALS.singleSessionPrice);
-    expect(text).toContain(SERVICE_CATEGORY_LABELS.masaje);
+    expect(text).toContain(SERVICES_LITERALS.price);
+    expect(text).toContain(SERVICES_LITERALS.kind);
+    expect(text).toContain(SERVICES_LITERALS.sessionCount);
+    expect(text).toContain('Entrenamiento personal');
+    expect(text).toContain('pack-10');
+    expect(text).toContain('Masaje');
     expect(fixture.nativeElement.querySelector('app-bona-grid')).toBeTruthy();
   });
 
-  it('opens nested bonos and single-session price for masaje', () => {
+  it('opens nested bonos for a service', () => {
     fixture.componentInstance.onServiceRowClick({ id: 'svc-masaje' });
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain(SERVICES_LITERALS.bonosTitle);
-    expect(text).toContain(SERVICES_LITERALS.singleSessionPrice);
+    expect(text).toContain(SERVICES_LITERALS.price);
     expect(text).toContain('sesion-suelta');
     expect(text).toContain('45');
     expect(fixture.nativeElement.querySelectorAll('app-bona-grid').length).toBe(2);

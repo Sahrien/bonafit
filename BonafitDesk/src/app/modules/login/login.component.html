@@ -1,19 +1,22 @@
 <div class="login">
-  <p class="login__brand">{{ literals.brand }}</p>
-  <header class="login__header">
-    <h1>{{ literals.title }}</h1>
-    <p>{{ literals.subtitle }}</p>
-  </header>
+  <div class="login__card">
+    <p class="login__brand">{{ literals.brand }}</p>
+    <header class="login__header">
+      <h1>{{ literals.title }}</h1>
+      <p class="login__value">{{ literals.value }}</p>
+      <p>{{ literals.subtitle }}</p>
+    </header>
 
-  @if (error()) {
-    <p class="login__error">{{ error() }}</p>
-  }
+    @if (error()) {
+      <p class="login__error">{{ error() }}</p>
+    }
 
-  <app-bona-form
-    [fields]="fields"
-    [value]="formValue()"
-    [submitText]="literals.submit"
-    [disabled]="submitting()"
-    (valueChange)="onFormChange($event)"
-    (submitted)="onSubmit($event)" />
+    <app-bona-form
+      [fields]="fields"
+      [value]="formValue()"
+      [submitText]="literals.submit"
+      [disabled]="submitting()"
+      (valueChange)="onFormChange($event)"
+      (submitted)="onSubmit($event)" />
+  </div>
 </div>

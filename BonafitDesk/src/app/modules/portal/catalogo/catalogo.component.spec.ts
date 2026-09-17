@@ -11,6 +11,7 @@ import { ClientsApiService } from '../../../services/clients-api.service';
 import { ServicesApiService } from '../../../services/services-api.service';
 import { CatalogoComponent } from './catalogo.component';
 import { CATALOGO_LITERALS } from './catalogo.literals';
+import { clickGridMenuAction } from '../../../testing/grid-menu';
 
 describe('CatalogoComponent', () => {
   let fixture: ComponentFixture<CatalogoComponent>;
@@ -31,8 +32,9 @@ describe('CatalogoComponent', () => {
   const services: ServiceDto[] = [
     {
       id: 'svc-ep',
-      category: 'entrenamiento-personal',
-      name: 'entrenamiento-personal',
+      name: 'Entrenamiento personal',
+      sharesSessionPool: true,
+      forcesSingleSession: false,
       allowsSingleSession: false,
       durationMinutes: 60,
       bookableByClient: true,
@@ -40,8 +42,9 @@ describe('CatalogoComponent', () => {
     },
     {
       id: 'svc-masaje',
-      category: 'masaje',
-      name: 'masaje',
+      name: 'Masaje',
+      sharesSessionPool: false,
+      forcesSingleSession: true,
       allowsSingleSession: true,
       singleSessionPrice: 45,
       durationMinutes: 60,
@@ -105,12 +108,8 @@ describe('CatalogoComponent', () => {
     return fixture.whenStable().then(() => fixture.detectChanges());
   }
 
-  function contractButtonInRow(text: string): HTMLButtonElement | undefined {
-    const rows = Array.from(
-      fixture.nativeElement.querySelectorAll('tr') as NodeListOf<HTMLTableRowElement>,
-    );
-    const row = rows.find((item) => item.textContent?.includes(text));
-    return row?.querySelector('button') ?? undefined;
+  function contractInRow(text: string): void {
+    clickGridMenuAction(fixture.nativeElement, CATALOGO_LITERALS.contract, { rowText: text });
   }
 
   it('loads catalog offers from real bonos only', async () => {
@@ -123,13 +122,13 @@ describe('CatalogoComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('pack-10');
     expect(text).toContain('sesion-suelta');
-    expect(text).toContain(CATALOGO_LITERALS.contract);
+    expect(fixture.nativeElement.querySelector('button[mat-icon-button]')).toBeTruthy();
   });
 
   it('contracts a bono through ClientsApiService.contractBono', async () => {
     await create();
 
-    contractButtonInRow('pack-10')?.click();
+    contractInRow('pack-10');
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -144,7 +143,7 @@ describe('CatalogoComponent', () => {
   it('contracts a one-session masaje bono', async () => {
     await create();
 
-    contractButtonInRow('sesion-suelta')?.click();
+    contractInRow('sesion-suelta');
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();

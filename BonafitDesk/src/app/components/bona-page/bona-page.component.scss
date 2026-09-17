@@ -7,15 +7,18 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--bona-space-4);
-  margin-bottom: var(--bona-space-5);
+  margin-bottom: var(--bona-space-4);
 
   h1 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: var(--bona-page-title-size);
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 
   p {
     margin: var(--bona-space-2) 0 0;
+    max-width: 40rem;
     color: var(--bona-color-text-muted);
   }
 }
@@ -26,8 +29,58 @@
   gap: var(--bona-space-2);
 }
 
-.bona-page__loading {
+.bona-page__skeleton {
   display: flex;
-  justify-content: center;
-  padding: var(--bona-space-6) 0;
+  flex-direction: column;
+  gap: var(--bona-space-3);
+}
+
+.bona-page__skeleton-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.bona-page__skeleton-block {
+  height: 3.25rem;
+  border-radius: var(--bona-radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--bona-color-header) 0%,
+    var(--bona-color-nested) 50%,
+    var(--bona-color-header) 100%
+  );
+  background-size: 200% 100%;
+  animation: bona-page-shimmer 1.2s ease-in-out infinite;
+}
+
+.bona-page__skeleton-block--short {
+  width: 55%;
+}
+
+@keyframes bona-page-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (max-width: 48rem) {
+  .bona-page__header {
+    flex-direction: column;
+    gap: var(--bona-space-3);
+    margin-bottom: var(--bona-space-3);
+
+    h1 {
+      font-size: var(--bona-page-title-size);
+    }
+  }
+
+  .bona-page__actions {
+    width: 100%;
+  }
 }

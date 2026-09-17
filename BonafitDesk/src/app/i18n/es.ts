@@ -1,3 +1,9 @@
+export const GRID_LITERALS = {
+  empty: 'Sin resultados',
+  emptyTitle: 'Nada que mostrar',
+  actions: 'Acciones',
+} as const;
+
 export const PASSWORD_FIELD_LITERALS = {
   show: 'Mostrar contraseña',
   hide: 'Ocultar contraseña',
@@ -6,7 +12,8 @@ export const PASSWORD_FIELD_LITERALS = {
 export const LOGIN_LITERALS = {
   brand: 'Bonafit',
   title: 'Iniciar sesión',
-  subtitle: 'Accede con tu email y contraseña',
+  value: 'Gestiona el estudio o reserva tus sesiones.',
+  subtitle: 'Estudio para entrenadores y portal para clientes. Accede con tu email y contraseña.',
   email: 'Email',
   password: 'Contraseña',
   submit: 'Entrar',
@@ -33,11 +40,13 @@ export const CONFIRM_LITERALS = {
 
 export const ADMIN_LITERALS = {
   brand: 'Bonafit',
+  roleSubtitle: 'Estudio',
   logout: 'Salir',
   menu: 'Menú',
   profileMenu: 'Cuenta',
   settings: 'Ajustes',
   calendar: 'Calendario',
+  schedules: 'Horarios',
   clients: 'Clientes',
   services: 'Servicios',
   forms: 'Formularios',
@@ -45,6 +54,7 @@ export const ADMIN_LITERALS = {
 
 export const CLIENT_LITERALS = {
   brand: 'Bonafit',
+  roleSubtitle: 'Portal',
   logout: 'Salir',
   menu: 'Menú',
   profileMenu: 'Cuenta',
@@ -52,6 +62,6 @@ export const CLIENT_LITERALS = {
   profile: 'Datos personales',
   bonos: 'Bonos',
   catalog: 'Catálogo',
-  agenda: 'Agenda',
+  agenda: 'Inicio',
   forms: 'Formularios',
 } as const;

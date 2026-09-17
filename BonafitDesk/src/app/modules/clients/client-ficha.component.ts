@@ -23,15 +23,26 @@ import {
 } from '../../components/bona-grid/bona-grid.component';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
+import { ApiBusinessError } from '../../core/api-business.error';
 import { BonoDto } from '../../models/bono.dto';
-import { ClientBonoDto, ClientBonoPatchDto } from '../../models/client-bono.dto';
+import { ClientBonoDto, ClientBonoPatchDto, ContractBonoDto } from '../../models/client-bono.dto';
 import { ClientDto, ClientWriteDto } from '../../models/client.dto';
+import { ServiceDto } from '../../models/service.dto';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ServicesApiService } from '../../services/services-api.service';
 import { fromDatetimeLocalValue, toDatetimeLocalValue } from '../calendar/calendar-datetime';
 import { CLIENTS_LITERALS } from './clients.literals';
 
 const NEW_CLIENT_ID = 'new';
+
+const EMPTY_GIFT: BonaFormValue = {
+  serviceId: '',
+  kind: 'pack',
+  bonoId: '',
+};
+
+const GIFT_PACK = 'pack';
+const GIFT_SINGLE = 'single';
 
 const EMPTY_FORM: BonaFormValue = {
   firstName: '',
@@ -67,9 +78,11 @@ export class ClientFichaComponent {
   readonly temporaryPassword = signal('');
   readonly bonoFormOpen = signal(false);
   readonly bonoForm = signal<BonaFormValue>({ remainingSessions: '', expiresAt: '' });
+  readonly giftForm = signal<BonaFormValue>({ ...EMPTY_GIFT });
   private readonly editingBonoId = signal<string | null>(null);
   private readonly clientBonos = signal<ClientBonoDto[]>([]);
   private readonly bonos = signal<BonoDto[]>([]);
+  private readonly services = signal<ServiceDto[]>([]);
 
   private readonly clientId = toSignal(
     this.route.paramMap.pipe(map((params) => params.get('id') ?? '')),
@@ -99,13 +112,15 @@ export class ClientFichaComponent {
   ];
 
   readonly bonoColumns: BonaGridColumn[] = [
-    { field: 'name', header: CLIENTS_LITERALS.bonosTitle },
+    { field: 'serviceName', header: CLIENTS_LITERALS.service },
+    { field: 'name', header: CLIENTS_LITERALS.bono },
     { field: 'remainingSessions', header: CLIENTS_LITERALS.remainingSessions, type: 'number' },
     { field: 'expiresAtLabel', header: CLIENTS_LITERALS.expiresAt },
   ];
 
   readonly bonoActions: BonaGridAction[] = [
     { label: CLIENTS_LITERALS.editBono, action: 'edit' },
+    { label: CLIENTS_LITERALS.unassign, action: 'unassign' },
   ];
 
   readonly bonoFields: BonaFieldDefinition[] = [
@@ -114,12 +129,55 @@ export class ClientFichaComponent {
   ];
 
   readonly bonoRows = computed(() =>
-    this.clientBonos().map((row) => ({
-      ...row,
-      name: this.bonos().find((bono) => bono.id === row.bonoId)?.name ?? row.bonoId,
-      expiresAtLabel: row.expiresAt ?? this.literals.noExpiry,
-    })),
+    this.clientBonos().map((row) => {
+      const bono = this.bonos().find((item) => item.id === row.bonoId);
+      const service = this.services().find((item) => item.id === bono?.serviceId);
+      return {
+        ...row,
+        serviceName: service?.name ?? '',
+        name: this.assignedBonoLabel(row, bono),
+        expiresAtLabel: row.expiresAt ?? this.literals.noExpiry,
+      };
+    }),
   );
+
+  readonly giftFields = computed((): BonaFieldDefinition[] => {
+    const serviceId = this.giftForm()['serviceId'] ?? '';
+    const kind = this.giftForm()['kind'] ?? GIFT_PACK;
+    const fields: BonaFieldDefinition[] = [
+      {
+        key: 'serviceId',
+        label: this.literals.service,
+        type: 'select',
+        required: true,
+        options: this.services()
+          .filter((service) => service.active)
+          .map((service) => ({ value: service.id, label: service.name })),
+      },
+      {
+        key: 'kind',
+        label: this.literals.giftKind,
+        type: 'select',
+        required: true,
+        options: [
+          { value: GIFT_PACK, label: this.literals.giftPack },
+          { value: GIFT_SINGLE, label: this.literals.giftSingle },
+        ],
+      },
+    ];
+    if (kind === GIFT_PACK) {
+      fields.push({
+        key: 'bonoId',
+        label: this.literals.bono,
+        type: 'select',
+        required: true,
+        options: this.bonos()
+          .filter((bono) => bono.serviceId === serviceId)
+          .map((bono) => ({ value: bono.id, label: bono.name })),
+      });
+    }
+    return fields;
+  });
 
   constructor() {
     effect(() => {
@@ -188,10 +246,54 @@ export class ClientFichaComponent {
       });
   }
 
+  onGiftFormChange(value: BonaFormValue): void {
+    const previousService = this.giftForm()['serviceId'] ?? '';
+    const nextService = value['serviceId'] ?? '';
+    if (nextService !== previousService) {
+      this.giftForm.set({ ...value, bonoId: '' });
+      return;
+    }
+    this.giftForm.set(value);
+  }
+
+  onGiftSubmit(value: BonaFormValue): void {
+    const payload = this.toGiftPayload(value);
+    if (!payload) {
+      return;
+    }
+    const kind = value['kind'] ?? GIFT_PACK;
+    this.confirm
+      .open({
+        title: this.literals.confirmGiftTitle,
+        message:
+          kind === GIFT_SINGLE
+            ? this.literals.confirmGiftSingleMessage
+            : this.literals.confirmGiftPackMessage,
+        confirmLabel: this.literals.gift,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() => this.clientsApi.contractBono(payload)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.toast.success(this.literals.gifted);
+          this.giftForm.set({ ...EMPTY_GIFT, serviceId: value['serviceId'] ?? '' });
+          this.loadBonos(payload.clientId);
+        },
+        error: () => this.toast.error(this.literals.giftError),
+      });
+  }
+
   onBonoAction(event: BonaGridActionEvent<Record<string, unknown>>): void {
     const id = String(event.item['id'] ?? '');
+    if (event.action === 'unassign' && id) {
+      this.unassignBono(id);
+      return;
+    }
     const row = this.clientBonos().find((item) => item.id === id);
-    if (!row) {
+    if (!row || event.action !== 'edit') {
       return;
     }
     this.editingBonoId.set(row.id);
@@ -239,9 +341,41 @@ export class ClientFichaComponent {
     this.editingBonoId.set(null);
   }
 
+  private unassignBono(id: string): void {
+    this.confirm
+      .open({
+        title: this.literals.confirmUnassignTitle,
+        message: this.literals.confirmUnassignMessage,
+        confirmLabel: this.literals.unassign,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() => this.clientsApi.deleteClientBono(id)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          if (this.editingBonoId() === id) {
+            this.bonoFormOpen.set(false);
+            this.editingBonoId.set(null);
+          }
+          this.toast.success(this.literals.unassigned);
+          this.loadBonos(this.clientId());
+        },
+        error: (error: unknown) => {
+          if (error instanceof ApiBusinessError && error.code === 'client-bono.hasRelations') {
+            this.toast.error(this.literals.errorAssigned);
+            return;
+          }
+          this.toast.error(this.literals.giftError);
+        },
+      });
+  }
+
   private load(id: string): void {
     this.error.set('');
     this.bonoFormOpen.set(false);
+    this.giftForm.set({ ...EMPTY_GIFT });
     if (!id || id === NEW_CLIENT_ID) {
       this.formValue.set({ ...EMPTY_FORM });
       this.clientBonos.set([]);
@@ -258,13 +392,15 @@ export class ClientFichaComponent {
       client: this.clientsApi.getClient(id),
       clientBonos: this.clientsApi.getClientBonos(id),
       bonos: this.servicesApi.getBonos(),
+      services: this.servicesApi.getServices(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ client, clientBonos, bonos }) => {
+        next: ({ client, clientBonos, bonos, services }) => {
           this.formValue.set(this.toFormValue(client));
           this.clientBonos.set(clientBonos);
           this.bonos.set(bonos);
+          this.services.set(services);
           this.loading.set(false);
         },
         error: () => {
@@ -279,6 +415,35 @@ export class ClientFichaComponent {
       .getClientBonos(clientId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((rows) => this.clientBonos.set(rows));
+  }
+
+  private assignedBonoLabel(row: ClientBonoDto, bono: BonoDto | undefined): string {
+    if (row.remainingSessions === 1 && (bono?.sessionCount ?? 1) !== 1) {
+      return this.literals.singleSession;
+    }
+    return bono?.name ?? row.bonoId;
+  }
+
+  private toGiftPayload(value: BonaFormValue): ContractBonoDto | null {
+    const clientId = this.clientId();
+    if (!clientId || this.isNew()) {
+      return null;
+    }
+    const serviceId = (value['serviceId'] ?? '').trim();
+    const kind = value['kind'] ?? GIFT_PACK;
+    if (!serviceId) {
+      this.error.set(this.literals.errorRequired);
+      return null;
+    }
+    if (kind === GIFT_SINGLE) {
+      return { clientId, serviceId, remainingSessions: 1 };
+    }
+    const bonoId = (value['bonoId'] ?? '').trim();
+    if (!bonoId) {
+      this.error.set(this.literals.errorRequired);
+      return null;
+    }
+    return { clientId, bonoId };
   }
 
   private toFormValue(client: ClientDto): BonaFormValue {

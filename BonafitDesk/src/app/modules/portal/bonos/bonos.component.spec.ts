@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { AuthSessionDto } from '../../../models/auth-session.dto';
 import { BonoDto } from '../../../models/bono.dto';
@@ -60,6 +61,7 @@ describe('BonosComponent', () => {
       imports: [BonosComponent],
       providers: [
         provideNoopAnimations(),
+        provideRouter([]),
         { provide: AuthApiService, useValue: authApi },
         { provide: ClientsApiService, useValue: clientsApi },
         { provide: ServicesApiService, useValue: servicesApi },

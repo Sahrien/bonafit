@@ -6,6 +6,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { MOCK_CLIENTS } from '../../testing/fixtures';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
+import { clickGridMenuAction } from '../../testing/grid-menu';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ClientsComponent } from './clients.component';
 import { CLIENTS_LITERALS } from './clients.literals';
@@ -64,12 +65,7 @@ describe('ClientsComponent', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/admin/clients', ClientsComponent);
 
-    const buttons = Array.from(
-      harness.routeNativeElement?.querySelectorAll('button') ?? [],
-    ) as HTMLButtonElement[];
-    const edit = buttons.find((button) => button.textContent?.includes(CLIENTS_LITERALS.edit));
-    expect(edit).toBeTruthy();
-    edit?.click();
+    clickGridMenuAction(harness.routeNativeElement, CLIENTS_LITERALS.edit);
     await harness.fixture.whenStable();
 
     expect(router.url).toBe('/admin/clients/client-1');

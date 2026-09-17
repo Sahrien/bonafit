@@ -15,6 +15,7 @@ export interface BonaTabItem {
 export class BonaTabsComponent {
   readonly tabs = input<BonaTabItem[]>([]);
   readonly active = input('');
+  readonly label = input('');
   readonly activeChange = output<string>();
 
   onSelect(id: string): void {

@@ -44,6 +44,10 @@ export class ClientsApiService implements ClientsApi {
   updateClientBono(id: string, payload: ClientBonoPatchDto): Observable<ClientBonoDto> {
     return this.http.put<ClientBonoDto>(apiUrl(API_PATHS.clientBonos, id), payload);
   }
+
+  deleteClientBono(id: string): Observable<void> {
+    return this.http.delete<void>(apiUrl(API_PATHS.clientBonos, id));
+  }
 }
 
 export { ClientsApiService as ClientsService };

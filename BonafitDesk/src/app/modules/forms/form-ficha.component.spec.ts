@@ -5,6 +5,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { MOCK_CLIENTS, MOCK_FORM_ASSIGNMENTS, MOCK_FORMS } from '../../testing/fixtures';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
+import { clickGridMenuAction } from '../../testing/grid-menu';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { FormsApiService } from '../../services/forms-api.service';
 import { FormFichaComponent } from './form-ficha.component';
@@ -87,12 +88,7 @@ describe('FormFichaComponent', () => {
     harness.fixture.detectChanges();
     await harness.fixture.whenStable();
 
-    const buttons = Array.from(
-      harness.routeNativeElement?.querySelectorAll('button') ?? [],
-    ) as HTMLButtonElement[];
-    const views = buttons.filter((button) => button.textContent?.includes(FORMS_LITERALS.view));
-    expect(views.length).toBeGreaterThan(1);
-    views[1]?.click();
+    clickGridMenuAction(harness.routeNativeElement, FORMS_LITERALS.view, { rowIndex: 1 });
     harness.fixture.detectChanges();
     await harness.fixture.whenStable();
 

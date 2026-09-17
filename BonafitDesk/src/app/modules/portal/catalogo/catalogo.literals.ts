@@ -1,6 +1,7 @@
 export const CATALOGO_LITERALS = {
   title: 'Catálogo',
-  subtitle: 'Servicios y bonos disponibles para contratar',
+  subtitle: 'Packs y sesiones sueltas que puedes contratar en el estudio',
+  emptyTitle: 'Nada en el catálogo ahora mismo',
   loading: 'Cargando el catálogo…',
   loadError: 'No se pudo cargar el catálogo.',
   noSession: 'No hay un cliente asociado a esta sesión.',

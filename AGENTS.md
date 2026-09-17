@@ -22,7 +22,7 @@ Keep Desk and API DTO/JSON shapes in lockstep (camelCase). Booking rules exist i
 
 - Roles: `admin` (trainers) and `client`.
 - Admin UI lives under `/admin/*`. Client portal under `/app/*`.
-- Service categories: `entrenamiento-personal`, `hipopresivos`, `masaje`.
+- Service types are rows in `services` (seed: Entrenamiento personal, Hipopresivos, Masaje). Bonos hang off each service.
 - Appointment statuses: `pending`, `confirmed`, `completed`, `cancelled`.
 - Timezone: `Europe/Madrid`. Instants in JSON are UTC ISO strings.
 - UI copy is Spanish. Put strings in literals files, not inline in templates, unless the file already inlines marketing copy (Webonafit).

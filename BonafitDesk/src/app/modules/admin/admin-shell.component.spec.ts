@@ -49,6 +49,7 @@ describe('AdminShellComponent', () => {
     const text = document.querySelector('app-admin-shell')?.textContent ?? '';
     expect(text).toContain('Alex Martin');
     expect(text).toContain(ADMIN_LITERALS.calendar);
+    expect(text).toContain(ADMIN_LITERALS.schedules);
     expect(text).toContain(ADMIN_LITERALS.clients);
     expect(router.url).toBe('/admin/calendar');
   });

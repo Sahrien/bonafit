@@ -14,18 +14,20 @@ import {
 import { BonaInputTextFieldComponent } from '../../components/bona-input-text-field/bona-input-text-field.component';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
+import { ApiBusinessError } from '../../core/api-business.error';
 import { BonoDto, BonoWriteDto } from '../../models/bono.dto';
-import { ServiceCategory, ServiceDto, ServiceWriteDto } from '../../models/service.dto';
+import { ServiceDto, ServiceWriteDto } from '../../models/service.dto';
 import { ServicesApiService } from '../../services/services-api.service';
-import { SERVICE_CATEGORY_LABELS, SERVICES_LITERALS } from './services.literals';
+import { SERVICES_LITERALS } from './services.literals';
 
 const NEW_ID = 'new';
 
 const EMPTY_SERVICE: BonaFormValue = {
   name: '',
-  category: 'entrenamiento-personal',
   allowsSingleSession: 'false',
   bookableByClient: 'true',
+  sharesSessionPool: 'true',
+  forcesSingleSession: 'false',
   durationMinutes: '60',
   singleSessionPrice: '',
   active: 'true',
@@ -37,6 +39,11 @@ const EMPTY_BONO: BonaFormValue = {
   sessionCount: '',
   price: '',
 };
+
+const YES_NO_OPTIONS = [
+  { value: 'true', label: SERVICES_LITERALS.yes },
+  { value: 'false', label: SERVICES_LITERALS.no },
+];
 
 @Component({
   selector: 'app-services',
@@ -73,10 +80,10 @@ export class ServicesComponent {
 
   readonly serviceColumns: BonaGridColumn[] = [
     { field: 'name', header: SERVICES_LITERALS.name },
-    { field: 'categoryLabel', header: SERVICES_LITERALS.category },
-    { field: 'durationMinutes', header: SERVICES_LITERALS.durationMinutes, type: 'number' },
-    { field: 'allowsSingleSessionLabel', header: SERVICES_LITERALS.allowsSingleSession },
-    { field: 'singleSessionPriceLabel', header: SERVICES_LITERALS.singleSessionPrice },
+    { field: 'kindLabel', header: SERVICES_LITERALS.kind },
+    { field: 'durationMinutesLabel', header: SERVICES_LITERALS.durationMinutes },
+    { field: 'sessionCountLabel', header: SERVICES_LITERALS.sessionCount },
+    { field: 'priceLabel', header: SERVICES_LITERALS.price, type: 'currency' },
     { field: 'activeLabel', header: SERVICES_LITERALS.active },
   ];
 
@@ -88,7 +95,7 @@ export class ServicesComponent {
   readonly bonoColumns: BonaGridColumn[] = [
     { field: 'name', header: SERVICES_LITERALS.name },
     { field: 'sessionCount', header: SERVICES_LITERALS.sessionCount, type: 'number' },
-    { field: 'price', header: SERVICES_LITERALS.price, type: 'number' },
+    { field: 'price', header: SERVICES_LITERALS.price, type: 'currency' },
     { field: 'description', header: SERVICES_LITERALS.description },
   ];
 
@@ -99,22 +106,41 @@ export class ServicesComponent {
 
   readonly serviceRows = computed(() => {
     const query = this.search().trim().toLowerCase();
-    const source = this.services();
-    const filtered = query
-      ? source.filter((service) => service.name.toLowerCase().includes(query))
-      : source;
-    return filtered.map((service) => ({
-      ...service,
-      categoryLabel: SERVICE_CATEGORY_LABELS[service.category],
-      allowsSingleSessionLabel: service.allowsSingleSession
-        ? this.literals.yes
-        : this.literals.no,
-      singleSessionPriceLabel:
-        service.allowsSingleSession && service.singleSessionPrice != null
-          ? String(service.singleSessionPrice)
-          : '',
-      activeLabel: service.active ? this.literals.yes : this.literals.no,
-    }));
+    const rows: Record<string, unknown>[] = [];
+    for (const service of this.services()) {
+      const serviceBonos = this.bonos().filter((bono) => bono.serviceId === service.id);
+      const serviceMatches = !query || service.name.toLowerCase().includes(query);
+      const matchingBonos = query
+        ? serviceBonos.filter((bono) => bono.name.toLowerCase().includes(query))
+        : serviceBonos;
+      if (!serviceMatches && matchingBonos.length === 0) {
+        continue;
+      }
+      rows.push({
+        rowKind: 'service',
+        id: service.id,
+        name: service.name,
+        kindLabel: this.literals.kindService,
+        durationMinutesLabel: String(service.durationMinutes),
+        sessionCountLabel: '',
+        priceLabel: service.singleSessionPrice,
+        activeLabel: service.active ? this.literals.yes : this.literals.no,
+      });
+      for (const bono of serviceMatches ? serviceBonos : matchingBonos) {
+        rows.push({
+          rowKind: 'bono',
+          id: bono.id,
+          serviceId: service.id,
+          name: bono.name,
+          kindLabel: this.literals.kindBono,
+          durationMinutesLabel: '',
+          sessionCountLabel: String(bono.sessionCount),
+          priceLabel: bono.price,
+          activeLabel: '',
+        });
+      }
+    }
+    return rows;
   });
 
   readonly selectedBonos = computed(() => {
@@ -131,21 +157,9 @@ export class ServicesComponent {
   readonly showDetail = computed(() => this.selectedServiceId() !== null);
 
   readonly serviceFields = computed((): BonaFieldDefinition[] => {
-    const allowsSingle = this.serviceForm()['allowsSingleSession'] === 'true';
+    const forcesSingleSession = this.serviceForm()['forcesSingleSession'] === 'true';
     const fields: BonaFieldDefinition[] = [
       { key: 'name', label: this.literals.name, type: 'text', required: true },
-      {
-        key: 'category',
-        label: this.literals.category,
-        type: 'select',
-        required: true,
-        options: (Object.keys(SERVICE_CATEGORY_LABELS) as ServiceCategory[]).map(
-          (category) => ({
-            value: category,
-            label: SERVICE_CATEGORY_LABELS[category],
-          }),
-        ),
-      },
       {
         key: 'durationMinutes',
         label: this.literals.durationMinutes,
@@ -153,39 +167,44 @@ export class ServicesComponent {
         required: true,
       },
       {
-        key: 'bookableByClient',
-        label: this.literals.bookableByClient,
-        type: 'select',
-        options: [
-          { value: 'true', label: this.literals.yes },
-          { value: 'false', label: this.literals.no },
-        ],
+        key: 'singleSessionPrice',
+        label: this.literals.price,
+        type: 'number',
       },
       {
         key: 'active',
         label: this.literals.active,
         type: 'select',
-        options: [
-          { value: 'true', label: this.literals.yes },
-          { value: 'false', label: this.literals.no },
-        ],
+        options: YES_NO_OPTIONS,
       },
       {
-        key: 'allowsSingleSession',
-        label: this.literals.allowsSingleSession,
+        key: 'sharesSessionPool',
+        label: this.literals.sharesSessionPool,
         type: 'select',
-        options: [
-          { value: 'true', label: this.literals.yes },
-          { value: 'false', label: this.literals.no },
-        ],
+        options: YES_NO_OPTIONS,
+      },
+      {
+        key: 'forcesSingleSession',
+        label: this.literals.forcesSingleSession,
+        type: 'select',
+        options: YES_NO_OPTIONS,
       },
     ];
-    if (allowsSingle) {
-      fields.push({
-        key: 'singleSessionPrice',
-        label: this.literals.singleSessionPrice,
-        type: 'number',
-      });
+    if (!forcesSingleSession) {
+      fields.push(
+        {
+          key: 'bookableByClient',
+          label: this.literals.bookableByClient,
+          type: 'select',
+          options: YES_NO_OPTIONS,
+        },
+        {
+          key: 'allowsSingleSession',
+          label: this.literals.allowsSingleSession,
+          type: 'select',
+          options: YES_NO_OPTIONS,
+        },
+      );
     }
     return fields;
   });
@@ -213,11 +232,25 @@ export class ServicesComponent {
   }
 
   onServiceRowClick(item: Record<string, unknown>): void {
+    if (item['rowKind'] === 'bono') {
+      this.selectBono(String(item['id'] ?? ''));
+      return;
+    }
     this.selectService(String(item['id'] ?? ''));
   }
 
   onServiceAction(event: BonaGridActionEvent<Record<string, unknown>>): void {
     const id = String(event.item['id'] ?? '');
+    if (event.item['rowKind'] === 'bono') {
+      if (event.action === 'edit') {
+        this.selectBono(id);
+        return;
+      }
+      if (event.action === 'delete' && id) {
+        this.deleteBono(id);
+      }
+      return;
+    }
     if (event.action === 'edit') {
       this.selectService(id);
       return;
@@ -228,6 +261,14 @@ export class ServicesComponent {
   }
 
   onServiceFormChange(value: BonaFormValue): void {
+    if (value['forcesSingleSession'] === 'true') {
+      this.serviceForm.set({
+        ...value,
+        allowsSingleSession: 'true',
+        bookableByClient: 'false',
+      });
+      return;
+    }
     this.serviceForm.set(value);
   }
 
@@ -269,34 +310,11 @@ export class ServicesComponent {
   onBonoAction(event: BonaGridActionEvent<Record<string, unknown>>): void {
     const id = String(event.item['id'] ?? '');
     if (event.action === 'edit') {
-      const bono = this.bonos().find((item) => item.id === id);
-      if (!bono) {
-        return;
-      }
-      this.editingBonoId.set(bono.id);
-      this.bonoForm.set(this.toBonoForm(bono));
-      this.bonoFormOpen.set(true);
+      this.selectBono(id);
       return;
     }
     if (event.action === 'delete' && id) {
-      this.confirm
-        .open({
-          title: this.literals.confirmDeleteBonoTitle,
-          message: this.literals.confirmDeleteBonoMessage,
-          confirmLabel: this.literals.delete,
-        })
-        .pipe(
-          filter((ok) => ok),
-          switchMap(() => this.servicesApi.deleteBono(id)),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: () => {
-            this.toast.success(this.literals.deleted);
-            this.loadAll();
-          },
-          error: () => this.toast.error(this.literals.errorSave),
-        });
+      this.deleteBono(id);
     }
   }
 
@@ -320,11 +338,11 @@ export class ServicesComponent {
         : this.servicesApi.updateBono(id, payload);
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-          this.toast.success(this.literals.saved);
-          this.closeBonoForm();
-          this.loadAll();
-        },
-        error: () => this.toast.error(this.literals.errorSave),
+        this.toast.success(this.literals.saved);
+        this.closeBonoForm();
+        this.loadAll();
+      },
+      error: () => this.toast.error(this.literals.errorSave),
     });
   }
 
@@ -341,6 +359,17 @@ export class ServicesComponent {
     this.serviceForm.set(this.toServiceForm(service));
     this.closeBonoForm();
     this.error.set('');
+  }
+
+  private selectBono(id: string): void {
+    const bono = this.bonos().find((item) => item.id === id);
+    if (!bono) {
+      return;
+    }
+    this.selectService(bono.serviceId);
+    this.editingBonoId.set(bono.id);
+    this.bonoForm.set(this.toBonoForm(bono));
+    this.bonoFormOpen.set(true);
   }
 
   private deleteService(id: string): void {
@@ -364,8 +393,42 @@ export class ServicesComponent {
           this.toast.success(this.literals.deleted);
           this.loadAll();
         },
-        error: () => this.toast.error(this.literals.errorSave),
+        error: (error: unknown) => this.toast.error(this.deleteError(error)),
       });
+  }
+
+  private deleteBono(id: string): void {
+    this.confirm
+      .open({
+        title: this.literals.confirmDeleteBonoTitle,
+        message: this.literals.confirmDeleteBonoMessage,
+        confirmLabel: this.literals.delete,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() => this.servicesApi.deleteBono(id)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          if (this.editingBonoId() === id) {
+            this.closeBonoForm();
+          }
+          this.toast.success(this.literals.deleted);
+          this.loadAll();
+        },
+        error: (error: unknown) => this.toast.error(this.deleteError(error)),
+      });
+  }
+
+  private deleteError(error: unknown): string {
+    if (
+      error instanceof ApiBusinessError &&
+      (error.code === 'service.hasRelations' || error.code === 'bono.hasRelations')
+    ) {
+      return this.literals.errorAssigned;
+    }
+    return this.literals.errorSave;
   }
 
   private loadAll(after?: () => void): void {
@@ -396,9 +459,10 @@ export class ServicesComponent {
   private toServiceForm(service: ServiceDto): BonaFormValue {
     return {
       name: service.name,
-      category: service.category,
       allowsSingleSession: service.allowsSingleSession ? 'true' : 'false',
       bookableByClient: service.bookableByClient ? 'true' : 'false',
+      sharesSessionPool: service.sharesSessionPool ? 'true' : 'false',
+      forcesSingleSession: service.forcesSingleSession ? 'true' : 'false',
       durationMinutes: String(service.durationMinutes),
       singleSessionPrice:
         service.singleSessionPrice != null ? String(service.singleSessionPrice) : '',
@@ -417,26 +481,29 @@ export class ServicesComponent {
 
   private toServiceWrite(value: BonaFormValue): ServiceWriteDto | null {
     const name = (value['name'] ?? '').trim();
-    const category = value['category'] as ServiceCategory;
     const durationMinutes = Number(value['durationMinutes']);
-    if (!name || !category || Number.isNaN(durationMinutes) || durationMinutes <= 0) {
+    if (!name || Number.isNaN(durationMinutes) || durationMinutes <= 0) {
       this.error.set(this.literals.errorRequired);
       return null;
     }
-    const allowsSingleSession = value['allowsSingleSession'] === 'true';
+    const forcesSingleSession = value['forcesSingleSession'] === 'true';
     const payload: ServiceWriteDto = {
       name,
-      category,
-      allowsSingleSession,
+      sharesSessionPool: value['sharesSessionPool'] === 'true',
+      forcesSingleSession,
+      allowsSingleSession: value['allowsSingleSession'] === 'true',
       bookableByClient: value['bookableByClient'] === 'true',
       durationMinutes,
       active: value['active'] !== 'false',
     };
-    if (allowsSingleSession) {
-      const price = Number(value['singleSessionPrice']);
-      if (!Number.isNaN(price) && value['singleSessionPrice'] !== '') {
-        payload.singleSessionPrice = price;
+    const priceRaw = value['singleSessionPrice'] ?? '';
+    if (priceRaw !== '') {
+      const price = Number(priceRaw);
+      if (Number.isNaN(price) || price < 0) {
+        this.error.set(this.literals.errorRequired);
+        return null;
       }
+      payload.singleSessionPrice = price;
     }
     return payload;
   }

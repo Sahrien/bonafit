@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { MOCK_SERVICES, MOCK_TRAINERS } from '../../../testing/fixtures';
 import { AuthSessionDto } from '../../../models/auth-session.dto';
@@ -83,6 +84,7 @@ describe('PortalAgendaComponent', () => {
       imports: [PortalAgendaComponent],
       providers: [
         provideNoopAnimations(),
+        provideRouter([]),
         { provide: AuthApiService, useValue: authApi },
         { provide: CalendarApiService, useValue: calendarApi },
         { provide: ClientsApiService, useValue: clientsApi },
@@ -101,8 +103,36 @@ describe('PortalAgendaComponent', () => {
     expect(calendarApi.getAvailability).toHaveBeenCalled();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain(PORTAL_AGENDA_LITERALS.title);
+    expect(text).toContain(PORTAL_AGENDA_LITERALS.nextAppointment);
+    expect(text).toContain(PORTAL_AGENDA_LITERALS.noNextAppointment);
     expect(text).toContain(PORTAL_AGENDA_LITERALS.slots);
-    expect(text).toContain(PORTAL_AGENDA_LITERALS.book);
     expect(text).toContain('Alex Martin');
+    expect(text).toContain('7');
+  });
+
+  it('shows the next appointment in the hero when one is upcoming', async () => {
+    calendarApi.getAppointments.and.returnValue(
+      of([
+        {
+          id: 'apt-next',
+          trainerId: 'trainer-1',
+          clientId: 'client-1',
+          serviceId: 'svc-ep',
+          startsAt: '2026-12-01T10:00:00.000Z',
+          endsAt: '2026-12-01T11:00:00.000Z',
+          location: 'studio-1',
+          status: 'confirmed' as const,
+        },
+      ]),
+    );
+    fixture = TestBed.createComponent(PortalAgendaComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain(PORTAL_AGENDA_LITERALS.nextAppointment);
+    expect(text).toContain('Entrenamiento personal');
+    expect(text).not.toContain(PORTAL_AGENDA_LITERALS.noNextAppointment);
   });
 });

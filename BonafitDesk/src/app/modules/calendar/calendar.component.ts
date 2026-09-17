@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, forkJoin, switchMap } from 'rxjs';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
 import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
@@ -11,14 +14,9 @@ import {
   BonaCalendarSlotSelect,
   BonaCalendarView,
 } from '../../components/bona-calendar/bona-calendar.component';
+import { BonaTabItem, BonaTabsComponent } from '../../components/bona-tabs/bona-tabs.component';
 import { BonaFieldDefinition, BonaFieldOption } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
-import {
-  BonaGridAction,
-  BonaGridActionEvent,
-  BonaGridColumn,
-  BonaGridComponent,
-} from '../../components/bona-grid/bona-grid.component';
 import { ApiBusinessError } from '../../core/api-business.error';
 import { addMinutes, isBonoUsable } from '../../core/booking';
 import { AppointmentDto, AppointmentStatus, AppointmentWriteDto } from '../../models/appointment.dto';
@@ -26,9 +24,10 @@ import { BonoDto } from '../../models/bono.dto';
 import { BookingSettingsDto } from '../../models/booking-settings.dto';
 import { ClientBonoDto } from '../../models/client-bono.dto';
 import { ClientDto } from '../../models/client.dto';
-import { ServiceCategory, ServiceDto } from '../../models/service.dto';
-import { TrainerScheduleDto, TrainerScheduleWriteDto } from '../../models/trainer-schedule.dto';
+import { ServiceDto } from '../../models/service.dto';
 import { TrainerDto } from '../../models/trainer.dto';
+import { Router } from '@angular/router';
+import { AUTH_PATHS } from '../../core/auth/auth.paths';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ServicesApiService } from '../../services/services-api.service';
@@ -46,13 +45,6 @@ const EMPTY_FORM: BonaFormValue = {
   status: 'confirmed',
 };
 
-const EMPTY_SCHEDULE: BonaFormValue = {
-  trainerId: '',
-  weekday: '1',
-  startTime: '08:00',
-  endTime: '18:00',
-};
-
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
   pending: 'var(--bona-color-warning)',
   confirmed: 'var(--bona-color-primary)',
@@ -60,17 +52,20 @@ const STATUS_COLORS: Record<AppointmentStatus, string> = {
   cancelled: 'var(--bona-color-border)',
 };
 
-const NEW_ID = 'new';
-
 @Component({
   selector: 'app-calendar',
   standalone: true,
   imports: [
     BonaPageComponent,
     BonaCalendarComponent,
+    BonaTabsComponent,
     BonaFormComponent,
     BonaButtonComponent,
-    BonaGridComponent,
+    MatIconButton,
+    MatIcon,
+    MatMenu,
+    MatMenuItem,
+    MatMenuTrigger,
   ],
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.scss',
@@ -80,21 +75,22 @@ export class CalendarComponent {
   private readonly calendarApi = inject(CalendarApiService);
   private readonly clientsApi = inject(ClientsApiService);
   private readonly servicesApi = inject(ServicesApiService);
+  private readonly router = inject(Router);
   private readonly confirm = inject(BonaConfirm);
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly literals = CALENDAR_LITERALS;
+  readonly viewTabs: BonaTabItem[] = [
+    { id: 'week', label: CALENDAR_LITERALS.week },
+    { id: 'day', label: CALENDAR_LITERALS.day },
+  ];
   readonly view = signal<BonaCalendarView>('week');
   readonly loading = signal(true);
   readonly formOpen = signal(false);
   readonly editingId = signal<string | null>(null);
   readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
   readonly error = signal('');
-  readonly schedulesOpen = signal(false);
-  readonly scheduleFormOpen = signal(false);
-  readonly editingScheduleId = signal<string | null>(null);
-  readonly scheduleForm = signal<BonaFormValue>({ ...EMPTY_SCHEDULE });
 
   private readonly trainers = signal<TrainerDto[]>([]);
   private readonly clients = signal<ClientDto[]>([]);
@@ -102,7 +98,6 @@ export class CalendarComponent {
   private readonly bonos = signal<BonoDto[]>([]);
   private readonly clientBonos = signal<ClientBonoDto[]>([]);
   private readonly appointments = signal<AppointmentDto[]>([]);
-  private readonly schedules = signal<TrainerScheduleDto[]>([]);
   private readonly settings = signal<BookingSettingsDto | null>(null);
 
   readonly events = computed(() =>
@@ -111,37 +106,28 @@ export class CalendarComponent {
       .map((appointment) => this.toCalendarEvent(appointment)),
   );
 
+  readonly todayAppointments = computed(() => {
+    const todayKey = this.dayKey(new Date());
+    return this.appointments()
+      .filter(
+        (appointment) =>
+          appointment.status !== 'cancelled' && this.dayKey(new Date(appointment.startsAt)) === todayKey,
+      )
+      .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime())
+      .map((appointment) => ({
+        id: appointment.id,
+        time: this.formatTime(appointment.startsAt),
+        title: this.toCalendarEvent(appointment).title,
+        status: this.statusLabel(appointment.status),
+      }));
+  });
+
   readonly editorTitle = computed(() =>
     this.editingId() ? this.literals.editAppointment : this.literals.newAppointment,
   );
 
   readonly currentStatus = computed(
     () => (this.formValue()['status'] ?? '') as AppointmentStatus | '',
-  );
-
-  readonly weekdayOptions: BonaFieldOption[] = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
-    value: String(weekday),
-    label: this.weekdayLabel(weekday),
-  }));
-
-  readonly scheduleColumns: BonaGridColumn[] = [
-    { field: 'trainerLabel', header: CALENDAR_LITERALS.trainer },
-    { field: 'weekdayLabel', header: CALENDAR_LITERALS.weekday },
-    { field: 'startTime', header: CALENDAR_LITERALS.startTime },
-    { field: 'endTime', header: CALENDAR_LITERALS.endTime },
-  ];
-
-  readonly scheduleActions: BonaGridAction[] = [
-    { label: CALENDAR_LITERALS.edit, action: 'edit' },
-    { label: CALENDAR_LITERALS.delete, action: 'delete' },
-  ];
-
-  readonly scheduleRows = computed(() =>
-    this.schedules().map((row) => ({
-      ...row,
-      trainerLabel: this.trainers().find((trainer) => trainer.id === row.trainerId)?.name ?? row.trainerId,
-      weekdayLabel: this.weekdayLabel(row.weekday),
-    })),
   );
 
   readonly appointmentFields = computed((): BonaFieldDefinition[] => {
@@ -215,31 +201,17 @@ export class CalendarComponent {
     ];
   });
 
-  readonly scheduleFields = computed((): BonaFieldDefinition[] => [
-    {
-      key: 'trainerId',
-      label: this.literals.trainer,
-      type: 'select',
-      required: true,
-      options: this.trainers().map((trainer) => ({ value: trainer.id, label: trainer.name })),
-    },
-    {
-      key: 'weekday',
-      label: this.literals.weekday,
-      type: 'select',
-      required: true,
-      options: this.weekdayOptions,
-    },
-    { key: 'startTime', label: this.literals.startTime, type: 'time', required: true },
-    { key: 'endTime', label: this.literals.endTime, type: 'time', required: true },
-  ]);
-
   constructor() {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 48rem)').matches) {
+      this.view.set('day');
+    }
     this.loadCatalog();
   }
 
-  onView(view: BonaCalendarView): void {
-    this.view.set(view);
+  onView(view: string): void {
+    if (view === 'week' || view === 'day') {
+      this.view.set(view);
+    }
   }
 
   onCreate(): void {
@@ -251,6 +223,10 @@ export class CalendarComponent {
     });
   }
 
+  onOpenSchedules(): void {
+    void this.router.navigateByUrl(AUTH_PATHS.adminSchedules);
+  }
+
   onSlotSelect(slot: BonaCalendarSlotSelect): void {
     this.openForm(null, {
       ...EMPTY_FORM,
@@ -260,6 +236,15 @@ export class CalendarComponent {
       location: this.settings()?.defaultLocation ?? '',
       status: 'confirmed',
     });
+  }
+
+  onTodayClick(id: string): void {
+    const appointment = this.appointments().find((item) => item.id === id);
+    if (!appointment) {
+      return;
+    }
+    this.openForm(appointment.id, this.toFormValue(appointment));
+    this.loadClientBonos(appointment.clientId);
   }
 
   onEventClick(event: BonaCalendarEvent): void {
@@ -356,87 +341,6 @@ export class CalendarComponent {
       });
   }
 
-  toggleSchedules(): void {
-    this.schedulesOpen.update((open) => !open);
-  }
-
-  onCreateSchedule(): void {
-    this.editingScheduleId.set(NEW_ID);
-    this.scheduleForm.set({
-      ...EMPTY_SCHEDULE,
-      trainerId: this.defaultTrainerId(),
-    });
-    this.scheduleFormOpen.set(true);
-  }
-
-  onScheduleAction(event: BonaGridActionEvent<Record<string, unknown>>): void {
-    const id = String(event.item['id'] ?? '');
-    if (event.action === 'edit') {
-      const row = this.schedules().find((item) => item.id === id);
-      if (!row) {
-        return;
-      }
-      this.editingScheduleId.set(row.id);
-      this.scheduleForm.set({
-        trainerId: row.trainerId,
-        weekday: String(row.weekday),
-        startTime: row.startTime,
-        endTime: row.endTime,
-      });
-      this.scheduleFormOpen.set(true);
-      return;
-    }
-    if (event.action === 'delete' && id) {
-      this.confirm
-        .open({
-          title: this.literals.confirmDeleteScheduleTitle,
-          message: this.literals.confirmDeleteScheduleMessage,
-          confirmLabel: this.literals.delete,
-        })
-        .pipe(
-          filter((ok) => ok),
-          switchMap(() => this.calendarApi.deleteTrainerSchedule(id)),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: () => {
-            this.toast.success(this.literals.scheduleDeleted);
-            this.loadSchedules();
-          },
-          error: (error) => this.error.set(this.messageFor(error)),
-        });
-    }
-  }
-
-  onScheduleFormChange(value: BonaFormValue): void {
-    this.scheduleForm.set(value);
-  }
-
-  onSaveSchedule(value: BonaFormValue): void {
-    const payload = this.toScheduleWrite(value);
-    if (!payload) {
-      return;
-    }
-    const id = this.editingScheduleId();
-    const request =
-      !id || id === NEW_ID
-        ? this.calendarApi.createTrainerSchedule(payload)
-        : this.calendarApi.updateTrainerSchedule(id, payload);
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.scheduleFormOpen.set(false);
-        this.editingScheduleId.set(null);
-        this.loadSchedules();
-      },
-      error: (error) => this.error.set(this.messageFor(error)),
-    });
-  }
-
-  onCancelSchedule(): void {
-    this.scheduleFormOpen.set(false);
-    this.editingScheduleId.set(null);
-  }
-
   private saveAppointment(value: BonaFormValue): void {
     const payload = this.toWriteDto(value);
     if (!payload) {
@@ -465,18 +369,16 @@ export class CalendarComponent {
       services: this.servicesApi.getServices(),
       bonos: this.servicesApi.getBonos(),
       settings: this.calendarApi.getBookingSettings(),
-      schedules: this.calendarApi.getTrainerSchedules(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ trainers, appointments, clients, services, bonos, settings, schedules }) => {
+        next: ({ trainers, appointments, clients, services, bonos, settings }) => {
           this.trainers.set(trainers);
           this.appointments.set(appointments);
           this.clients.set(clients);
           this.services.set(services);
           this.bonos.set(bonos);
           this.settings.set(settings);
-          this.schedules.set(schedules);
           this.loading.set(false);
         },
         error: (error) => {
@@ -491,13 +393,6 @@ export class CalendarComponent {
       .getAppointments()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((appointments) => this.appointments.set(appointments));
-  }
-
-  private loadSchedules(): void {
-    this.calendarApi
-      .getTrainerSchedules()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((rows) => this.schedules.set(rows));
   }
 
   private loadClientBonos(clientId: string): void {
@@ -521,40 +416,30 @@ export class CalendarComponent {
     return this.trainers()[0]?.id ?? '';
   }
 
+  private dayKey(date: Date): string {
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  }
+
+  private formatTime(value: string): string {
+    return new Date(value).toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
   private clientLabel(client: ClientDto): string {
     return `${client.firstName} ${client.lastName}`.trim();
   }
 
   private serviceLabel(service: ServiceDto): string {
-    const labels: Record<ServiceCategory, string> = {
-      'entrenamiento-personal': this.literals.categoryPersonal,
-      hipopresivos: this.literals.categoryHipopresivos,
-      masaje: this.literals.categoryMasaje,
-    };
-    return labels[service.category] ?? service.name;
-  }
-
-  private weekdayLabel(weekday: number): string {
-    const labels: Record<number, string> = {
-      1: this.literals.weekday1,
-      2: this.literals.weekday2,
-      3: this.literals.weekday3,
-      4: this.literals.weekday4,
-      5: this.literals.weekday5,
-      6: this.literals.weekday6,
-      7: this.literals.weekday7,
-    };
-    return labels[weekday] ?? String(weekday);
+    return service.name;
   }
 
   private bonoOptions(service: ServiceDto | undefined): BonaFieldOption[] {
     if (!service) {
       return [];
     }
-    const options: BonaFieldOption[] = [];
-    if (service.allowsSingleSession) {
-      options.push({ value: '', label: this.literals.singleSession });
-    }
+    const options: BonaFieldOption[] = [{ value: '', label: this.literals.singleSession }];
     const clientId = this.formValue()['clientId'] ?? '';
     const now = new Date();
     for (const contracted of this.clientBonos()) {
@@ -565,9 +450,12 @@ export class CalendarComponent {
       if (!bono || bono.serviceId !== service.id) {
         continue;
       }
+      const gift = contracted.remainingSessions === 1 && bono.sessionCount !== 1;
       options.push({
         value: contracted.id,
-        label: `${bono.name} · ${contracted.remainingSessions}`,
+        label: gift
+          ? `${this.literals.singleSession} · ${contracted.remainingSessions}`
+          : `${bono.name} · ${contracted.remainingSessions}`,
       });
     }
     return options;
@@ -625,12 +513,7 @@ export class CalendarComponent {
       this.error.set(this.literals.errorRequired);
       return null;
     }
-    const service = this.services().find((item) => item.id === serviceId);
     const clientBonoId = value['clientBonoId'] ?? '';
-    if (service && !service.allowsSingleSession && !clientBonoId) {
-      this.error.set(this.literals.errorBonoRequired);
-      return null;
-    }
     const payload: AppointmentWriteDto = {
       trainerId,
       clientId,
@@ -639,23 +522,9 @@ export class CalendarComponent {
       endsAt,
       location,
       status,
+      clientBonoId: clientBonoId || null,
     };
-    if (clientBonoId) {
-      payload.clientBonoId = clientBonoId;
-    }
     return payload;
-  }
-
-  private toScheduleWrite(value: BonaFormValue): TrainerScheduleWriteDto | null {
-    const trainerId = value['trainerId'] ?? '';
-    const weekday = Number(value['weekday']);
-    const startTime = value['startTime'] ?? '';
-    const endTime = value['endTime'] ?? '';
-    if (!trainerId || !weekday || !startTime || !endTime) {
-      this.error.set(this.literals.errorRequired);
-      return null;
-    }
-    return { trainerId, weekday, startTime, endTime };
   }
 
   private endsAtFor(serviceId: string, startsAtLocal: string, currentEnds: string): string {

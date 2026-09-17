@@ -21,10 +21,10 @@ export class PortalShellComponent {
   readonly literals = CLIENT_LITERALS;
   readonly userName = this.authSession.userName;
   readonly navItems: BonaShellNavItem[] = [
-    { id: 'agenda', label: CLIENT_LITERALS.agenda, link: AUTH_PATHS.clientHome },
-    { id: 'bonos', label: CLIENT_LITERALS.bonos, link: '/app/bonos' },
-    { id: 'catalog', label: CLIENT_LITERALS.catalog, link: '/app/catalogo' },
-    { id: 'forms', label: CLIENT_LITERALS.forms, link: '/app/formularios' },
+    { id: 'agenda', label: CLIENT_LITERALS.agenda, link: AUTH_PATHS.clientHome, icon: 'event' },
+    { id: 'bonos', label: CLIENT_LITERALS.bonos, link: '/app/bonos', icon: 'loyalty' },
+    { id: 'catalog', label: CLIENT_LITERALS.catalog, link: '/app/catalogo', icon: 'storefront' },
+    { id: 'forms', label: CLIENT_LITERALS.forms, link: '/app/formularios', icon: 'assignment' },
   ];
   readonly menuItems: BonaShellNavItem[] = [
     { id: 'profile', label: CLIENT_LITERALS.profile, link: AUTH_PATHS.clientProfile },

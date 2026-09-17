@@ -5,17 +5,18 @@ export interface AppointmentDto {
   trainerId: string;
   clientId: string;
   serviceId: string;
-  clientBonoId?: string;
+  clientBonoId?: string | null;
   startsAt: string;
   endsAt: string;
   location: string;
   status: AppointmentStatus;
 }
 
-export type AppointmentWriteDto = Omit<AppointmentDto, 'id' | 'status' | 'location' | 'endsAt'> & {
+export type AppointmentWriteDto = Omit<AppointmentDto, 'id' | 'status' | 'location' | 'endsAt' | 'clientBonoId'> & {
   status?: AppointmentStatus;
   location?: string;
   endsAt?: string;
+  clientBonoId?: string | null;
 };
 
 export interface AppointmentQuery {

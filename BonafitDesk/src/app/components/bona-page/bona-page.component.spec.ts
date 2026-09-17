@@ -23,9 +23,9 @@ describe('BonaPageComponent', () => {
     expect(text).toContain('Citas');
   });
 
-  it('shows a spinner while loading', () => {
+  it('shows a skeleton while loading', () => {
     fixture.componentRef.setInput('loading', true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('mat-progress-spinner')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.bona-page__skeleton')).toBeTruthy();
   });
 });

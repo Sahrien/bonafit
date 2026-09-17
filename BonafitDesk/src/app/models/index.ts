@@ -1,6 +1,6 @@
 export type { TrainerDto, TrainerWriteDto } from './trainer.dto';
 export type { ClientDto, ClientWriteDto } from './client.dto';
-export type { ServiceCategory, ServiceDto, ServiceWriteDto } from './service.dto';
+export type { ServiceDto, ServiceWriteDto } from './service.dto';
 export type { BonoDto, BonoWriteDto } from './bono.dto';
 export type {
   ClientBonoDto,

@@ -21,13 +21,15 @@ export class AdminShellComponent {
   readonly literals = ADMIN_LITERALS;
   readonly userName = this.authSession.userName;
   readonly navItems: BonaShellNavItem[] = [
-    { id: 'calendar', label: ADMIN_LITERALS.calendar, link: AUTH_PATHS.adminHome },
-    { id: 'clients', label: ADMIN_LITERALS.clients, link: '/admin/clients' },
-    { id: 'services', label: ADMIN_LITERALS.services, link: '/admin/services' },
-    { id: 'forms', label: ADMIN_LITERALS.forms, link: '/admin/forms' },
+    { id: 'calendar', label: ADMIN_LITERALS.calendar, link: AUTH_PATHS.adminHome, icon: 'calendar_month' },
+    { id: 'schedules', label: ADMIN_LITERALS.schedules, link: AUTH_PATHS.adminSchedules, icon: 'schedule' },
+    { id: 'clients', label: ADMIN_LITERALS.clients, link: '/admin/clients', icon: 'groups' },
+    { id: 'services', label: ADMIN_LITERALS.services, link: '/admin/services', icon: 'spa' },
+    { id: 'forms', label: ADMIN_LITERALS.forms, link: '/admin/forms', icon: 'assignment' },
   ];
   readonly menuItems: BonaShellNavItem[] = [
     { id: 'settings', label: ADMIN_LITERALS.settings, link: AUTH_PATHS.adminSettings },
+    { id: 'schedules', label: ADMIN_LITERALS.schedules, link: AUTH_PATHS.adminSchedules },
   ];
 
   onLogout(): void {

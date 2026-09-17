@@ -8,8 +8,6 @@ from app.roles import UserRole
 from app.schemas import BonoOut, BonoWrite, ServiceOut, ServiceWrite
 from app.serializers import bono_out, service_out
 
-MASAGE = "masaje"
-
 
 class CatalogService:
     def __init__(self, session_factory: SessionFactory) -> None:
@@ -31,17 +29,15 @@ class CatalogService:
 
     def create_service(self, payload: ServiceWrite) -> ServiceOut:
         with self._session_factory() as db:
-            bookable = False if payload.category == MASAGE else payload.bookableByClient
-            allows_single = True if payload.category == MASAGE else payload.allowsSingleSession
             row = Service(
-                category=payload.category,
                 name=payload.name,
-                allows_single_session=allows_single,
+                shares_session_pool=payload.sharesSessionPool,
+                forces_single_session=payload.forcesSingleSession,
                 single_session_price=payload.singleSessionPrice,
                 duration_minutes=payload.durationMinutes,
-                bookable_by_client=bookable,
                 active=payload.active,
             )
+            _apply_service_rules(row, payload)
             db.add(row)
             db.flush()
             return service_out(row)
@@ -51,13 +47,13 @@ class CatalogService:
             row = db.get(Service, service_id)
             if row is None:
                 raise NotFoundError("service", service_id)
-            row.category = payload.category
             row.name = payload.name
-            row.allows_single_session = True if payload.category == MASAGE else payload.allowsSingleSession
+            row.shares_session_pool = payload.sharesSessionPool
+            row.forces_single_session = payload.forcesSingleSession
             row.single_session_price = payload.singleSessionPrice
             row.duration_minutes = payload.durationMinutes
-            row.bookable_by_client = False if payload.category == MASAGE else payload.bookableByClient
             row.active = payload.active
+            _apply_service_rules(row, payload)
             return service_out(row)
 
     def delete_service(self, service_id: str) -> None:
@@ -65,9 +61,9 @@ class CatalogService:
             row = db.get(Service, service_id)
             if row is None:
                 raise NotFoundError("service", service_id)
-            if db.scalar(select(Appointment.id).where(Appointment.service_id == service_id).limit(1)) or db.scalar(
-                select(Bono.id).where(Bono.service_id == service_id).limit(1)
-            ):
+            if db.scalar(select(Appointment.id).where(Appointment.service_id == service_id).limit(1)):
+                raise BusinessError("service.hasRelations")
+            if db.scalar(select(Bono.id).where(Bono.service_id == service_id).limit(1)):
                 raise BusinessError("service.hasRelations")
             db.delete(row)
 
@@ -124,3 +120,12 @@ class CatalogService:
             if db.scalar(select(ClientBono.id).where(ClientBono.bono_id == bono_id).limit(1)):
                 raise BusinessError("bono.hasRelations")
             db.delete(row)
+
+
+def _apply_service_rules(row: Service, payload: ServiceWrite) -> None:
+    if payload.forcesSingleSession:
+        row.allows_single_session = True
+        row.bookable_by_client = False
+        return
+    row.allows_single_session = payload.allowsSingleSession
+    row.bookable_by_client = payload.bookableByClient

@@ -82,8 +82,9 @@ class Service(Base):
     __tablename__ = "services"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    category: Mapped[str] = mapped_column(String(40), nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    shares_session_pool: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    forces_single_session: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     allows_single_session: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     single_session_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
     duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)

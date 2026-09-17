@@ -20,6 +20,9 @@
         [columns]="serviceColumns"
         [actions]="serviceActions"
         [emptyMessage]="literals.emptyServices"
+        [emptyTitle]="literals.emptyServicesTitle"
+        [emptyActionLabel]="literals.newService"
+        (emptyAction)="onCreateService()"
         (action)="onServiceAction($event)"
         (rowClick)="onServiceRowClick($event)" />
     </div>

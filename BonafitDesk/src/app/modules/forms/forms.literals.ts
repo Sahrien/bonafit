@@ -1,6 +1,7 @@
 export const FORMS_LITERALS = {
   title: 'Formularios y encuestas',
-  subtitle: 'Preguntas para clientes y sus respuestas',
+  subtitle: 'Plantillas para el estudio y respuestas de tus clientes',
+  emptyTitle: 'Todavía no hay formularios',
   search: 'Buscar',
   searchPlaceholder: 'Título o descripción',
   newForm: 'Nuevo formulario',

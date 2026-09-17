@@ -103,6 +103,22 @@ describe('ClientsApiService', () => {
     expect((await pending).remainingSessions).toBe(5);
   });
 
+  it('POST /client-bonos gifts a single session', async () => {
+    const payload = { clientId: 'client-1', serviceId: 'svc-ep', remainingSessions: 1 };
+    const pending = firstValueFrom(api.contractBono(payload));
+    const req = http.expectOne({ method: 'POST', url: apiUrl(API_PATHS.clientBonos) });
+    expect(req.request.body).toEqual(payload);
+    req.flush({
+      id: 'cb-gift',
+      clientId: 'client-1',
+      bonoId: 'bono-ep-10',
+      remainingSessions: 1,
+      purchasedAt: '2026-09-17T00:00:00.000Z',
+      expiresAt: null,
+    });
+    expect((await pending).remainingSessions).toBe(1);
+  });
+
   it('PUT /client-bonos/:id', async () => {
     const payload = { remainingSessions: 4, expiresAt: '2026-12-01T10:00:00.000Z' };
     const pending = firstValueFrom(api.updateClientBono('cb-1', payload));
@@ -113,5 +129,11 @@ describe('ClientsApiService', () => {
     expect(req.request.body).toEqual(payload);
     req.flush({ ...MOCK_CLIENT_BONOS[0], remainingSessions: 4 });
     expect((await pending).remainingSessions).toBe(4);
+  });
+
+  it('DELETE /client-bonos/:id', async () => {
+    const pending = firstValueFrom(api.deleteClientBono('cb-1'));
+    http.expectOne({ method: 'DELETE', url: apiUrl(API_PATHS.clientBonos, 'cb-1') }).flush(null);
+    expect(await pending).toBeNull();
   });
 });

@@ -2,9 +2,20 @@ import pytest
 
 from app.database import Database
 from app.errors import BusinessError, ForbiddenError, NotFoundError
+from app.models import Appointment
 from app.schemas import ClientBonoPatch, ClientWrite, ContractBono
 from app.services.clients import ClientService
-from tests.factories import add_bono, add_client, add_client_bono, add_service, add_user, admin_user, client_user
+from tests.factories import (
+    add_appointment,
+    add_bono,
+    add_client,
+    add_client_bono,
+    add_service,
+    add_trainer,
+    add_user,
+    admin_user,
+    client_user,
+)
 
 
 def _write(**overrides: object) -> ClientWrite:
@@ -67,7 +78,7 @@ def test_client_update_keeps_email_and_notes(
 def test_session_balance_skips_masaje_and_empty(client_service: ClientService, db: Database) -> None:
     add_client(db)
     add_service(db)
-    add_service(db, id="svc-masaje", category="masaje", name="Masaje", allows_single_session=True)
+    add_service(db, id="svc-masaje", name="Masaje", shares_session_pool=False, allows_single_session=True)
     add_bono(db)
     add_bono(db, id="bono-m", service_id="svc-masaje", session_count=1)
     add_client_bono(db, remaining_sessions=4)
@@ -89,6 +100,56 @@ def test_contract_and_list_bonos(client_service: ClientService, db: Database) ->
     assert len(rows) == 1
 
 
+def test_admin_gifts_single_session_for_service(client_service: ClientService, db: Database) -> None:
+    add_client(db)
+    add_service(db)
+    add_bono(db, session_count=10)
+    gifted = client_service.contract_bono(
+        ContractBono(clientId="client-1", serviceId="svc-1", remainingSessions=1),
+        admin_user(),
+    )
+    assert gifted.remainingSessions == 1
+    assert gifted.bonoId == "bono-1"
+
+
+def test_admin_gift_prefers_single_session_catalog_bono(
+    client_service: ClientService, db: Database
+) -> None:
+    add_client(db)
+    add_service(db)
+    add_bono(db, id="bono-10", session_count=10)
+    add_bono(db, id="bono-1", name="suelta", session_count=1)
+    gifted = client_service.contract_bono(
+        ContractBono(clientId="client-1", serviceId="svc-1", remainingSessions=1),
+        admin_user(),
+    )
+    assert gifted.bonoId == "bono-1"
+    assert gifted.remainingSessions == 1
+
+
+def test_client_cannot_gift_single_session(client_service: ClientService, db: Database) -> None:
+    add_client(db)
+    add_service(db)
+    add_bono(db)
+    with pytest.raises(BusinessError) as exc:
+        client_service.contract_bono(
+            ContractBono(clientId="client-1", serviceId="svc-1", remainingSessions=1),
+            client_user(),
+        )
+    assert exc.value.code == "booking.bonoRequired"
+
+
+def test_gift_single_session_requires_catalog_bono(client_service: ClientService, db: Database) -> None:
+    add_client(db)
+    add_service(db)
+    with pytest.raises(BusinessError) as exc:
+        client_service.contract_bono(
+            ContractBono(clientId="client-1", serviceId="svc-1", remainingSessions=1),
+            admin_user(),
+        )
+    assert exc.value.code == "booking.bonoRequired"
+
+
 def test_contract_inactive_service(client_service: ClientService, db: Database) -> None:
     add_client(db)
     add_service(db, active=False)
@@ -105,6 +166,43 @@ def test_update_client_bono(client_service: ClientService, db: Database) -> None
     add_client_bono(db)
     updated = client_service.update_client_bono("cb-1", ClientBonoPatch(remainingSessions=2, expiresAt=None))
     assert updated.remainingSessions == 2
+
+
+def test_delete_client_bono(client_service: ClientService, db: Database) -> None:
+    add_client(db)
+    add_service(db)
+    add_bono(db)
+    add_client_bono(db)
+    client_service.delete_client_bono("cb-1")
+    assert client_service.list_client_bonos("client-1", admin_user()) == []
+
+
+def test_delete_client_bono_blocked_by_upcoming(client_service: ClientService, db: Database) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_service(db)
+    add_bono(db)
+    add_client_bono(db)
+    add_appointment(db, client_bono_id="cb-1", status="confirmed")
+    with pytest.raises(BusinessError) as exc:
+        client_service.delete_client_bono("cb-1")
+    assert exc.value.code == "client-bono.hasRelations"
+    assert client_service.list_client_bonos("client-1", admin_user())[0].id == "cb-1"
+
+
+def test_delete_client_bono_unlinks_completed(client_service: ClientService, db: Database) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_service(db)
+    add_bono(db)
+    add_client_bono(db)
+    add_appointment(db, client_bono_id="cb-1", status="completed")
+    client_service.delete_client_bono("cb-1")
+    assert client_service.list_client_bonos("client-1", admin_user()) == []
+    with db.session() as session:
+        appointment = session.get(Appointment, "apt-1")
+        assert appointment is not None
+        assert appointment.client_bono_id is None
 
 
 def test_delete_client_blocked_by_bono(client_service: ClientService, db: Database) -> None:

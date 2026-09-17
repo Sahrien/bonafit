@@ -23,10 +23,11 @@ describe('BonaShellAppComponent', () => {
     fixture = TestBed.createComponent(BonaShellAppComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('brand', 'Bonafit');
+    fixture.componentRef.setInput('brandSubtitle', 'Estudio');
     fixture.componentRef.setInput('userName', 'Alex Martin');
     fixture.componentRef.setInput('navItems', [
-      { id: 'calendar', label: 'Calendario', link: '/admin/calendar' },
-      { id: 'clients', label: 'Clientes', link: '/admin/clients' },
+      { id: 'calendar', label: 'Calendario', link: '/admin/calendar', icon: 'calendar_month' },
+      { id: 'clients', label: 'Clientes', link: '/admin/clients', icon: 'groups' },
     ]);
     fixture.componentRef.setInput('menuItems', [
       { id: 'settings', label: 'Ajustes', link: '/admin/ajustes' },
@@ -37,6 +38,7 @@ describe('BonaShellAppComponent', () => {
   it('renders brand, nav, and the current user', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Bonafit');
+    expect(text).toContain('Estudio');
     expect(text).toContain('Calendario');
     expect(text).toContain('Clientes');
     expect(text).toContain('Alex Martin');
@@ -57,5 +59,12 @@ describe('BonaShellAppComponent', () => {
     logout?.click();
 
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders bottom navigation for the primary destinations', () => {
+    const bottom = fixture.nativeElement.querySelector('.bona-shell-app__bottom') as HTMLElement;
+    expect(bottom).toBeTruthy();
+    expect(bottom.textContent).toContain('Calendario');
+    expect(bottom.textContent).toContain('Clientes');
   });
 });
