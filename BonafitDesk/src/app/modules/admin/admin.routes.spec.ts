@@ -1,3 +1,4 @@
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -31,6 +32,7 @@ describe('ADMIN_ROUTES horarios', () => {
     await TestBed.configureTestingModule({
       providers: [
         provideNoopAnimations(),
+        provideDeskTranslate(),
         provideHttpClient(),
         provideRouter(routes),
         { provide: AuthApiService, useValue: auth },

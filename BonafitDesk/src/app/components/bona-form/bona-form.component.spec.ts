@@ -1,3 +1,4 @@
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -30,7 +31,7 @@ describe('BonaFormComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BonaFormComponent, FormActionsHostComponent],
-      providers: [provideNoopAnimations()],
+      providers: [provideNoopAnimations(), provideDeskTranslate()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BonaFormComponent);

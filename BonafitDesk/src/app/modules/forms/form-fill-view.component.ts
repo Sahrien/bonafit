@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
 import { BonaFieldComponent } from '../../components/bona-field/bona-field.component';
 import { BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { mapToAnswers, missingRequiredAnswers } from '../../core/form-answers';
+import { injectI18n } from '../../core/i18n/inject-i18n';
 import { FormQuestionDto } from '../../models/form.dto';
 import { FormFieldLabels, groupQuestionsByHeading, questionToField } from './form-question.mapper';
-import { FORMS_LITERALS } from './forms.literals';
 
 export function formFieldAnchorId(questionId: string): string {
   return `form-field-${questionId}`;
@@ -20,6 +20,10 @@ export function formFieldAnchorId(questionId: string): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormFillViewComponent {
+  private readonly i18n = injectI18n('forms');
+  get literals() {
+    return this.i18n();
+  }
   readonly banner = input('');
   readonly description = input('');
   readonly questions = input<FormQuestionDto[]>([]);
@@ -29,7 +33,7 @@ export class FormFillViewComponent {
   readonly saveText = input('');
   readonly disabled = input(false);
   readonly error = input('');
-  readonly requiredError = input(FORMS_LITERALS.requiredError);
+  readonly requiredError = input('');
   readonly valueChange = output<BonaFormValue>();
   readonly submitted = output<BonaFormValue>();
   readonly saved = output<BonaFormValue>();

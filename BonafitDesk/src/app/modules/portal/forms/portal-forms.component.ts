@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { EMPTY, switchMap, take } from 'rxjs';
@@ -27,7 +27,7 @@ export class PortalFormsComponent {
   private readonly formsApi = inject(FormsApiService);
   private readonly router = inject(Router);
 
-  private readonly i18n = injectI18n<Record<string, string>>('portalForms');
+  private readonly i18n = injectI18n('portalForms');
   get literals() {
     return this.i18n();
   }
@@ -53,7 +53,7 @@ export class PortalFormsComponent {
         switchMap((session) => {
           if (!session?.user.clientId) {
             this.loading.set(false);
-            this.error.set(PORTAL_FORMS_LITERALS.noSession);
+            this.error.set(this.literals.noSession);
             return EMPTY;
           }
           return this.formsApi.getMyAssignments();
@@ -66,7 +66,7 @@ export class PortalFormsComponent {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set(PORTAL_FORMS_LITERALS.loadError);
+          this.error.set(this.literals.loadError);
           this.loading.set(false);
         },
       });
@@ -100,11 +100,11 @@ export class PortalFormsComponent {
 
   private statusLabel(assignment: FormAssignmentDto): string {
     if (assignment.status === 'completed') {
-      return PORTAL_FORMS_LITERALS.statusCompleted;
+      return this.literals.statusCompleted;
     }
     if (assignment.answers.length > 0) {
-      return PORTAL_FORMS_LITERALS.statusDraft;
+      return this.literals.statusDraft;
     }
-    return PORTAL_FORMS_LITERALS.statusPending;
+    return this.literals.statusPending;
   }
 }

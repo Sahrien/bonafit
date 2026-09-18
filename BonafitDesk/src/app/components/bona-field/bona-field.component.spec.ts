@@ -1,3 +1,4 @@
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { BonaFieldComponent } from './bona-field.component';
@@ -9,7 +10,7 @@ describe('BonaFieldComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BonaFieldComponent],
-      providers: [provideNoopAnimations()],
+      providers: [provideNoopAnimations(), provideDeskTranslate()],
     }).compileComponents();
   });
 

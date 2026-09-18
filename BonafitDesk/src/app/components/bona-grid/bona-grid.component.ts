@@ -71,6 +71,7 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
   @Input() columnFilters = false;
   @Input() columnSort = false;
   @Input() emptyFilteredMessage = '';
+  @Input() inlineActions = false;
 
   pageIndex = 0;
   filterValues: Record<string, string> = {};

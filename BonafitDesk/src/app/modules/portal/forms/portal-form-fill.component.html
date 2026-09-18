@@ -35,7 +35,7 @@
     <app-form-fill-view
       [description]="assignment()?.description ?? ''"
       [questions]="assignment()?.questions ?? []"
-      [labels]="fieldLabels"
+      [labels]="fieldLabels()"
       [value]="formValue()"
       [submitText]="literals.submit"
       [saveText]="literals.saveDraft"

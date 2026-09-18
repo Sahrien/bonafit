@@ -18,7 +18,7 @@
   }
 
   <app-bona-form
-    [fields]="fields"
+    [fields]="fields()"
     [value]="formValue()"
     [showSubmit]="false"
     [disabled]="saving()"
@@ -32,14 +32,14 @@
       </header>
       <app-bona-grid
         [data]="bonoRows()"
-        [columns]="bonoColumns"
-        [actions]="bonoActions"
+        [columns]="bonoColumns()"
+        [actions]="bonoActions()"
         [emptyMessage]="literals.emptyAssigned"
         (action)="onBonoAction($event)" />
       @if (bonoFormOpen()) {
         <div class="page-nested__form">
           <app-bona-form
-            [fields]="bonoFields"
+            [fields]="bonoFields()"
             [value]="bonoForm()"
             [submitText]="literals.save"
             (valueChange)="onBonoFormChange($event)"
@@ -78,8 +78,8 @@
       @if (historyOpen()) {
         <app-bona-grid
           [data]="historyRows()"
-          [columns]="historyColumns"
-          [actions]="historyActions"
+          [columns]="historyColumns()"
+          [actions]="historyActions()"
           [pageSize]="historyPageSize"
           [columnFilters]="true"
           [columnSort]="true"
@@ -89,7 +89,7 @@
         @if (sessionNoteFormOpen()) {
           <div class="page-nested__form">
             <app-bona-form
-              [fields]="sessionNoteFields"
+              [fields]="sessionNoteFields()"
               [value]="sessionNoteForm()"
               [submitText]="literals.save"
               (valueChange)="onSessionNoteFormChange($event)"

@@ -32,7 +32,7 @@ export class AdminSettingsComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly authSession = injectAuthSession();
 
-  private readonly i18n = injectI18n<Record<string, string>>('settings');
+  private readonly i18n = injectI18n('settings');
   get literals() {
     return this.i18n();
   }

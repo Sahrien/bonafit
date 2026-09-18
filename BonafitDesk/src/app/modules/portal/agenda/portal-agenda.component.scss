@@ -44,18 +44,24 @@
   }
 }
 
-.portal-agenda__days {
+.portal-agenda__days,
+.portal-agenda__times,
+.portal-agenda__trainers {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: var(--bona-space-1);
   margin: var(--bona-space-3) 0 0;
   padding: var(--bona-space-1);
-  overflow-x: auto;
   background: var(--bona-color-nested);
   border-radius: var(--bona-radius-md);
 }
 
-.portal-agenda__day-chip {
+.portal-agenda__days {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.portal-agenda__chip {
   appearance: none;
   flex: 0 0 auto;
   min-height: 2rem;
@@ -83,6 +89,12 @@
   }
 }
 
+.portal-agenda__chip--time {
+  min-width: 4.5rem;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+}
+
 .portal-agenda__day {
   margin-top: var(--bona-space-3);
 
@@ -93,33 +105,20 @@
   }
 }
 
-.portal-agenda__slots {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.portal-agenda__book-action {
   display: flex;
-  flex-direction: column;
-  gap: var(--bona-space-2);
-}
-
-.portal-agenda__slot {
-  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--bona-space-3);
-  min-height: 2.75rem;
+  margin-top: var(--bona-space-3);
   padding: var(--bona-space-3);
   background: var(--bona-color-surface);
   border: 1px solid var(--bona-color-border);
   border-radius: var(--bona-radius-md);
 }
 
-.portal-agenda__slot-time {
+.portal-agenda__book-summary {
   margin: 0;
   font-weight: 700;
-}
-
-.portal-agenda__slot-meta {
-  margin: var(--bona-space-1) 0 0;
-  color: var(--bona-color-text-muted);
 }

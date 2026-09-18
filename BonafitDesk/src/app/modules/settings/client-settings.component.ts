@@ -16,7 +16,7 @@ import { PasswordChangeFormComponent } from './password-change-form.component';
 export class ClientSettingsComponent {
   private readonly toast = inject(BonaToast);
 
-  private readonly i18n = injectI18n<Record<string, string>>('settings');
+  private readonly i18n = injectI18n('settings');
   get literals() {
     return this.i18n();
   }

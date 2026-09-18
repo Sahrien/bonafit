@@ -42,7 +42,7 @@
       [banner]="literals.previewBanner"
       [description]="description()"
       [questions]="questions()"
-      [labels]="fieldLabels"
+      [labels]="fieldLabels()"
       [value]="previewValue()"
       [submitText]="literals.previewSubmit"
       [error]="previewError()"
@@ -51,7 +51,7 @@
       (submitted)="onPreviewSubmit($event)" />
   } @else {
     @if (!isNew()) {
-      <app-bona-tabs [tabs]="tabs" [active]="tab()" (activeChange)="onTabChange($event)" />
+      <app-bona-tabs [tabs]="tabs()" [active]="tab()" (activeChange)="onTabChange($event)" />
     }
 
     @if (isNew() || tab() === 'template') {
@@ -59,17 +59,30 @@
         <h2>{{ literals.templateSection }}</h2>
         <div class="template-meta">
           <div class="template-meta__item">
-            <span class="template-meta__label">{{ literals.formTitle }}</span>
+            <span class="template-meta__label">{{ literals.titleEs }}</span>
             <app-bona-input-text-field
               [value]="title()"
               (valueChange)="onTitleChange($event)" />
           </div>
           <div class="template-meta__item">
-            <span class="template-meta__label">{{ literals.description }}</span>
+            <span class="template-meta__label">{{ literals.titleEn }}</span>
+            <app-bona-input-text-field
+              [value]="titleEn()"
+              (valueChange)="onTitleEnChange($event)" />
+          </div>
+          <div class="template-meta__item">
+            <span class="template-meta__label">{{ literals.descriptionEs }}</span>
             <app-bona-field
               [definition]="descriptionField"
               [value]="description()"
               (valueChange)="onDescriptionChange($event)" />
+          </div>
+          <div class="template-meta__item">
+            <span class="template-meta__label">{{ literals.descriptionEn }}</span>
+            <app-bona-field
+              [definition]="descriptionEnField"
+              [value]="descriptionEn()"
+              (valueChange)="onDescriptionEnChange($event)" />
           </div>
         </div>
 
@@ -97,9 +110,13 @@
                   @if (isQuestionOpen(heading.id)) {
                     <p class="page-hint">{{ literals.sectionHint }}</p>
                     <app-bona-field
-                      [definition]="headingPromptField"
+                      [definition]="headingPromptField()"
                       [value]="heading.prompt"
                       (valueChange)="onPromptChange(heading.id, $event)" />
+                    <app-bona-field
+                      [definition]="headingPromptEnField()"
+                      [value]="promptEn(heading)"
+                      (valueChange)="onPromptEnChange(heading.id, $event)" />
                     <div class="question-card__actions">
                       <app-bona-button
                         [text]="literals.moveUp"
@@ -142,16 +159,20 @@
                     </button>
                     @if (isQuestionOpen(question.id)) {
                       <app-bona-input-text-field
-                        [label]="literals.prompt"
+                        [label]="literals.promptEs"
                         [value]="question.prompt"
                         (valueChange)="onPromptChange(question.id, $event)" />
+                      <app-bona-input-text-field
+                        [label]="literals.promptEn"
+                        [value]="promptEn(question)"
+                        (valueChange)="onPromptEnChange(question.id, $event)" />
                       <div class="question-card__row">
                         <app-bona-field
-                          [definition]="typeField"
+                          [definition]="typeField()"
                           [value]="question.type"
                           (valueChange)="onTypeChange(question.id, $event)" />
                         <app-bona-field
-                          [definition]="requiredField"
+                          [definition]="requiredField()"
                           [value]="question.required ? 'true' : 'false'"
                           (valueChange)="onRequiredChange(question.id, $event)" />
                       </div>
@@ -162,9 +183,13 @@
                           @for (option of question.options ?? []; track option.id) {
                             <div class="question-card__option">
                               <app-bona-input-text-field
-                                [label]="literals.optionLabel"
+                                [label]="literals.optionEs"
                                 [value]="option.label"
                                 (valueChange)="onOptionLabelChange(question.id, option.id, $event)" />
+                              <app-bona-input-text-field
+                                [label]="literals.optionEn"
+                                [value]="optionEn(option)"
+                                (valueChange)="onOptionEnChange(question.id, option.id, $event)" />
                               <app-bona-button
                                 [text]="literals.remove"
                                 variant="secondary"
@@ -273,8 +298,8 @@
         <h2>{{ literals.responsesSection }}</h2>
         <app-bona-grid
           [data]="assignmentRows()"
-          [columns]="assignmentColumns"
-          [actions]="assignmentActions"
+          [columns]="assignmentColumns()"
+          [actions]="assignmentActions()"
           [emptyMessage]="literals.emptyAssignments"
           (action)="onAssignmentAction($event)"
           (rowClick)="onAssignmentRowClick($event)" />

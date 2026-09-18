@@ -21,7 +21,7 @@ export class AdminShellComponent {
   private readonly authSession = injectAuthSession();
   readonly brandTheme = inject(BrandThemeService);
 
-  private readonly i18n = injectI18n<Record<string, string>>('admin');
+  private readonly i18n = injectI18n('admin');
   get literals() {
     return this.i18n();
   }

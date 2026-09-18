@@ -1,7 +1,9 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { provideDeskTranslate } from '../../../core/i18n/provide-desk-translate';
 import { MOCK_BOOKING_SETTINGS, MOCK_SERVICES, MOCK_TRAINERS } from '../../../testing/fixtures';
 import { AuthSessionDto } from '../../../models/auth-session.dto';
 import { BonoDto } from '../../../models/bono.dto';
@@ -86,6 +88,7 @@ describe('PortalAgendaComponent', () => {
       imports: [PortalAgendaComponent],
       providers: [
         provideNoopAnimations(),
+        provideHttpClient(), provideDeskTranslate(),
         provideRouter([]),
         { provide: AuthApiService, useValue: authApi },
         { provide: CalendarApiService, useValue: calendarApi },
@@ -327,6 +330,39 @@ describe('PortalAgendaComponent', () => {
     expect(calendarApi.updateAppointment).not.toHaveBeenCalled();
   });
 
+  it('cancels a confirmed next appointment inside the cutoff', async () => {
+    const pending = {
+      id: 'apt-next',
+      trainerId: 'trainer-1',
+      clientId: 'client-1',
+      serviceId: 'svc-ep',
+      startsAt: '2026-12-01T10:00:00.000Z',
+      endsAt: '2026-12-01T11:00:00.000Z',
+      location: 'studio-1',
+      status: 'confirmed' as const,
+    };
+    calendarApi.getAppointments.and.returnValue(of([pending]));
+    calendarApi.updateAppointment.and.returnValue(of({ ...pending, status: 'cancelled' as const }));
+    fixture = TestBed.createComponent(PortalAgendaComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const nextCard = fixture.nativeElement.querySelector('app-bona-summary-card') as HTMLElement;
+    const cancelButton = [...nextCard.querySelectorAll('button')].find((button) =>
+      button.textContent?.includes(PORTAL_AGENDA_LITERALS.cancel),
+    );
+    expect(cancelButton).toBeTruthy();
+    cancelButton?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(calendarApi.updateAppointment).toHaveBeenCalledWith(
+      'apt-next',
+      jasmine.objectContaining({ status: 'cancelled', trainerId: 'trainer-1', clientId: 'client-1' }),
+    );
+  });
+
   it('hides cancel when the appointment is outside the booking cutoff', async () => {
     const startsAt = new Date(Date.now() + 30 * 60_000).toISOString();
     const endsAt = new Date(Date.now() + 90 * 60_000).toISOString();
@@ -375,19 +411,46 @@ describe('PortalAgendaComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const chips = fixture.nativeElement.querySelectorAll('.portal-agenda__day-chip') as NodeListOf<HTMLButtonElement>;
+    const chips = fixture.nativeElement.querySelectorAll(
+      '.portal-agenda__days .portal-agenda__chip',
+    ) as NodeListOf<HTMLButtonElement>;
     expect(chips.length).toBe(2);
-    expect(fixture.nativeElement.querySelectorAll('.portal-agenda__slot').length).toBe(1);
+    expect(fixture.nativeElement.querySelectorAll('.portal-agenda__chip--time').length).toBe(1);
     expect(fixture.componentInstance.selectedDayGroup()?.slots.length).toBe(1);
     expect(fixture.componentInstance.selectedDayGroup()?.key).toBe(fixture.componentInstance.slotGroups()[0].key);
 
     chips[1].click();
     fixture.detectChanges();
     expect(fixture.componentInstance.selectedDayGroup()?.key).toBe(fixture.componentInstance.slotGroups()[1].key);
-    expect(fixture.nativeElement.querySelectorAll('.portal-agenda__slot').length).toBe(1);
-    expect(fixture.nativeElement.querySelector('.portal-agenda__slot-time')?.textContent).toContain(
+    expect(fixture.nativeElement.querySelectorAll('.portal-agenda__chip--time').length).toBe(1);
+    expect(fixture.nativeElement.querySelector('.portal-agenda__chip--time')?.textContent).toContain(
       fixture.componentInstance.selectedDayGroup()?.slots[0].timeLabel ?? '',
     );
+  });
+
+  it('groups same-hour slots into one time chip', async () => {
+    calendarApi.getAvailability.and.returnValue(
+      of([
+        {
+          trainerId: 'trainer-1',
+          startsAt: '2026-09-09T07:00:00.000Z',
+          endsAt: '2026-09-09T08:00:00.000Z',
+        },
+        {
+          trainerId: 'trainer-2',
+          startsAt: '2026-09-09T07:00:00.000Z',
+          endsAt: '2026-09-09T08:00:00.000Z',
+        },
+      ]),
+    );
+    fixture = TestBed.createComponent(PortalAgendaComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.portal-agenda__chip--time').length).toBe(1);
+    expect(fixture.componentInstance.trainersAtSelectedTime().length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.portal-agenda__trainers .portal-agenda__chip').length).toBe(2);
   });
 
   it('shows slots when changing even if the bono has no leftover sessions', async () => {

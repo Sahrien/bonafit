@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
@@ -40,6 +42,7 @@ describe('SchedulesComponent', () => {
       imports: [SchedulesComponent],
       providers: [
         provideNoopAnimations(),
+        provideHttpClient(), provideDeskTranslate(),
         provideRouter([{ path: 'admin/horarios', component: SchedulesComponent }]),
         { provide: CalendarApiService, useValue: calendarApi },
         ...provideBonaFeedbackTesting().providers,

@@ -34,7 +34,7 @@ export class PasswordChangeFormComponent {
 
   readonly saved = output<void>();
 
-  private readonly i18n = injectI18n<Record<string, string>>('changePassword');
+  private readonly i18n = injectI18n('changePassword');
   get literals() {
     return this.i18n();
   }

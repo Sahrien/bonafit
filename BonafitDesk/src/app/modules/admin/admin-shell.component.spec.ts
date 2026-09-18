@@ -1,3 +1,4 @@
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { provideHttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -29,6 +30,7 @@ describe('AdminShellComponent', () => {
       imports: [AdminShellComponent],
       providers: [
         provideNoopAnimations(),
+        provideDeskTranslate(),
         provideHttpClient(),
         provideRouter([
           {

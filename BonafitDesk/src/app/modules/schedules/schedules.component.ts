@@ -50,7 +50,7 @@ export class SchedulesComponent {
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly i18n = injectI18n<Record<string, string>>('schedules');
+  private readonly i18n = injectI18n('schedules');
   get literals() {
     return this.i18n();
   }

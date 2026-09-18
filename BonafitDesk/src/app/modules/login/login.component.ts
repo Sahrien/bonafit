@@ -23,7 +23,7 @@ export class LoginComponent {
   private readonly language = inject(LanguageService);
   readonly brandTheme = inject(BrandThemeService);
 
-  private readonly i18n = injectI18n<Record<string, string>>('login');
+  private readonly i18n = injectI18n('login');
   get literals() {
     return this.i18n();
   }

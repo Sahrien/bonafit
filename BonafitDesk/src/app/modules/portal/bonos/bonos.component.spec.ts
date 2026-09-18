@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideDeskTranslate } from '../../../core/i18n/provide-desk-translate';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
@@ -61,6 +63,7 @@ describe('BonosComponent', () => {
       imports: [BonosComponent],
       providers: [
         provideNoopAnimations(),
+        provideHttpClient(), provideDeskTranslate(),
         provideRouter([]),
         { provide: AuthApiService, useValue: authApi },
         { provide: ClientsApiService, useValue: clientsApi },

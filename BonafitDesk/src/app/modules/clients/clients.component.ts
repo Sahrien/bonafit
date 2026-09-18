@@ -34,7 +34,7 @@ export class ClientsComponent {
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly i18n = injectI18n<Record<string, string>>('clients');
+  private readonly i18n = injectI18n('clients');
   get literals() {
     return this.i18n();
   }

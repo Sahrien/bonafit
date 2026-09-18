@@ -1,5 +1,7 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { GRID_LITERALS } from '../../i18n/es';
 import { BonaGridComponent } from './bona-grid.component';
 
@@ -15,7 +17,7 @@ describe('BonaGridComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BonaGridComponent],
-      providers: [provideNoopAnimations()],
+      providers: [provideNoopAnimations(), provideHttpClient(), provideDeskTranslate()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BonaGridComponent<ClientRow>);
@@ -127,7 +129,7 @@ describe('BonaGridComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('N9');
     expect(fixture.nativeElement.textContent).not.toContain('N10');
     expect(fixture.nativeElement.textContent).toContain(
-      GRID_LITERALS.pageOf.replace('{page}', '1').replace('{pages}', '2'),
+      GRID_LITERALS.pageOf.replace('{{page}}', '1').replace('{{pages}}', '2'),
     );
 
     const next = Array.from(
@@ -139,7 +141,7 @@ describe('BonaGridComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('N10');
     expect(fixture.nativeElement.textContent).not.toContain('N0');
     expect(fixture.nativeElement.textContent).toContain(
-      GRID_LITERALS.pageOf.replace('{page}', '2').replace('{pages}', '2'),
+      GRID_LITERALS.pageOf.replace('{{page}}', '2').replace('{{pages}}', '2'),
     );
   });
 
@@ -155,7 +157,7 @@ describe('BonaGridComponent', () => {
       '.bona-grid__table .bona-grid__sort',
     ) as HTMLButtonElement;
     expect(sort.getAttribute('aria-label')).toBe(
-      GRID_LITERALS.sortColumn.replace('{column}', 'Nombre'),
+      GRID_LITERALS.sortColumn.replace('{{column}}', 'Nombre'),
     );
 
     sort.click();
@@ -165,7 +167,7 @@ describe('BonaGridComponent', () => {
     ).map((cell) => cell.textContent?.trim());
     expect(cells[0]).toBe('Ana');
     expect(sort.getAttribute('aria-label')).toBe(
-      GRID_LITERALS.sortAsc.replace('{column}', 'Nombre'),
+      GRID_LITERALS.sortAsc.replace('{{column}}', 'Nombre'),
     );
 
     sort.click();

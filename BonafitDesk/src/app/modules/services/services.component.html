@@ -17,8 +17,8 @@
     <div class="services-split__list">
       <app-bona-grid
         [data]="serviceRows()"
-        [columns]="serviceColumns"
-        [actions]="serviceActions"
+        [columns]="serviceColumns()"
+        [actions]="serviceActions()"
         [emptyMessage]="literals.emptyServices"
         [emptyTitle]="literals.emptyServicesTitle"
         [emptyActionLabel]="literals.newService"
@@ -52,8 +52,8 @@
 
             <app-bona-grid
               [data]="selectedBonos()"
-              [columns]="bonoColumns"
-              [actions]="bonoActions"
+              [columns]="bonoColumns()"
+              [actions]="bonoActions()"
               [emptyMessage]="literals.emptyBonos"
               (action)="onBonoAction($event)" />
 
@@ -61,7 +61,7 @@
               <div class="page-nested__form">
                 <h4>{{ literals.bonoEditor }}</h4>
                 <app-bona-form
-                  [fields]="bonoFields"
+                  [fields]="bonoFields()"
                   [value]="bonoForm()"
                   [submitText]="literals.save"
                   (valueChange)="onBonoFormChange($event)"

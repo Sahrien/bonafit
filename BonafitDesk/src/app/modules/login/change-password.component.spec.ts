@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
@@ -19,6 +21,7 @@ describe('ChangePasswordComponent', () => {
       imports: [ChangePasswordComponent],
       providers: [
         provideNoopAnimations(),
+        provideHttpClient(), provideDeskTranslate(),
         provideRouter([]),
         { provide: AuthApiService, useValue: auth },
       ],

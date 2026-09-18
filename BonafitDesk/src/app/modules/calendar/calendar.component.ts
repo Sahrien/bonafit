@@ -86,7 +86,7 @@ export class CalendarComponent {
   readonly language = inject(LanguageService);
   private readonly translate = inject(TranslateService);
 
-  private readonly i18n = injectI18n<Record<string, string>>('calendar');
+  private readonly i18n = injectI18n('calendar');
   get literals() {
     return this.i18n();
   }

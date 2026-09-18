@@ -1,8 +1,8 @@
-<a class="skip-link" href="#contenido">Saltar al contenido</a>
+<a class="skip-link" href="#contenido">{{ 'chrome.skip' | translate }}</a>
 
 <header class="site-header">
   <div class="wrap header-bar">
-    <a routerLink="/" class="brand" [attr.aria-label]="branding.studioName() + ', inicio'" (click)="closeMenu()">
+    <a routerLink="/" class="brand" [attr.aria-label]="branding.studioName() + ', ' + ('chrome.homeAria' | translate)" (click)="closeMenu()">
       <app-logo
         size="sm"
         [showTagline]="false"
@@ -11,23 +11,29 @@
         [imageUrl]="branding.logoHref()" />
     </a>
 
-    <button
-      class="menu-toggle"
-      type="button"
-      [attr.aria-expanded]="menuOpen()"
-      aria-controls="site-nav"
-      (click)="toggleMenu()"
-    >
-      {{ menuOpen() ? 'Cerrar' : 'Menú' }}
-    </button>
+    <div class="header-actions">
+      <div class="lang" role="group" [attr.aria-label]="'chrome.language' | translate">
+        <button type="button" class="lang__btn" [class.is-active]="language.language() === 'es'" (click)="language.setLanguage('es')">ES</button>
+        <button type="button" class="lang__btn" [class.is-active]="language.language() === 'en'" (click)="language.setLanguage('en')">EN</button>
+      </div>
+      <button
+        class="menu-toggle"
+        type="button"
+        [attr.aria-expanded]="menuOpen()"
+        aria-controls="site-nav"
+        (click)="toggleMenu()"
+      >
+        {{ menuOpen() ? ('chrome.close' | translate) : ('chrome.menu' | translate) }}
+      </button>
+    </div>
 
     <nav
       id="site-nav"
       class="nav"
       [class.nav--open]="menuOpen()"
-      aria-label="Principal"
+      [attr.aria-label]="'chrome.navAria' | translate"
     >
-      @for (item of nav; track item.fragment) {
+      @for (item of nav(); track item.fragment) {
         <a
           routerLink="/"
           [fragment]="item.fragment"
@@ -36,7 +42,7 @@
           {{ item.label }}
         </a>
       }
-      <app-button text="Reservar sesión" (clicked)="goToContact()" />
+      <app-button [text]="'chrome.book' | translate" (clicked)="goToContact()" />
     </nav>
   </div>
 </header>
@@ -55,18 +61,18 @@
         [studioName]="branding.studioName()"
         [slogan]="branding.slogan()"
         [imageUrl]="branding.logoHref()" />
-      <p class="footer-claim">Más fuerza. Más movilidad. Más vida.</p>
+      <p class="footer-claim">{{ 'footer.claim' | translate }}</p>
     </div>
     <div>
-      <p class="eyebrow">Contacto</p>
+      <p class="eyebrow">{{ 'footer.contact' | translate }}</p>
       <p><a href="tel:+34965123456">+34 965 12 34 56</a></p>
       <p>
         <a href="https://wa.me/34622184709" target="_blank" rel="noopener noreferrer">WhatsApp +34 622 18 47 09</a>
       </p>
       <p><a [href]="'mailto:' + email">{{ email }}</a></p>
-      <p>Urbanización Bonalba Golf, 03110 Mutxamel, Alicante</p>
-      <p>Lunes a viernes 8:00–20:00 · Sábados 9:00–13:00</p>
+      <p>{{ 'footer.address' | translate }}</p>
+      <p>{{ 'footer.hours' | translate }}</p>
     </div>
   </div>
-  <p class="legal">© 2026 {{ branding.studioName() }} {{ branding.slogan() }}. Todos los derechos reservados.</p>
+  <p class="legal">© 2026 {{ branding.studioName() }} {{ branding.slogan() }}. {{ 'footer.legal' | translate }}</p>
 </footer>

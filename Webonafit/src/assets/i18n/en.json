@@ -1,0 +1,103 @@
+{
+  "chrome": {
+    "skip": "Skip to content",
+    "menu": "Menu",
+    "close": "Close",
+    "navAria": "Primary",
+    "homeAria": "home",
+    "book": "Book a session",
+    "language": "Language"
+  },
+  "nav": {
+    "about": "Who we are",
+    "offer": "What we offer",
+    "longevity": "Longevity",
+    "area": "Area",
+    "contact": "Contact"
+  },
+  "footer": {
+    "claim": "More strength. More mobility. More life.",
+    "contact": "Contact",
+    "hours": "Monday to Friday 8:00–20:00 · Saturdays 9:00–13:00",
+    "address": "Urbanización Bonalba Golf, 03110 Mutxamel, Alicante",
+    "legal": "All rights reserved."
+  },
+  "home": {
+    "heroTitle": "Strength, movement and wellbeing to live better",
+    "heroClaim": "Getting older does not mean stopping training. It means training better.",
+    "heroCta": "I want to train better",
+    "aboutEyebrow": "Who we are",
+    "aboutTitle": "Specialists in strength, mobility and longevity from age 50",
+    "aboutP1": "BONAFIT is not a conventional gym or a generic workout. We support people — especially from age 50 — who want to stay active, strong, agile and independent.",
+    "aboutP2": "We train movement and wellbeing with calm, precision and respect for your body. The aim is not to fit a mould: it is for everyday life to feel lighter.",
+    "quote": "“We do not train so you can be 50. We train so you can live your 70s with strength.”",
+    "slogan": "Age is not trained. Strength is.",
+    "offerEyebrow": "What we offer",
+    "offerTitle": "BonaFit Personal, tailored to you",
+    "offerLede": "Close support at home in the Bonalba area and, later on, in a small private studio.",
+    "complementsTitle": "Complementary services",
+    "complementsText": "To look after tone, recovery and a sense of wellbeing between sessions.",
+    "longevityEyebrow": "Longevity",
+    "longevityTitle": "We do not sell hours. We look after the life you want to keep living.",
+    "longevityText": "The value of a BONAFIT programme is not measured in sets or minutes. It is measured in autonomy, confidence and the freedom to move without age becoming a barrier.",
+    "longevitySlogan": "More strength. More mobility. More life.",
+    "areaEyebrow": "Area",
+    "areaTitle": "Near you, in a setting that invites you to look after your body",
+    "areaLede": "We work mainly in the Bonalba urbanisation and surroundings, and can travel to nearby towns.",
+    "primaryTitle": "Main area",
+    "nearbyTitle": "We also travel",
+    "territories": ["Strength", "Mobility", "Longevity", "Wellbeing"],
+    "offers": [
+      {
+        "title": "Personalised sessions",
+        "text": "Workouts of about 55–60 minutes, designed for you. We recommend two sessions a week to progress steadily, without rushing."
+      },
+      {
+        "title": "Assessment and programme",
+        "text": "We start with an initial assessment, listen to your goals and design an individual programme that evolves with you."
+      },
+      {
+        "title": "A body that supports you",
+        "text": "We work on strength, mobility, balance and functional movement, with close follow-up so every session has a purpose."
+      }
+    ],
+    "complements": [
+      "Hypopressives",
+      "Stretching",
+      "Muscle recovery",
+      "Sports massage",
+      "Lymphatic drainage"
+    ],
+    "outcomes": [
+      "More confidence walking and climbing stairs",
+      "Standing up from a chair independently",
+      "Travelling and moving without age as a limit",
+      "Playing with grandchildren and enjoying the day",
+      "Strength, mobility and confidence to live better"
+    ],
+    "primaryAreas": ["Bonalba Golf", "Cotoveta", "Mutxamel"],
+    "nearbyAreas": ["Sant Joan d'Alacant", "Playa de San Juan", "Busot", "El Campello"]
+  },
+  "contact": {
+    "eyebrow": "Let's talk",
+    "title": "Request information",
+    "intro": "Tell us how you feel and what you would like to regain. We will reply to assess a first session in the Bonalba area.",
+    "phone": "Phone",
+    "whatsapp": "WhatsApp",
+    "email": "Email",
+    "address": "Address",
+    "hours": "Hours",
+    "hoursValue": "Monday to Friday 8:00–20:00 · Saturdays 9:00–13:00",
+    "addressValue": "Urbanización Bonalba Golf, 03110 Mutxamel, Alicante",
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "emailPlaceholder": "you@email.com",
+    "phonePlaceholder": "Optional",
+    "message": "Message",
+    "messagePlaceholder": "What you would like to work on or how we can help",
+    "submit": "Send message",
+    "error": "Please complete name, email and message.",
+    "modalTitle": "We have received your message",
+    "modalBody": "Thank you for writing. We will be in touch shortly to talk calmly and see if BONAFIT is a good fit."
+  }
+}

@@ -1,13 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, switchMap, take } from 'rxjs';
 import { BonaFieldDefinition } from '../../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../../components/bona-form/bona-form.component';
 import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
+import { injectI18n } from '../../../core/i18n/inject-i18n';
 import { ClientDto, ClientWriteDto } from '../../../models/client.dto';
 import { AuthApiService } from '../../../services/auth-api.service';
 import { ClientsApiService } from '../../../services/clients-api.service';
-import { PROFILE_LITERALS } from './profile.literals';
 
 @Component({
   selector: 'app-portal-profile',
@@ -21,20 +21,23 @@ export class ProfileComponent {
   private readonly auth = inject(AuthApiService);
   private readonly clientsApi = inject(ClientsApiService);
 
-  readonly literals = PROFILE_LITERALS;
+  private readonly i18n = injectI18n('profile');
+  get literals() {
+    return this.i18n();
+  }
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly error = signal('');
   readonly feedback = signal('');
   readonly formValue = signal<BonaFormValue>({});
 
-  readonly fields: BonaFieldDefinition[] = [
-    { key: 'firstName', label: PROFILE_LITERALS.firstName, type: 'text', required: true },
-    { key: 'lastName', label: PROFILE_LITERALS.lastName, type: 'text', required: true },
-    { key: 'email', label: PROFILE_LITERALS.email, type: 'email', required: true },
-    { key: 'phone', label: PROFILE_LITERALS.phone, type: 'tel' },
-    { key: 'notes', label: PROFILE_LITERALS.notes, type: 'textarea' },
-  ];
+  readonly fields = computed<BonaFieldDefinition[]>(() => [
+    { key: 'firstName', label: this.literals.firstName, type: 'text', required: true },
+    { key: 'lastName', label: this.literals.lastName, type: 'text', required: true },
+    { key: 'email', label: this.literals.email, type: 'email', required: true },
+    { key: 'phone', label: this.literals.phone, type: 'tel' },
+    { key: 'notes', label: this.literals.notes, type: 'textarea' },
+  ]);
 
   private clientId = '';
   private instantConfirm = false;
@@ -48,7 +51,7 @@ export class ProfileComponent {
           const clientId = session?.user.clientId;
           if (!clientId) {
             this.loading.set(false);
-            this.error.set(PROFILE_LITERALS.noSession);
+            this.error.set(this.literals.noSession);
             return EMPTY;
           }
           this.clientId = clientId;
@@ -63,7 +66,7 @@ export class ProfileComponent {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set(PROFILE_LITERALS.loadError);
+          this.error.set(this.literals.loadError);
           this.loading.set(false);
         },
       });
@@ -79,11 +82,11 @@ export class ProfileComponent {
       next: (client) => {
         this.formValue.set(this.toFormValue(client));
         this.saving.set(false);
-        this.feedback.set(PROFILE_LITERALS.saved);
+        this.feedback.set(this.literals.saved);
       },
       error: () => {
         this.saving.set(false);
-        this.feedback.set(PROFILE_LITERALS.saveError);
+        this.feedback.set(this.literals.saveError);
       },
     });
   }

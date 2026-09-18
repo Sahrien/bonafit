@@ -22,9 +22,9 @@ import {
   mapToAnswers,
   missingRequiredAnswers,
 } from '../../../core/form-answers';
+import { injectI18n } from '../../../core/i18n/inject-i18n';
 import { FormFillViewComponent } from '../../forms/form-fill-view.component';
 import { answerDisplayItems, FormFieldLabels, groupAnswerDisplayItems } from '../../forms/form-question.mapper';
-import { PORTAL_FORMS_LITERALS } from './portal-forms.literals';
 
 @Component({
   selector: 'app-portal-form-fill',
@@ -41,7 +41,10 @@ export class PortalFormFillComponent {
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly literals = PORTAL_FORMS_LITERALS;
+  private readonly i18n = injectI18n('portalForms');
+  get literals() {
+    return this.i18n();
+  }
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly error = signal('');
@@ -56,14 +59,14 @@ export class PortalFormFillComponent {
 
   readonly isCompleted = computed(() => this.assignment()?.status === 'completed');
 
-  readonly fieldLabels: FormFieldLabels = {
+  readonly fieldLabels = computed<FormFieldLabels>(() => ({
     yes: this.literals.yes,
     no: this.literals.no,
     firstName: this.literals.firstName,
     lastName: this.literals.lastName,
     moveUp: this.literals.moveUp,
     moveDown: this.literals.moveDown,
-  };
+  }));
 
   readonly answerBlocks = computed(() => {
     const assignment = this.assignment();
@@ -72,7 +75,7 @@ export class PortalFormFillComponent {
     }
     return groupAnswerDisplayItems(
       answerDisplayItems(assignment.questions, assignment.answers, {
-        ...this.fieldLabels,
+        ...this.fieldLabels(),
         empty: this.literals.emptyAnswer,
       }),
     );

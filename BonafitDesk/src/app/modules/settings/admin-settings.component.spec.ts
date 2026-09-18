@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
@@ -34,6 +36,7 @@ describe('AdminSettingsComponent', () => {
       imports: [AdminSettingsComponent],
       providers: [
         provideNoopAnimations(),
+        provideHttpClient(), provideDeskTranslate(),
         { provide: CalendarApiService, useValue: calendarApi },
         { provide: BrandingApiService, useValue: brandingApi },
         { provide: AuthApiService, useValue: authApi },

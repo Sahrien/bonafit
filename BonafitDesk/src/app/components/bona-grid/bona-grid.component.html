@@ -48,20 +48,35 @@
         <ng-container matColumnDef="_actions">
           <th mat-header-cell *matHeaderCellDef></th>
           <td mat-cell *matCellDef="let row" (click)="$event.stopPropagation()">
-            <button
-              mat-icon-button
-              type="button"
-              [matMenuTriggerFor]="actionsMenu"
-              [attr.aria-label]="actionsLabelText">
-              <mat-icon>more_horiz</mat-icon>
-            </button>
-            <mat-menu #actionsMenu="matMenu">
-              @for (gridAction of visibleActions(row); track gridAction.action) {
-                <button mat-menu-item type="button" (click)="onAction(gridAction, row)">
-                  {{ gridAction.label }}
+            @if (visibleActions(row).length > 0) {
+              @if (inlineActions) {
+                <div class="bona-grid__inline-actions">
+                  @for (gridAction of visibleActions(row); track gridAction.action) {
+                    <button
+                      type="button"
+                      class="bona-grid__inline-action"
+                      (click)="onAction(gridAction, row)">
+                      {{ gridAction.label }}
+                    </button>
+                  }
+                </div>
+              } @else {
+                <button
+                  mat-icon-button
+                  type="button"
+                  [matMenuTriggerFor]="actionsMenu"
+                  [attr.aria-label]="actionsLabelText">
+                  <mat-icon>more_horiz</mat-icon>
                 </button>
+                <mat-menu #actionsMenu="matMenu">
+                  @for (gridAction of visibleActions(row); track gridAction.action) {
+                    <button mat-menu-item type="button" (click)="onAction(gridAction, row)">
+                      {{ gridAction.label }}
+                    </button>
+                  }
+                </mat-menu>
               }
-            </mat-menu>
+            }
           </td>
         </ng-container>
       }
@@ -130,22 +145,35 @@
               </p>
             }
           </div>
-          @if (actions.length > 0) {
+          @if (visibleActions(row).length > 0) {
             <div class="bona-grid__card-actions" (click)="$event.stopPropagation()">
-              <button
-                mat-icon-button
-                type="button"
-                [matMenuTriggerFor]="cardMenu"
-                [attr.aria-label]="actionsLabelText">
-                <mat-icon>more_horiz</mat-icon>
-              </button>
-              <mat-menu #cardMenu="matMenu">
-                @for (gridAction of visibleActions(row); track gridAction.action) {
-                  <button mat-menu-item type="button" (click)="onAction(gridAction, row)">
-                    {{ gridAction.label }}
-                  </button>
-                }
-              </mat-menu>
+              @if (inlineActions) {
+                <div class="bona-grid__inline-actions">
+                  @for (gridAction of visibleActions(row); track gridAction.action) {
+                    <button
+                      type="button"
+                      class="bona-grid__inline-action"
+                      (click)="onAction(gridAction, row)">
+                      {{ gridAction.label }}
+                    </button>
+                  }
+                </div>
+              } @else {
+                <button
+                  mat-icon-button
+                  type="button"
+                  [matMenuTriggerFor]="cardMenu"
+                  [attr.aria-label]="actionsLabelText">
+                  <mat-icon>more_horiz</mat-icon>
+                </button>
+                <mat-menu #cardMenu="matMenu">
+                  @for (gridAction of visibleActions(row); track gridAction.action) {
+                    <button mat-menu-item type="button" (click)="onAction(gridAction, row)">
+                      {{ gridAction.label }}
+                    </button>
+                  }
+                </mat-menu>
+              }
             </div>
           }
         </li>

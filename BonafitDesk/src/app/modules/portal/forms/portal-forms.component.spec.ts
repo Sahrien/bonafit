@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideDeskTranslate } from '../../../core/i18n/provide-desk-translate';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -44,6 +46,7 @@ describe('PortalFormsComponent', () => {
       imports: [PortalFormsComponent],
       providers: [
         provideNoopAnimations(),
+        provideHttpClient(), provideDeskTranslate(),
         provideRouter([
           { path: 'app/formularios', component: PortalFormsComponent },
           { path: 'app/formularios/:id', component: PortalFormFillStubComponent },

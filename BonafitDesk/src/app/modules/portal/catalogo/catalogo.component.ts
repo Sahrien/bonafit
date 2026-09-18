@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, filter, forkJoin, map, switchMap, take } from 'rxjs';
 import { BonaConfirm } from '../../../components/bona-confirm/bona-confirm.service';
@@ -10,12 +10,12 @@ import {
 } from '../../../components/bona-grid/bona-grid.component';
 import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
 import { BonaToast } from '../../../components/bona-toast/bona-toast.service';
+import { injectI18n } from '../../../core/i18n/inject-i18n';
 import { BonoDto } from '../../../models/bono.dto';
 import { ServiceDto } from '../../../models/service.dto';
 import { AuthApiService } from '../../../services/auth-api.service';
 import { ClientsApiService } from '../../../services/clients-api.service';
 import { ServicesApiService } from '../../../services/services-api.service';
-import { CATALOGO_LITERALS } from './catalogo.literals';
 
 @Component({
   selector: 'app-portal-catalogo',
@@ -33,21 +33,24 @@ export class CatalogoComponent {
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly literals = CATALOGO_LITERALS;
+  private readonly i18n = injectI18n('catalogo');
+  get literals() {
+    return this.i18n();
+  }
   readonly loading = signal(true);
   readonly error = signal('');
   readonly rows = signal<Record<string, unknown>[]>([]);
 
-  readonly columns: BonaGridColumn[] = [
-    { field: 'serviceName', header: CATALOGO_LITERALS.service },
-    { field: 'offerName', header: CATALOGO_LITERALS.offer },
-    { field: 'sessionCount', header: CATALOGO_LITERALS.sessions, type: 'number' },
-    { field: 'price', header: CATALOGO_LITERALS.price, type: 'currency' },
-  ];
+  readonly columns = computed<BonaGridColumn[]>(() => [
+    { field: 'serviceName', header: this.literals.service },
+    { field: 'offerName', header: this.literals.offer },
+    { field: 'sessionCount', header: this.literals.sessions, type: 'number' },
+    { field: 'price', header: this.literals.price, type: 'currency' },
+  ]);
 
-  readonly actions: BonaGridAction[] = [
-    { label: CATALOGO_LITERALS.contract, action: 'contract' },
-  ];
+  readonly actions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.contract, action: 'contract' },
+  ]);
 
   private clientId = '';
 
@@ -60,7 +63,7 @@ export class CatalogoComponent {
           const clientId = session?.user.clientId;
           if (!clientId) {
             this.loading.set(false);
-            this.error.set(CATALOGO_LITERALS.noSession);
+            this.error.set(this.literals.noSession);
             return EMPTY;
           }
           this.clientId = clientId;
@@ -74,7 +77,7 @@ export class CatalogoComponent {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set(CATALOGO_LITERALS.loadError);
+          this.error.set(this.literals.loadError);
           this.loading.set(false);
         },
       });
@@ -92,9 +95,9 @@ export class CatalogoComponent {
 
     this.confirm
       .open({
-        title: CATALOGO_LITERALS.confirmContractTitle,
-        message: CATALOGO_LITERALS.confirmContractMessage,
-        confirmLabel: CATALOGO_LITERALS.contract,
+        title: this.literals.confirmContractTitle,
+        message: this.literals.confirmContractMessage,
+        confirmLabel: this.literals.contract,
       })
       .pipe(
         filter((ok) => ok),
@@ -105,9 +108,9 @@ export class CatalogoComponent {
       .subscribe({
         next: (rows) => {
           this.rows.set(rows);
-          this.toast.success(CATALOGO_LITERALS.contracted);
+          this.toast.success(this.literals.contracted);
         },
-        error: () => this.toast.error(CATALOGO_LITERALS.contractError),
+        error: () => this.toast.error(this.literals.contractError),
       });
   }
 

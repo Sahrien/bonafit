@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
+import { provideWebTranslate } from '../../i18n/provide-web-translate';
 import { HomeComponent } from './home.component';
 
 describe('HomeComponent', () => {
@@ -11,7 +12,7 @@ describe('HomeComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
-      providers: [provideRouter([]), provideHttpClient()],
+      providers: [provideRouter([]), provideHttpClient(), provideWebTranslate()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HomeComponent);

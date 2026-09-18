@@ -26,6 +26,36 @@ main {
   gap: 1rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.lang {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+
+.lang__btn {
+  min-width: 2.25rem;
+  min-height: 2.4rem;
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-card);
+  color: var(--color-forest);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.lang__btn.is-active {
+  background: var(--color-forest);
+  color: var(--color-cream);
+}
+
 .brand {
   color: inherit;
   text-decoration: none;

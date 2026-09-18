@@ -16,14 +16,15 @@ import { BonaPageComponent } from '../../components/bona-page/bona-page.componen
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { ApiBusinessError } from '../../core/api-business.error';
 import { BonoDto, BonoWriteDto } from '../../models/bono.dto';
-import { ServiceDto, ServiceWriteDto } from '../../models/service.dto';
+import { ServiceDto, ServiceWriteDto, catalogText } from '../../models/service.dto';
 import { ServicesApiService } from '../../services/services-api.service';
-import { SERVICES_LITERALS } from './services.literals';
+import { injectI18n } from '../../core/i18n/inject-i18n';
 
 const NEW_ID = 'new';
 
 const EMPTY_SERVICE: BonaFormValue = {
-  name: '',
+  nameEs: '',
+  nameEn: '',
   allowsSingleSession: 'false',
   bookableByClient: 'true',
   sharesSessionPool: 'true',
@@ -34,16 +35,13 @@ const EMPTY_SERVICE: BonaFormValue = {
 };
 
 const EMPTY_BONO: BonaFormValue = {
-  name: '',
-  description: '',
+  nameEs: '',
+  nameEn: '',
+  descriptionEs: '',
+  descriptionEn: '',
   sessionCount: '',
   price: '',
 };
-
-const YES_NO_OPTIONS = [
-  { value: 'true', label: SERVICES_LITERALS.yes },
-  { value: 'false', label: SERVICES_LITERALS.no },
-];
 
 function catalogSearchHaystack(parts: Array<string | number | null | undefined>): string {
   return parts
@@ -81,7 +79,10 @@ export class ServicesComponent {
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly literals = SERVICES_LITERALS;
+  private readonly i18n = injectI18n('services');
+  get literals() {
+    return this.i18n();
+  }
   readonly error = signal('');
   readonly loading = signal(true);
   readonly search = signal('');
@@ -94,31 +95,31 @@ export class ServicesComponent {
   private readonly services = signal<ServiceDto[]>([]);
   private readonly bonos = signal<BonoDto[]>([]);
 
-  readonly serviceColumns: BonaGridColumn[] = [
-    { field: 'name', header: SERVICES_LITERALS.name },
-    { field: 'kindLabel', header: SERVICES_LITERALS.kind },
-    { field: 'durationMinutesLabel', header: SERVICES_LITERALS.durationMinutes },
-    { field: 'sessionCountLabel', header: SERVICES_LITERALS.sessionCount },
-    { field: 'priceLabel', header: SERVICES_LITERALS.price, type: 'currency' },
-    { field: 'activeLabel', header: SERVICES_LITERALS.active },
-  ];
+  readonly serviceColumns = computed<BonaGridColumn[]>(() => [
+    { field: 'name', header: this.literals.name },
+    { field: 'kindLabel', header: this.literals.kind },
+    { field: 'durationMinutesLabel', header: this.literals.durationMinutes },
+    { field: 'sessionCountLabel', header: this.literals.sessionCount },
+    { field: 'priceLabel', header: this.literals.price, type: 'currency' },
+    { field: 'activeLabel', header: this.literals.active },
+  ]);
 
-  readonly serviceActions: BonaGridAction[] = [
-    { label: SERVICES_LITERALS.edit, action: 'edit' },
-    { label: SERVICES_LITERALS.delete, action: 'delete' },
-  ];
+  readonly serviceActions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.edit, action: 'edit' },
+    { label: this.literals.delete, action: 'delete' },
+  ]);
 
-  readonly bonoColumns: BonaGridColumn[] = [
-    { field: 'name', header: SERVICES_LITERALS.name },
-    { field: 'sessionCount', header: SERVICES_LITERALS.sessionCount, type: 'number' },
-    { field: 'price', header: SERVICES_LITERALS.price, type: 'currency' },
-    { field: 'description', header: SERVICES_LITERALS.description },
-  ];
+  readonly bonoColumns = computed<BonaGridColumn[]>(() => [
+    { field: 'name', header: this.literals.name },
+    { field: 'sessionCount', header: this.literals.sessionCount, type: 'number' },
+    { field: 'price', header: this.literals.price, type: 'currency' },
+    { field: 'description', header: this.literals.description },
+  ]);
 
-  readonly bonoActions: BonaGridAction[] = [
-    { label: SERVICES_LITERALS.edit, action: 'edit' },
-    { label: SERVICES_LITERALS.delete, action: 'delete' },
-  ];
+  readonly bonoActions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.edit, action: 'edit' },
+    { label: this.literals.delete, action: 'delete' },
+  ]);
 
   readonly serviceRows = computed(() => {
     const query = this.search().trim().toLowerCase();
@@ -174,8 +175,13 @@ export class ServicesComponent {
 
   readonly serviceFields = computed((): BonaFieldDefinition[] => {
     const forcesSingleSession = this.serviceForm()['forcesSingleSession'] === 'true';
+    const yesNo = [
+      { value: 'true', label: this.literals.yes },
+      { value: 'false', label: this.literals.no },
+    ];
     const fields: BonaFieldDefinition[] = [
-      { key: 'name', label: this.literals.name, type: 'text', required: true },
+      { key: 'nameEs', label: this.literals.nameEs, type: 'text', required: true },
+      { key: 'nameEn', label: this.literals.nameEn, type: 'text', required: true },
       {
         key: 'durationMinutes',
         label: this.literals.durationMinutes,
@@ -191,19 +197,19 @@ export class ServicesComponent {
         key: 'active',
         label: this.literals.active,
         type: 'select',
-        options: YES_NO_OPTIONS,
+        options: yesNo,
       },
       {
         key: 'sharesSessionPool',
         label: this.literals.sharesSessionPool,
         type: 'select',
-        options: YES_NO_OPTIONS,
+        options: yesNo,
       },
       {
         key: 'forcesSingleSession',
         label: this.literals.forcesSingleSession,
         type: 'select',
-        options: YES_NO_OPTIONS,
+        options: yesNo,
       },
     ];
     if (!forcesSingleSession) {
@@ -212,25 +218,27 @@ export class ServicesComponent {
           key: 'bookableByClient',
           label: this.literals.bookableByClient,
           type: 'select',
-          options: YES_NO_OPTIONS,
+          options: yesNo,
         },
         {
           key: 'allowsSingleSession',
           label: this.literals.allowsSingleSession,
           type: 'select',
-          options: YES_NO_OPTIONS,
+          options: yesNo,
         },
       );
     }
     return fields;
   });
 
-  readonly bonoFields: BonaFieldDefinition[] = [
-    { key: 'name', label: SERVICES_LITERALS.name, type: 'text', required: true },
-    { key: 'sessionCount', label: SERVICES_LITERALS.sessionCount, type: 'number', required: true },
-    { key: 'price', label: SERVICES_LITERALS.price, type: 'number', required: true },
-    { key: 'description', label: SERVICES_LITERALS.description, type: 'textarea' },
-  ];
+  readonly bonoFields = computed<BonaFieldDefinition[]>(() => [
+    { key: 'nameEs', label: this.literals.nameEs, type: 'text', required: true },
+    { key: 'nameEn', label: this.literals.nameEn, type: 'text', required: true },
+    { key: 'sessionCount', label: this.literals.sessionCount, type: 'number', required: true },
+    { key: 'price', label: this.literals.price, type: 'number', required: true },
+    { key: 'descriptionEs', label: this.literals.descriptionEs, type: 'textarea' },
+    { key: 'descriptionEn', label: this.literals.descriptionEn, type: 'textarea' },
+  ]);
 
   constructor() {
     this.loadAll();
@@ -474,7 +482,8 @@ export class ServicesComponent {
 
   private toServiceForm(service: ServiceDto): BonaFormValue {
     return {
-      name: service.name,
+      nameEs: catalogText(service.i18n, 'name', 'es', service.name),
+      nameEn: catalogText(service.i18n, 'name', 'en'),
       allowsSingleSession: service.allowsSingleSession ? 'true' : 'false',
       bookableByClient: service.bookableByClient ? 'true' : 'false',
       sharesSessionPool: service.sharesSessionPool ? 'true' : 'false',
@@ -488,29 +497,33 @@ export class ServicesComponent {
 
   private toBonoForm(bono: BonoDto): BonaFormValue {
     return {
-      name: bono.name,
-      description: bono.description,
+      nameEs: catalogText(bono.i18n, 'name', 'es', bono.name),
+      nameEn: catalogText(bono.i18n, 'name', 'en'),
+      descriptionEs: catalogText(bono.i18n, 'description', 'es', bono.description),
+      descriptionEn: catalogText(bono.i18n, 'description', 'en'),
       sessionCount: String(bono.sessionCount),
       price: String(bono.price),
     };
   }
 
   private toServiceWrite(value: BonaFormValue): ServiceWriteDto | null {
-    const name = (value['name'] ?? '').trim();
+    const nameEs = (value['nameEs'] ?? '').trim();
+    const nameEn = (value['nameEn'] ?? '').trim();
     const durationMinutes = Number(value['durationMinutes']);
-    if (!name || Number.isNaN(durationMinutes) || durationMinutes <= 0) {
+    if (!nameEs || !nameEn || Number.isNaN(durationMinutes) || durationMinutes <= 0) {
       this.error.set(this.literals.errorRequired);
       return null;
     }
     const forcesSingleSession = value['forcesSingleSession'] === 'true';
     const payload: ServiceWriteDto = {
-      name,
+      name: nameEs,
       sharesSessionPool: value['sharesSessionPool'] === 'true',
       forcesSingleSession,
       allowsSingleSession: value['allowsSingleSession'] === 'true',
       bookableByClient: value['bookableByClient'] === 'true',
       durationMinutes,
       active: value['active'] !== 'false',
+      i18n: { name: { es: nameEs, en: nameEn } },
     };
     const priceRaw = value['singleSessionPrice'] ?? '';
     if (priceRaw !== '') {
@@ -525,30 +538,51 @@ export class ServicesComponent {
   }
 
   private matchesService(service: ServiceDto, query: string): boolean {
-    return catalogContains([service.name], query);
+    return catalogContains(
+      [service.name, catalogText(service.i18n, 'name', 'es'), catalogText(service.i18n, 'name', 'en')],
+      query,
+    );
   }
 
   private matchesBono(service: ServiceDto, bono: BonoDto, query: string): boolean {
     return catalogContains(
-      [service.name, bono.name, bono.description, bono.sessionCount],
+      [
+        service.name,
+        catalogText(service.i18n, 'name', 'es'),
+        catalogText(service.i18n, 'name', 'en'),
+        bono.name,
+        catalogText(bono.i18n, 'name', 'es'),
+        catalogText(bono.i18n, 'name', 'en'),
+        bono.description,
+        catalogText(bono.i18n, 'description', 'es'),
+        catalogText(bono.i18n, 'description', 'en'),
+        bono.sessionCount,
+      ],
       query,
     );
   }
 
   private toBonoWrite(value: BonaFormValue, serviceId: string): BonoWriteDto | null {
-    const name = (value['name'] ?? '').trim();
+    const nameEs = (value['nameEs'] ?? '').trim();
+    const nameEn = (value['nameEn'] ?? '').trim();
     const sessionCount = Number(value['sessionCount']);
     const price = Number(value['price']);
-    if (!name || Number.isNaN(sessionCount) || Number.isNaN(price)) {
+    if (!nameEs || !nameEn || Number.isNaN(sessionCount) || Number.isNaN(price)) {
       this.error.set(this.literals.errorRequired);
       return null;
     }
+    const descriptionEs = (value['descriptionEs'] ?? '').trim();
+    const descriptionEn = (value['descriptionEn'] ?? '').trim();
     return {
       serviceId,
-      name,
-      description: (value['description'] ?? '').trim(),
+      name: nameEs,
+      description: descriptionEs,
       sessionCount,
       price,
+      i18n: {
+        name: { es: nameEs, en: nameEn },
+        description: { es: descriptionEs, en: descriptionEn },
+      },
     };
   }
 }

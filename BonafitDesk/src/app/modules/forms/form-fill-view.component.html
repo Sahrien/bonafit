@@ -9,7 +9,7 @@
 }
 @if (missingFields().length) {
   <div class="form-fill-view__error" role="alert">
-    <p>{{ requiredError() }}</p>
+    <p>{{ requiredError() || literals.requiredError }}</p>
     <ul class="form-fill-view__missing-list">
       @for (item of missingFields(); track item.id) {
         <li>

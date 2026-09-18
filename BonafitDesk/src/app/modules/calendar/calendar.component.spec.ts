@@ -1,3 +1,4 @@
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -47,6 +48,7 @@ describe('CalendarComponent', () => {
       imports: [CalendarComponent],
       providers: [
         provideNoopAnimations(),
+        provideDeskTranslate(),
         provideHttpClient(),
         provideRouter([]),
         { provide: CalendarApiService, useValue: calendarApi },

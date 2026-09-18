@@ -18,7 +18,7 @@ export class ChangePasswordComponent {
   private readonly auth = inject(AuthApiService);
   private readonly router = inject(Router);
 
-  private readonly i18n = injectI18n<Record<string, string>>('changePassword');
+  private readonly i18n = injectI18n('changePassword');
   get literals() {
     return this.i18n();
   }

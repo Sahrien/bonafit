@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -34,6 +36,7 @@ describe('ClientsComponent', () => {
       imports: [ClientsComponent],
       providers: [
         provideNoopAnimations(),
+        provideHttpClient(), provideDeskTranslate(),
         provideRouter([
           { path: 'admin/clients', component: ClientsComponent },
           { path: 'admin/clients/:id', component: ClientFichaStubComponent },

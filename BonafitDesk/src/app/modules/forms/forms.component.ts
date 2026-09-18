@@ -34,7 +34,7 @@ export class FormsComponent {
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly i18n = injectI18n<Record<string, string>>('forms');
+  private readonly i18n = injectI18n('forms');
   get literals() {
     return this.i18n();
   }

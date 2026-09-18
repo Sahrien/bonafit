@@ -35,7 +35,8 @@ import { CalendarApiService } from '../../services/calendar-api.service';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ServicesApiService } from '../../services/services-api.service';
 import { fromDatetimeLocalValue, toDatetimeLocalValue } from '../calendar/calendar-datetime';
-import { CLIENTS_LITERALS } from './clients.literals';
+import { injectI18n } from '../../core/i18n/inject-i18n';
+import { LanguageService } from '../../core/i18n/language.service';
 
 const NEW_CLIENT_ID = 'new';
 
@@ -82,8 +83,12 @@ export class ClientFichaComponent {
   private readonly confirm = inject(BonaConfirm);
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly language = inject(LanguageService);
 
-  readonly literals = CLIENTS_LITERALS;
+  private readonly i18n = injectI18n('clients');
+  get literals() {
+    return this.i18n();
+  }
   readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -114,39 +119,39 @@ export class ClientFichaComponent {
     this.isNew() ? this.literals.fichaNewTitle : this.literals.fichaTitle,
   );
 
-  readonly fields: BonaFieldDefinition[] = [
-    { key: 'firstName', label: CLIENTS_LITERALS.firstName, type: 'text', required: true },
-    { key: 'lastName', label: CLIENTS_LITERALS.lastName, type: 'text', required: true },
-    { key: 'email', label: CLIENTS_LITERALS.email, type: 'email', required: true },
-    { key: 'phone', label: CLIENTS_LITERALS.phone, type: 'tel' },
-    { key: 'notes', label: CLIENTS_LITERALS.notes, type: 'textarea' },
+  readonly fields = computed<BonaFieldDefinition[]>(() => [
+    { key: 'firstName', label: this.literals.firstName, type: 'text', required: true },
+    { key: 'lastName', label: this.literals.lastName, type: 'text', required: true },
+    { key: 'email', label: this.literals.email, type: 'email', required: true },
+    { key: 'phone', label: this.literals.phone, type: 'tel' },
+    { key: 'notes', label: this.literals.notes, type: 'textarea' },
     {
       key: 'instantConfirm',
-      label: CLIENTS_LITERALS.instantConfirm,
+      label: this.literals.instantConfirm,
       type: 'select',
       options: [
-        { value: 'true', label: CLIENTS_LITERALS.yes },
-        { value: 'false', label: CLIENTS_LITERALS.no },
+        { value: 'true', label: this.literals.yes },
+        { value: 'false', label: this.literals.no },
       ],
     },
-  ];
+  ]);
 
-  readonly bonoColumns: BonaGridColumn[] = [
-    { field: 'serviceName', header: CLIENTS_LITERALS.service },
-    { field: 'name', header: CLIENTS_LITERALS.bono },
-    { field: 'remainingSessions', header: CLIENTS_LITERALS.remainingSessions, type: 'number' },
-    { field: 'expiresAtLabel', header: CLIENTS_LITERALS.expiresAt },
-  ];
+  readonly bonoColumns = computed<BonaGridColumn[]>(() => [
+    { field: 'serviceName', header: this.literals.service },
+    { field: 'name', header: this.literals.bono },
+    { field: 'remainingSessions', header: this.literals.remainingSessions, type: 'number' },
+    { field: 'expiresAtLabel', header: this.literals.expiresAt },
+  ]);
 
-  readonly bonoActions: BonaGridAction[] = [
-    { label: CLIENTS_LITERALS.editBono, action: 'edit' },
-    { label: CLIENTS_LITERALS.unassign, action: 'unassign' },
-  ];
+  readonly bonoActions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.editBono, action: 'edit' },
+    { label: this.literals.unassign, action: 'unassign' },
+  ]);
 
-  readonly bonoFields: BonaFieldDefinition[] = [
-    { key: 'remainingSessions', label: CLIENTS_LITERALS.remainingSessions, type: 'number', required: true },
-    { key: 'expiresAt', label: CLIENTS_LITERALS.expiresAt, type: 'datetime-local' },
-  ];
+  readonly bonoFields = computed<BonaFieldDefinition[]>(() => [
+    { key: 'remainingSessions', label: this.literals.remainingSessions, type: 'number', required: true },
+    { key: 'expiresAt', label: this.literals.expiresAt, type: 'datetime-local' },
+  ]);
 
   readonly bonoRows = computed(() =>
     this.clientBonos().map((row) => {
@@ -161,26 +166,26 @@ export class ClientFichaComponent {
     }),
   );
 
-  readonly historyColumns: BonaGridColumn[] = [
+  readonly historyColumns = computed<BonaGridColumn[]>(() => [
     {
       field: 'whenLabel',
-      header: CLIENTS_LITERALS.sessionWhen,
+      header: this.literals.sessionWhen,
       sortField: 'startsAt',
       type: 'date',
     },
-    { field: 'serviceName', header: CLIENTS_LITERALS.service },
-    { field: 'trainerName', header: CLIENTS_LITERALS.trainer },
-    { field: 'statusLabel', header: CLIENTS_LITERALS.sessionStatus },
-    { field: 'notes', header: CLIENTS_LITERALS.sessionNotes },
-  ];
+    { field: 'serviceName', header: this.literals.service },
+    { field: 'trainerName', header: this.literals.trainer },
+    { field: 'statusLabel', header: this.literals.sessionStatus },
+    { field: 'notes', header: this.literals.sessionNotes },
+  ]);
 
-  readonly historyActions: BonaGridAction[] = [
-    { label: CLIENTS_LITERALS.editSessionNote, action: 'editNote' },
-  ];
+  readonly historyActions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.editSessionNote, action: 'editNote' },
+  ]);
 
-  readonly sessionNoteFields: BonaFieldDefinition[] = [
-    { key: 'notes', label: CLIENTS_LITERALS.sessionNotes, type: 'textarea' },
-  ];
+  readonly sessionNoteFields = computed<BonaFieldDefinition[]>(() => [
+    { key: 'notes', label: this.literals.sessionNotes, type: 'textarea' },
+  ]);
 
   readonly historyRows = computed(() =>
     [...this.appointments()]
@@ -557,7 +562,7 @@ export class ClientFichaComponent {
   }
 
   private formatSessionWhen(iso: string): string {
-    return new Date(iso).toLocaleString('es-ES', {
+    return new Date(iso).toLocaleString(this.language.locale(), {
       timeZone: 'Europe/Madrid',
       dateStyle: 'short',
       timeStyle: 'short',

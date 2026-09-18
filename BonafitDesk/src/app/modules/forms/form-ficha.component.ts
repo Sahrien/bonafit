@@ -39,45 +39,12 @@ import {
 } from '../../models/form.dto';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { FormsApiService } from '../../services/forms-api.service';
+import { injectI18n } from '../../core/i18n/inject-i18n';
+import { CatalogI18n, catalogText } from '../../models/service.dto';
 import { FormFillViewComponent } from './form-fill-view.component';
 import { answerDisplayItems, groupAnswerDisplayItems, groupQuestionsByHeading, orderedQuestions } from './form-question.mapper';
-import { FORMS_LITERALS } from './forms.literals';
 
 const NEW_FORM_ID = 'new';
-
-const QUESTION_TYPE_OPTIONS: NonNullable<BonaFieldDefinition['options']> = [
-  { value: 'shortText', label: FORMS_LITERALS.typeShortText },
-  { value: 'fullName', label: FORMS_LITERALS.typeFullName },
-  { value: 'email', label: FORMS_LITERALS.typeEmail },
-  { value: 'phone', label: FORMS_LITERALS.typePhone },
-  { value: 'date', label: FORMS_LITERALS.typeDate },
-  { value: 'number', label: FORMS_LITERALS.typeNumber },
-  { value: 'address', label: FORMS_LITERALS.typeAddress },
-  { value: 'text', label: FORMS_LITERALS.typeText },
-  { value: 'yesno', label: FORMS_LITERALS.typeYesNo },
-  { value: 'dropdown', label: FORMS_LITERALS.typeDropdown },
-  { value: 'singleChoice', label: FORMS_LITERALS.typeSingleChoice },
-  { value: 'multipleChoice', label: FORMS_LITERALS.typeMultipleChoice },
-  { value: 'ranking', label: FORMS_LITERALS.typeRanking },
-  { value: 'terms', label: FORMS_LITERALS.typeTerms },
-];
-
-const TYPE_FIELD: BonaFieldDefinition = {
-  key: 'type',
-  label: FORMS_LITERALS.type,
-  type: 'select',
-  options: QUESTION_TYPE_OPTIONS,
-};
-
-const REQUIRED_FIELD: BonaFieldDefinition = {
-  key: 'required',
-  label: FORMS_LITERALS.required,
-  type: 'select',
-  options: [
-    { value: 'true', label: FORMS_LITERALS.yes },
-    { value: 'false', label: FORMS_LITERALS.no },
-  ],
-};
 
 const DESCRIPTION_FIELD: BonaFieldDefinition = {
   key: 'description',
@@ -85,9 +52,9 @@ const DESCRIPTION_FIELD: BonaFieldDefinition = {
   type: 'textarea',
 };
 
-const HEADING_PROMPT_FIELD: BonaFieldDefinition = {
-  key: 'headingPrompt',
-  label: FORMS_LITERALS.sectionPrompt,
+const DESCRIPTION_EN_FIELD: BonaFieldDefinition = {
+  key: 'descriptionEn',
+  label: '',
   type: 'textarea',
 };
 
@@ -117,14 +84,61 @@ export class FormFichaComponent {
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly literals = FORMS_LITERALS;
-  readonly typeField = TYPE_FIELD;
-  readonly requiredField = REQUIRED_FIELD;
+  private readonly i18n = injectI18n('forms');
+  get literals() {
+    return this.i18n();
+  }
   readonly descriptionField = DESCRIPTION_FIELD;
-  readonly headingPromptField = HEADING_PROMPT_FIELD;
+  readonly descriptionEnField = DESCRIPTION_EN_FIELD;
+
+  readonly typeField = computed<BonaFieldDefinition>(() => ({
+    key: 'type',
+    label: this.literals.type,
+    type: 'select',
+    options: [
+      { value: 'shortText', label: this.literals.typeShortText },
+      { value: 'fullName', label: this.literals.typeFullName },
+      { value: 'email', label: this.literals.typeEmail },
+      { value: 'phone', label: this.literals.typePhone },
+      { value: 'date', label: this.literals.typeDate },
+      { value: 'number', label: this.literals.typeNumber },
+      { value: 'address', label: this.literals.typeAddress },
+      { value: 'text', label: this.literals.typeText },
+      { value: 'yesno', label: this.literals.typeYesNo },
+      { value: 'dropdown', label: this.literals.typeDropdown },
+      { value: 'singleChoice', label: this.literals.typeSingleChoice },
+      { value: 'multipleChoice', label: this.literals.typeMultipleChoice },
+      { value: 'ranking', label: this.literals.typeRanking },
+      { value: 'terms', label: this.literals.typeTerms },
+    ],
+  }));
+
+  readonly requiredField = computed<BonaFieldDefinition>(() => ({
+    key: 'required',
+    label: this.literals.required,
+    type: 'select',
+    options: [
+      { value: 'true', label: this.literals.yes },
+      { value: 'false', label: this.literals.no },
+    ],
+  }));
+
+  readonly headingPromptField = computed<BonaFieldDefinition>(() => ({
+    key: 'headingPrompt',
+    label: this.literals.promptEs,
+    type: 'textarea',
+  }));
+
+  readonly headingPromptEnField = computed<BonaFieldDefinition>(() => ({
+    key: 'headingPromptEn',
+    label: this.literals.promptEn,
+    type: 'textarea',
+  }));
 
   readonly title = signal('');
+  readonly titleEn = signal('');
   readonly description = signal('');
+  readonly descriptionEn = signal('');
   readonly questions = signal<FormQuestionDto[]>([]);
   readonly error = signal('');
   readonly feedback = signal('');
@@ -153,14 +167,14 @@ export class FormFichaComponent {
     this.isNew() ? this.literals.fichaNewTitle : this.literals.fichaTitle,
   );
   readonly previewPageTitle = computed(() => this.title().trim() || this.pageTitle());
-  readonly fieldLabels = {
-    yes: FORMS_LITERALS.yes,
-    no: FORMS_LITERALS.no,
-    firstName: FORMS_LITERALS.firstName,
-    lastName: FORMS_LITERALS.lastName,
-    moveUp: FORMS_LITERALS.moveUp,
-    moveDown: FORMS_LITERALS.moveDown,
-  };
+  readonly fieldLabels = computed(() => ({
+    yes: this.literals.yes,
+    no: this.literals.no,
+    firstName: this.literals.firstName,
+    lastName: this.literals.lastName,
+    moveUp: this.literals.moveUp,
+    moveDown: this.literals.moveDown,
+  }));
   readonly hasOptions = questionHasOptions;
 
   readonly templateBlocks = computed(() => groupQuestionsByHeading(this.questions()));
@@ -186,11 +200,11 @@ export class FormFichaComponent {
     );
   });
 
-  readonly tabs: BonaTabItem[] = [
-    { id: 'template', label: FORMS_LITERALS.tabTemplate },
-    { id: 'assign', label: FORMS_LITERALS.tabAssign },
-    { id: 'responses', label: FORMS_LITERALS.tabResponses },
-  ];
+  readonly tabs = computed<BonaTabItem[]>(() => [
+    { id: 'template', label: this.literals.tabTemplate },
+    { id: 'assign', label: this.literals.tabAssign },
+    { id: 'responses', label: this.literals.tabResponses },
+  ]);
 
   readonly assignmentRows = computed(() => {
     const clientsById = new Map(
@@ -207,16 +221,16 @@ export class FormFichaComponent {
     }));
   });
 
-  readonly assignmentColumns: BonaGridColumn[] = [
-    { field: 'clientName', header: FORMS_LITERALS.client },
-    { field: 'statusLabel', header: FORMS_LITERALS.status },
-    { field: 'assignedAt', header: FORMS_LITERALS.assignedAt, type: 'date' },
-    { field: 'submittedAtLabel', header: FORMS_LITERALS.submittedAt, type: 'date' },
-  ];
+  readonly assignmentColumns = computed<BonaGridColumn[]>(() => [
+    { field: 'clientName', header: this.literals.client },
+    { field: 'statusLabel', header: this.literals.status },
+    { field: 'assignedAt', header: this.literals.assignedAt, type: 'date' },
+    { field: 'submittedAtLabel', header: this.literals.submittedAt, type: 'date' },
+  ]);
 
-  readonly assignmentActions: BonaGridAction[] = [
-    { label: FORMS_LITERALS.view, action: 'view' },
-  ];
+  readonly assignmentActions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.view, action: 'view' },
+  ]);
 
   readonly selectedAssignment = computed(() => {
     const id = this.selectedAssignmentId();
@@ -272,8 +286,16 @@ export class FormFichaComponent {
     this.title.set(value);
   }
 
+  onTitleEnChange(value: string): void {
+    this.titleEn.set(value);
+  }
+
   onDescriptionChange(value: string): void {
     this.description.set(value);
+  }
+
+  onDescriptionEnChange(value: string): void {
+    this.descriptionEn.set(value);
   }
 
   onAddQuestion(): void {
@@ -322,11 +344,21 @@ export class FormFichaComponent {
     if (isFormHeading(type)) {
       return this.literals.typeHeading;
     }
-    return TYPE_FIELD.options?.find((option) => option.value === type)?.label ?? type;
+    return this.typeField().options?.find((option) => option.value === type)?.label ?? type;
   }
 
   onPromptChange(questionId: string, prompt: string): void {
     this.patchQuestion(questionId, { prompt });
+  }
+
+  onPromptEnChange(questionId: string, promptEn: string): void {
+    this.questions.update((list) =>
+      list.map((question) =>
+        question.id === questionId
+          ? { ...question, i18n: this.withLocale(question.i18n, 'prompt', question.prompt, promptEn) }
+          : question,
+      ),
+    );
   }
 
   onTypeChange(questionId: string, typeValue: string): void {
@@ -408,6 +440,31 @@ export class FormFichaComponent {
     );
   }
 
+  onOptionEnChange(questionId: string, optionId: string, optionEn: string): void {
+    this.questions.update((list) =>
+      list.map((question) =>
+        question.id === questionId
+          ? {
+              ...question,
+              options: (question.options ?? []).map((option) =>
+                option.id === optionId
+                  ? { ...option, i18n: this.withLocale(option.i18n, 'label', option.label, optionEn) }
+                  : option,
+              ),
+            }
+          : question,
+      ),
+    );
+  }
+
+  promptEn(question: FormQuestionDto): string {
+    return catalogText(question.i18n, 'prompt', 'en');
+  }
+
+  optionEn(option: { i18n?: CatalogI18n }): string {
+    return catalogText(option.i18n, 'label', 'en');
+  }
+
   onRemoveOption(questionId: string, optionId: string): void {
     this.questions.update((list) =>
       list.map((question) =>
@@ -439,8 +496,10 @@ export class FormFichaComponent {
           void this.router.navigate(['/admin/forms', form.id]);
           return;
         }
-        this.title.set(form.title);
-        this.description.set(form.description);
+        this.title.set(catalogText(form.i18n, 'title', 'es', form.title));
+        this.titleEn.set(catalogText(form.i18n, 'title', 'en'));
+        this.description.set(catalogText(form.i18n, 'description', 'es', form.description));
+        this.descriptionEn.set(catalogText(form.i18n, 'description', 'en'));
         this.questions.set(orderedQuestions(form.questions));
       },
       error: () => {
@@ -591,6 +650,15 @@ export class FormFichaComponent {
     );
   }
 
+  private withLocale(
+    i18n: CatalogI18n | undefined,
+    key: string,
+    es: string,
+    en: string,
+  ): CatalogI18n {
+    return { ...i18n, [key]: { es, en } };
+  }
+
   private toWriteDto(): FormWriteDto | null {
     const title = this.title().trim();
     const questions = this.questions();
@@ -609,12 +677,22 @@ export class FormFichaComponent {
         const options = (question.options ?? [])
           .map((option) => ({ ...option, label: option.label.trim() }))
           .filter((option) => option.label.length > 0)
-          .map((option, optionIndex) => ({ ...option, sortOrder: optionIndex }));
+          .map((option, optionIndex) => ({
+            ...option,
+            sortOrder: optionIndex,
+            i18n: this.withLocale(option.i18n, 'label', option.label, catalogText(option.i18n, 'label', 'en')),
+          }));
         if (options.length < 2) {
           this.error.set(this.literals.errorQuestion);
           return null;
         }
-        cleaned.push({ ...question, prompt, sortOrder: cleaned.length, options });
+        cleaned.push({
+          ...question,
+          prompt,
+          sortOrder: cleaned.length,
+          options,
+          i18n: this.withLocale(question.i18n, 'prompt', prompt, catalogText(question.i18n, 'prompt', 'en')),
+        });
       } else {
         cleaned.push({
           ...question,
@@ -622,13 +700,21 @@ export class FormFichaComponent {
           required: isFormHeading(question.type) ? false : question.required,
           sortOrder: cleaned.length,
           options: undefined,
+          i18n: this.withLocale(question.i18n, 'prompt', prompt, catalogText(question.i18n, 'prompt', 'en')),
         });
       }
     }
     this.error.set('');
+    const titleEn = this.titleEn().trim();
+    const description = this.description().trim();
+    const descriptionEn = this.descriptionEn().trim();
     return {
       title,
-      description: this.description().trim(),
+      description,
+      i18n: {
+        title: { es: title, en: titleEn },
+        description: { es: description, en: descriptionEn },
+      },
       questions: cleaned,
     };
   }
@@ -646,7 +732,9 @@ export class FormFichaComponent {
     this.openQuestionIds.set(new Set());
     if (!id || id === NEW_FORM_ID) {
       this.title.set('');
+      this.titleEn.set('');
       this.description.set('');
+      this.descriptionEn.set('');
       this.questions.set([]);
       this.assignments.set([]);
       this.clients.set([]);
@@ -662,8 +750,10 @@ export class FormFichaComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ form, assignments, clients }) => {
-          this.title.set(form.title);
-          this.description.set(form.description);
+          this.title.set(catalogText(form.i18n, 'title', 'es', form.title));
+          this.titleEn.set(catalogText(form.i18n, 'title', 'en'));
+          this.description.set(catalogText(form.i18n, 'description', 'es', form.description));
+          this.descriptionEn.set(catalogText(form.i18n, 'description', 'en'));
           this.questions.set(orderedQuestions(form.questions));
           this.assignments.set(assignments);
           this.clients.set(clients);

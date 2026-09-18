@@ -5,6 +5,7 @@ import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AUTH_PATHS } from '../../core/auth/auth.paths';
 import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
+import { LOGIN_LITERALS } from '../../i18n/es';
 import { AuthApiService } from '../../services/auth-api.service';
 import { MOCK_ACCOUNTS, createMockSession } from '../../testing/fixtures';
 import { LoginComponent } from './login.component';

@@ -3,7 +3,7 @@
     <p class="portal-page__status portal-page__status--error">{{ error() }}</p>
   } @else {
     <app-bona-form
-      [fields]="fields"
+      [fields]="fields()"
       [value]="formValue()"
       [submitText]="literals.save"
       [disabled]="saving()"

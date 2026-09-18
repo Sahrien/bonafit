@@ -26,6 +26,7 @@ import {
 import {
   AppointmentDto,
   AppointmentStatus,
+  AppointmentWriteDto,
   AvailabilitySlotDto,
 } from '../../../models/appointment.dto';
 import { BonoDto } from '../../../models/bono.dto';
@@ -67,7 +68,7 @@ export class PortalAgendaComponent {
   private readonly language = inject(LanguageService);
   private readonly translate = inject(TranslateService);
 
-  private readonly i18n = injectI18n<Record<string, string>>('agenda');
+  private readonly i18n = injectI18n('agenda');
   get literals() {
     return this.i18n();
   }
@@ -77,6 +78,8 @@ export class PortalAgendaComponent {
   readonly filterValue = signal<BonaFormValue>({ serviceId: '', trainerId: '' });
   readonly changingId = signal<string | null>(null);
   readonly selectedDayKey = signal('');
+  readonly selectedTimeKey = signal('');
+  readonly selectedTrainerId = signal('');
 
   private clientId = '';
   private readonly trainers = signal<TrainerDto[]>([]);
@@ -202,7 +205,7 @@ export class PortalAgendaComponent {
     if (!this.canCancelNext()) {
       return [];
     }
-    return [{ name: 'cancel', label: this.literals.cancel, variant: 'secondary' as const }];
+    return [{ name: 'cancel', label: this.literals.cancel, variant: 'primary' as const }];
   });
 
   readonly visibleSlots = computed(() => {
@@ -243,6 +246,44 @@ export class PortalAgendaComponent {
     const groups = this.slotGroups();
     const key = this.selectedDayKey();
     return groups.find((group) => group.key === key) ?? groups[0] ?? null;
+  });
+
+  readonly dayTimes = computed(() => {
+    const day = this.selectedDayGroup();
+    if (!day) {
+      return [];
+    }
+    const times: { key: string; label: string }[] = [];
+    const seen = new Set<string>();
+    for (const slot of day.slots) {
+      if (seen.has(slot.timeLabel)) {
+        continue;
+      }
+      seen.add(slot.timeLabel);
+      times.push({ key: slot.timeLabel, label: slot.timeLabel });
+    }
+    return times;
+  });
+
+  readonly trainersAtSelectedTime = computed(() => {
+    const day = this.selectedDayGroup();
+    const timeKey = this.selectedTimeKey() || this.dayTimes()[0]?.key;
+    if (!day || !timeKey) {
+      return [];
+    }
+    return day.slots.filter((slot) => slot.timeLabel === timeKey);
+  });
+
+  readonly selectedSlot = computed(() => {
+    const trainers = this.trainersAtSelectedTime();
+    if (trainers.length === 0) {
+      return null;
+    }
+    if (trainers.length === 1) {
+      return trainers[0];
+    }
+    const trainerId = this.selectedTrainerId();
+    return trainers.find((slot) => slot.trainerId === trainerId) ?? trainers[0];
   });
 
   readonly appointmentRows = computed(() =>
@@ -331,6 +372,22 @@ export class PortalAgendaComponent {
         untracked(() => this.selectedDayKey.set(groups[0]?.key ?? ''));
       }
     });
+
+    effect(() => {
+      const times = this.dayTimes();
+      const current = this.selectedTimeKey();
+      if (!times.some((time) => time.key === current)) {
+        untracked(() => this.selectedTimeKey.set(times[0]?.key ?? ''));
+      }
+    });
+
+    effect(() => {
+      const trainers = this.trainersAtSelectedTime();
+      const current = this.selectedTrainerId();
+      if (!trainers.some((slot) => slot.trainerId === current)) {
+        untracked(() => this.selectedTrainerId.set(trainers[0]?.trainerId ?? ''));
+      }
+    });
   }
 
   onFilterChange(value: BonaFormValue): void {
@@ -408,6 +465,24 @@ export class PortalAgendaComponent {
 
   onSelectDay(key: string): void {
     this.selectedDayKey.set(key);
+    this.selectedTimeKey.set('');
+    this.selectedTrainerId.set('');
+  }
+
+  onSelectTime(key: string): void {
+    this.selectedTimeKey.set(key);
+    this.selectedTrainerId.set('');
+  }
+
+  onSelectTrainer(trainerId: string): void {
+    this.selectedTrainerId.set(trainerId);
+  }
+
+  onBookSelected(): void {
+    const slot = this.selectedSlot();
+    if (slot) {
+      this.onBookSlot(slot);
+    }
   }
 
   onCancelNext(): void {
@@ -456,7 +531,7 @@ export class PortalAgendaComponent {
       .pipe(
         filter((ok) => ok),
         switchMap(() =>
-          this.calendarApi.updateAppointment(appointment.id, { ...appointment, status: 'cancelled' }),
+          this.calendarApi.updateAppointment(appointment.id, this.appointmentWrite(appointment, 'cancelled')),
         ),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -514,6 +589,23 @@ export class PortalAgendaComponent {
 
   private scrollToBooking(): void {
     document.getElementById('portal-agenda-book')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  private appointmentWrite(
+    appointment: AppointmentDto,
+    status?: AppointmentStatus,
+  ): AppointmentWriteDto {
+    return {
+      trainerId: appointment.trainerId,
+      clientId: appointment.clientId,
+      serviceId: appointment.serviceId,
+      startsAt: appointment.startsAt,
+      endsAt: appointment.endsAt,
+      location: appointment.location,
+      clientBonoId: appointment.clientBonoId,
+      notes: appointment.notes,
+      ...(status ? { status } : {}),
+    };
   }
 
   private canOfferCancel(status: AppointmentStatus, startsAt: string): boolean {

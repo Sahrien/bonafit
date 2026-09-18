@@ -1,3 +1,4 @@
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -21,7 +22,7 @@ describe('BonaInputTextFieldComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BonaInputTextFieldComponent, InputHostComponent],
-      providers: [provideNoopAnimations()],
+      providers: [provideNoopAnimations(), provideDeskTranslate()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BonaInputTextFieldComponent);

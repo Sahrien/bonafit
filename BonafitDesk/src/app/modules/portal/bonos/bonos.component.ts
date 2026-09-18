@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { EMPTY, forkJoin, map, switchMap, take } from 'rxjs';
@@ -9,10 +9,10 @@ import {
 import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
 import { BonoDto } from '../../../models/bono.dto';
 import { ClientBonoDto } from '../../../models/client-bono.dto';
+import { injectI18n } from '../../../core/i18n/inject-i18n';
 import { AuthApiService } from '../../../services/auth-api.service';
 import { ClientsApiService } from '../../../services/clients-api.service';
 import { ServicesApiService } from '../../../services/services-api.service';
-import { BONOS_LITERALS } from './bonos.literals';
 
 @Component({
   selector: 'app-portal-bonos',
@@ -28,17 +28,20 @@ export class BonosComponent {
   private readonly servicesApi = inject(ServicesApiService);
   private readonly router = inject(Router);
 
-  readonly literals = BONOS_LITERALS;
+  private readonly i18n = injectI18n('bonos');
+  get literals() {
+    return this.i18n();
+  }
   readonly loading = signal(true);
   readonly error = signal('');
   readonly rows = signal<Record<string, unknown>[]>([]);
 
-  readonly columns: BonaGridColumn[] = [
-    { field: 'name', header: BONOS_LITERALS.bono },
-    { field: 'remainingSessions', header: BONOS_LITERALS.remainingSessions, type: 'number' },
-    { field: 'purchasedAt', header: BONOS_LITERALS.purchasedAt, type: 'date' },
-    { field: 'expiresAt', header: BONOS_LITERALS.expiresAt },
-  ];
+  readonly columns = computed<BonaGridColumn[]>(() => [
+    { field: 'name', header: this.literals.bono },
+    { field: 'remainingSessions', header: this.literals.remainingSessions, type: 'number' },
+    { field: 'purchasedAt', header: this.literals.purchasedAt, type: 'date' },
+    { field: 'expiresAt', header: this.literals.expiresAt },
+  ]);
 
   constructor() {
     this.auth
@@ -49,7 +52,7 @@ export class BonosComponent {
           const clientId = session?.user.clientId;
           if (!clientId) {
             this.loading.set(false);
-            this.error.set(BONOS_LITERALS.noSession);
+            this.error.set(this.literals.noSession);
             return EMPTY;
           }
           return forkJoin({
@@ -66,7 +69,7 @@ export class BonosComponent {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set(BONOS_LITERALS.loadError);
+          this.error.set(this.literals.loadError);
           this.loading.set(false);
         },
       });
@@ -80,10 +83,10 @@ export class BonosComponent {
     const bonoById = new Map(bonos.map((bono) => [bono.id, bono]));
     return clientBonos.map((row) => ({
       id: row.id,
-      name: row.isGift ? BONOS_LITERALS.gift : (bonoById.get(row.bonoId)?.name ?? row.bonoId),
+      name: row.isGift ? this.literals.gift : (bonoById.get(row.bonoId)?.name ?? row.bonoId),
       remainingSessions: row.remainingSessions,
       purchasedAt: row.purchasedAt,
-      expiresAt: row.expiresAt ?? BONOS_LITERALS.noExpiry,
+      expiresAt: row.expiresAt ?? this.literals.noExpiry,
     }));
   }
 }

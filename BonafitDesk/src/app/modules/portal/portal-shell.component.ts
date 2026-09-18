@@ -21,7 +21,7 @@ export class PortalShellComponent {
   private readonly authSession = injectAuthSession();
   readonly brandTheme = inject(BrandThemeService);
 
-  private readonly i18n = injectI18n<Record<string, string>>('client');
+  private readonly i18n = injectI18n('client');
   get literals() {
     return this.i18n();
   }

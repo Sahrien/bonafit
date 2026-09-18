@@ -243,6 +243,30 @@
   flex-shrink: 0;
 }
 
+.bona-grid__inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--bona-space-2);
+}
+
+.bona-grid__inline-action {
+  appearance: none;
+  min-height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bona-color-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--bona-focus-ring);
+  }
+}
+
 .bona-grid__card--nested {
   background: var(--bona-color-nested);
 }
