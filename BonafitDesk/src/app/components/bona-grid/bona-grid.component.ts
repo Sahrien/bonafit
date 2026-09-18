@@ -6,13 +6,15 @@ import {
   OnChanges,
   Output,
   SimpleChanges,
+  inject,
 } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatTableModule } from '@angular/material/table';
+import { LanguageService } from '../../core/i18n/language.service';
 import { BonaButtonComponent } from '../bona-button/bona-button.component';
-import { GRID_LITERALS } from '../../i18n/es';
 
 export type BonaGridColumnType = 'text' | 'number' | 'date' | 'currency';
 
@@ -55,13 +57,16 @@ export interface BonaGridActionEvent<T = Record<string, unknown>> {
 export class BonaGridComponent<T extends Record<string, unknown> = Record<string, unknown>>
   implements OnChanges
 {
+  private readonly translate = inject(TranslateService);
+  private readonly language = inject(LanguageService);
+
   @Input() data: T[] = [];
   @Input() columns: BonaGridColumn[] = [];
   @Input() actions: BonaGridAction<T>[] = [];
-  @Input() emptyMessage: string = GRID_LITERALS.empty;
+  @Input() emptyMessage = '';
   @Input() emptyTitle = '';
   @Input() emptyActionLabel = '';
-  @Input() actionsLabel: string = GRID_LITERALS.actions;
+  @Input() actionsLabel = '';
   @Input() pageSize = 0;
   @Input() columnFilters = false;
   @Input() columnSort = false;
@@ -71,8 +76,6 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
   filterValues: Record<string, string> = {};
   sortField: string | null = null;
   sortDirection: BonaGridSortDirection | null = null;
-
-  readonly GRID_LITERALS = GRID_LITERALS;
 
   @Output() action = new EventEmitter<BonaGridActionEvent<T>>();
   @Output() emptyAction = new EventEmitter<void>();
@@ -144,10 +147,32 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
     return `calc(${rows} * 2.75rem)`;
   }
 
+  get emptyTitleText(): string {
+    return this.emptyTitle || this.gridText('emptyTitle');
+  }
+
+  get emptyMessageText(): string {
+    return this.emptyMessage || this.gridText('empty');
+  }
+
+  get actionsLabelText(): string {
+    return this.actionsLabel || this.gridText('actions');
+  }
+
+  get filterPlaceholder(): string {
+    return this.gridText('filter');
+  }
+
+  get previousPageLabel(): string {
+    return this.gridText('previousPage');
+  }
+
+  get nextPageLabel(): string {
+    return this.gridText('nextPage');
+  }
+
   get pageLabel(): string {
-    return GRID_LITERALS.pageOf
-      .replace('{page}', String(this.pageIndex + 1))
-      .replace('{pages}', String(this.pageCount));
+    return this.gridText('pageOf', { page: this.pageIndex + 1, pages: this.pageCount });
   }
 
   get canPrevious(): boolean {
@@ -187,7 +212,7 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
   }
 
   filterLabel(column: BonaGridColumn): string {
-    return `${GRID_LITERALS.filter} ${column.header}`;
+    return `${this.gridText('filter')} ${column.header}`;
   }
 
   onColumnFilter(field: string, event: Event): void {
@@ -215,13 +240,13 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
   }
 
   sortLabel(column: BonaGridColumn): string {
-    const template =
+    const key =
       this.sortField !== column.field || !this.sortDirection
-        ? GRID_LITERALS.sortColumn
+        ? 'sortColumn'
         : this.sortDirection === 'asc'
-          ? GRID_LITERALS.sortAsc
-          : GRID_LITERALS.sortDesc;
-    return template.replace('{column}', column.header);
+          ? 'sortAsc'
+          : 'sortDesc';
+    return this.gridText(key, { column: column.header });
   }
 
   onSort(column: BonaGridColumn): void {
@@ -245,7 +270,7 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
     if (column.type === 'number' || column.type === 'currency') {
       return this.numberValue(left[field]) - this.numberValue(right[field]);
     }
-    return this.formatCell(left, column).localeCompare(this.formatCell(right, column), 'es', {
+    return this.formatCell(left, column).localeCompare(this.formatCell(right, column), this.language.locale(), {
       numeric: true,
       sensitivity: 'base',
     });
@@ -291,7 +316,7 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
     if (column.type === 'date' && !(column.sortField && column.sortField !== column.field)) {
       const date = raw instanceof Date ? raw : new Date(String(raw));
       if (!Number.isNaN(date.getTime())) {
-        return date.toLocaleString('es');
+        return date.toLocaleString(this.language.locale());
       }
     }
     if (column.type === 'currency') {
@@ -300,7 +325,7 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
       }
       const amount = Number(raw);
       if (!Number.isNaN(amount)) {
-        return amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+        return amount.toLocaleString(this.language.locale(), { style: 'currency', currency: 'EUR' });
       }
     }
     return String(raw);
@@ -332,5 +357,10 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
   rowKey(item: T, index: number): string {
     const id = item['id'];
     return id != null && id !== '' ? String(id) : String(index);
+  }
+
+  private gridText(key: string, params?: Record<string, string | number>): string {
+    this.language.language();
+    return this.translate.instant(`grid.${key}`, params);
   }
 }

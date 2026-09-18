@@ -1,7 +1,11 @@
 <section class="hero">
   <div class="hero__glow" aria-hidden="true"></div>
   <div class="wrap hero__inner">
-    <app-logo size="lg" />
+    <app-logo
+      size="lg"
+      [studioName]="branding.studioName()"
+      [slogan]="branding.slogan()"
+      [imageUrl]="branding.logoHref()" />
     <h1>Fuerza, movimiento y bienestar para vivir mejor</h1>
     <p class="hero__claim">
       Cumplir años no significa dejar de entrenar. Significa entrenar mejor.

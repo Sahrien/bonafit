@@ -1,11 +1,13 @@
-import pytest
+from pathlib import Path
 
+import pytest
 from pydantic import ValidationError
 
 from app.database import Database
 from app.errors import BusinessError, ForbiddenError, NotFoundError
 from app.schemas import (
     AssignFormIn,
+    FORM_HEADING_TYPE,
     FormAnswerIn,
     FormQuestionIn,
     FormQuestionOptionIn,
@@ -85,6 +87,55 @@ def test_submit_incomplete(form_service: FormService, db: Database) -> None:
     assert exc.value.code == "form-assignment.incomplete"
 
 
+def test_save_draft_incomplete_then_submit(form_service: FormService, db: Database) -> None:
+    add_client(db)
+    form = form_service.create_form(_form())
+    assigned = form_service.assign_form(AssignFormIn(formId=form.id, clientIds=["client-1"]))
+    question_id = assigned[0].questions[0].id
+    draft = form_service.save_assignment_draft(
+        assigned[0].id,
+        SubmitFormIn(answers=[]),
+        client_user(),
+    )
+    assert draft.status == "pending"
+    assert draft.answers == []
+    draft = form_service.save_assignment_draft(
+        assigned[0].id,
+        SubmitFormIn(answers=[FormAnswerIn(questionId=question_id, value="Marina")]),
+        client_user(),
+    )
+    assert draft.status == "pending"
+    assert draft.answers[0].value == "Marina"
+    loaded = form_service.get_assignment(assigned[0].id, client_user())
+    assert loaded.answers[0].value == "Marina"
+    submitted = form_service.submit_assignment(
+        assigned[0].id,
+        SubmitFormIn(answers=[FormAnswerIn(questionId=question_id, value="Marina")]),
+        client_user(),
+    )
+    assert submitted.status == "completed"
+    assert submitted.submittedAt is not None
+
+
+def test_save_draft_blocked_when_completed(form_service: FormService, db: Database) -> None:
+    add_client(db)
+    form = form_service.create_form(_form())
+    assigned = form_service.assign_form(AssignFormIn(formId=form.id, clientIds=["client-1"]))
+    question_id = assigned[0].questions[0].id
+    form_service.submit_assignment(
+        assigned[0].id,
+        SubmitFormIn(answers=[FormAnswerIn(questionId=question_id, value="Marina")]),
+        client_user(),
+    )
+    with pytest.raises(BusinessError) as exc:
+        form_service.save_assignment_draft(
+            assigned[0].id,
+            SubmitFormIn(answers=[FormAnswerIn(questionId=question_id, value="Ana")]),
+            client_user(),
+        )
+    assert exc.value.code == "form-assignment.alreadyCompleted"
+
+
 def test_client_cannot_see_other_assignment(form_service: FormService, db: Database) -> None:
     add_client(db)
     add_client(db, id="client-2", email="pablo@example.com")
@@ -149,3 +200,44 @@ def test_option_type_requires_two_choices() -> None:
             sortOrder=0,
             options=[FormQuestionOptionIn(label="Only", sortOrder=0)],
         )
+
+
+def test_heading_is_optional_and_is_not_submitted(form_service: FormService, db: Database) -> None:
+    add_client(db)
+    heading = FormQuestionIn(prompt="Salud", type="heading", required=True, sortOrder=0)
+    assert heading.required is False
+    form = form_service.create_form(
+        FormWrite(
+            title="Intake",
+            description="",
+            questions=[
+                heading,
+                FormQuestionIn(prompt="Name?", type="text", required=True, sortOrder=1),
+            ],
+        )
+    )
+    assigned = form_service.assign_form(AssignFormIn(formId=form.id, clientIds=["client-1"]))
+    heading_id = assigned[0].questions[0].id
+    name_id = assigned[0].questions[1].id
+    submitted = form_service.submit_assignment(
+        assigned[0].id,
+        SubmitFormIn(
+            answers=[
+                FormAnswerIn(questionId=heading_id, value="should-skip"),
+                FormAnswerIn(questionId=name_id, value="Marina"),
+            ]
+        ),
+        client_user(),
+    )
+    assert submitted.status == "completed"
+    assert [answer.questionId for answer in submitted.answers] == [name_id]
+    assert submitted.answers[0].value == "Marina"
+
+
+def test_intake_seed_json_is_valid() -> None:
+    path = Path(__file__).resolve().parents[1] / "scripts" / "_intake_form.json"
+    payload = FormWrite.model_validate_json(path.read_text(encoding="utf-8"))
+    assert payload.title == "Cuestionario inicial"
+    headings = [question for question in payload.questions if question.type == FORM_HEADING_TYPE]
+    assert len(headings) >= 5
+    assert any(question.type == "terms" for question in payload.questions)

@@ -11,4 +11,7 @@ export class LogoComponent {
   showTagline = input(true);
   size = input<'sm' | 'md' | 'lg'>('md');
   inverted = input(false);
+  studioName = input('Bonafit');
+  slogan = input('Wellness & Longevity');
+  imageUrl = input<string | null>(null);
 }

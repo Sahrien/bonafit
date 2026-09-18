@@ -81,8 +81,8 @@ def list_bonos(
     serviceId: str | None = None,
     authorization: AuthorizationHeader = None,
 ) -> list[BonoOut]:
-    auth_service.require_not_must_change(authorization)
-    return catalog_service.list_bonos(serviceId)
+    user = auth_service.require_not_must_change(authorization)
+    return catalog_service.list_bonos(serviceId, user)
 
 
 @router.get("/bonos/{bono_id}", response_model=BonoOut)
@@ -93,8 +93,8 @@ def get_bono(
     auth_service: AuthSvc,
     authorization: AuthorizationHeader = None,
 ) -> BonoOut:
-    auth_service.require_not_must_change(authorization)
-    return catalog_service.get_bono(bono_id)
+    user = auth_service.require_not_must_change(authorization)
+    return catalog_service.get_bono(bono_id, user)
 
 
 @router.post("/bonos", response_model=BonoOut)

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DateSelectArg, EventClickArg } from '@fullcalendar/core';
+import { Calendar, DateSelectArg, EventClickArg } from '@fullcalendar/core';
 import {
   BonaCalendarComponent,
   BonaCalendarEvent,
@@ -24,9 +24,10 @@ describe('BonaCalendarComponent', () => {
       const mapped = toFullCalendarEvent(sample);
 
       expect(mapped.id).toBe('apt-1');
-      expect(mapped.title).toContain('Ana · Masaje');
-      expect(mapped.title).toContain('Sala 1');
+      expect(mapped.title).toBe('Ana · Masaje');
+      expect(mapped.title).not.toContain('Sala 1');
       expect(mapped.start).toBe(sample.start);
+      expect(Object.prototype.hasOwnProperty.call(mapped, 'interactive')).toBeFalse();
       expect(mapped.interactive).toBeUndefined();
       expect(mapped.extendedProps).toEqual(
         jasmine.objectContaining({
@@ -37,6 +38,11 @@ describe('BonaCalendarComponent', () => {
           source: sample,
         }),
       );
+    });
+
+    it('maps interactive true without treating undefined as false', () => {
+      const mapped = toFullCalendarEvent({ ...sample, interactive: true });
+      expect(mapped.interactive).toBeTrue();
     });
 
     it('maps cancelled appointments as non-interactive so the slot stays selectable', () => {
@@ -88,6 +94,7 @@ describe('BonaCalendarComponent', () => {
       expect(options.initialView).toBe('timeGridWeek');
       expect(options.selectOverlap).toBeTrue();
       expect(options.eventOverlap).toBeTrue();
+      expect(options.slotEventOverlap).toBeFalse();
       expect(options.events).toEqual([toFullCalendarEvent(sample)]);
     });
 
@@ -127,6 +134,19 @@ describe('BonaCalendarComponent', () => {
       } as unknown as DateSelectArg);
 
       expect(spy).toHaveBeenCalledWith({ start, end });
+    });
+
+    it('asks FullCalendar to updateSize after the first layout', (done) => {
+      const spy = spyOn(Calendar.prototype, 'updateSize').and.callThrough();
+      const sized = TestBed.createComponent(BonaCalendarComponent);
+      sized.nativeElement.style.display = 'block';
+      sized.nativeElement.style.width = '960px';
+      sized.componentRef.setInput('events', [sample]);
+      sized.detectChanges();
+      requestAnimationFrame(() => {
+        expect(spy).toHaveBeenCalled();
+        done();
+      });
     });
   });
 });

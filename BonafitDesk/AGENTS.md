@@ -26,6 +26,8 @@ Authenticated chrome is `bona-shell-app` (top bar, nav, profile menu). Admin wra
 
 Screens inject `*ApiService` only. Those services call BonafitApi through `HttpClient`. `environment.apiUrl` is the API **origin** (dev: `http://localhost:8080`); `apiUrl()` appends resource paths. Do not bake `/api` into the origin unless a proxy actually mounts there.
 
+Branding: `GET /branding` is public; `PUT /branding` and logo/favicon uploads are admin. `BrandThemeService` applies studio colors to `--bona-*` / `--mat-sys-*` at startup.
+
 Auth: `POST /auth/login` with `{ email, password }`. Persist the JWT in `AuthTokenStore`. `authTokenInterceptor` sends `Authorization: Bearer`. `apiErrorInterceptor` maps `409 { code }` to `ApiBusinessError` and `404 { resource, id }` to `ApiNotFoundError`. `GET /auth/me` refreshes the user; the token field from `/me` is empty — keep the stored login token.
 
 If `mustChangePassword` is true, guards send the user to `/cambiar-clave` (`POST /auth/change-password`).

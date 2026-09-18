@@ -22,7 +22,9 @@ FormQuestionType = Literal[
     "multipleChoice",
     "ranking",
     "terms",
+    "heading",
 ]
+FORM_HEADING_TYPE = "heading"
 FORM_OPTION_TYPES: frozenset[str] = frozenset(
     {"dropdown", "singleChoice", "multipleChoice", "ranking"}
 )
@@ -83,6 +85,7 @@ class AuthUserOut(BaseModel):
     clientId: str | None = None
     email: str | None = None
     mustChangePassword: bool = False
+    language: Literal["es", "en"] = "es"
 
 
 class AuthSessionOut(BaseModel):
@@ -103,6 +106,22 @@ class ChangePasswordRequest(BaseModel):
     newPassword: str = Field(min_length=8)
 
 
+class AuthMePatch(BaseModel):
+    model_config = camel_config()
+    language: Literal["es", "en"]
+
+
+class LocalizedText(BaseModel):
+    model_config = camel_config()
+    es: str = ""
+    en: str = ""
+
+
+class ServiceI18n(BaseModel):
+    model_config = camel_config()
+    name: LocalizedText | None = None
+
+
 class ServiceOut(BaseModel):
     model_config = camel_config()
     id: str
@@ -114,6 +133,7 @@ class ServiceOut(BaseModel):
     durationMinutes: int
     bookableByClient: bool
     active: bool = True
+    i18n: dict[str, dict[str, str]] = Field(default_factory=dict)
 
 
 class ServiceWrite(BaseModel):
@@ -126,6 +146,7 @@ class ServiceWrite(BaseModel):
     durationMinutes: int = Field(gt=0)
     bookableByClient: bool = True
     active: bool = True
+    i18n: dict[str, dict[str, str]] | None = None
 
 
 class BonoOut(BaseModel):
@@ -136,6 +157,7 @@ class BonoOut(BaseModel):
     description: str
     sessionCount: int
     price: float
+    i18n: dict[str, dict[str, str]] = Field(default_factory=dict)
 
 
 class BonoWrite(BaseModel):
@@ -145,6 +167,7 @@ class BonoWrite(BaseModel):
     description: str = ""
     sessionCount: int = Field(gt=0)
     price: float = Field(ge=0)
+    i18n: dict[str, dict[str, str]] | None = None
 
 
 class ClientBonoOut(BaseModel):
@@ -227,6 +250,33 @@ class BookingSettingsWrite(BaseModel):
     defaultLocation: str
 
 
+ColorScheme = Literal["light", "dark", "system"]
+
+
+class BrandingOut(BaseModel):
+    model_config = camel_config()
+    id: str
+    studioName: str
+    slogan: str
+    primaryHex: str
+    accentHex: str
+    surfaceHex: str
+    colorScheme: ColorScheme
+    logoUrl: str | None = None
+    faviconUrl: str | None = None
+    updatedAt: IsoDateTime
+
+
+class BrandingWrite(BaseModel):
+    model_config = camel_config()
+    studioName: str = Field(min_length=1, max_length=120)
+    slogan: str = Field(max_length=200)
+    primaryHex: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
+    accentHex: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
+    surfaceHex: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
+    colorScheme: ColorScheme
+
+
 class TrainerScheduleOut(BaseModel):
     model_config = camel_config()
     id: str
@@ -249,6 +299,7 @@ class FormQuestionOptionIn(BaseModel):
     id: str | None = None
     label: str
     sortOrder: int
+    i18n: dict[str, dict[str, str]] | None = None
 
 
 class FormQuestionIn(BaseModel):
@@ -259,9 +310,14 @@ class FormQuestionIn(BaseModel):
     required: bool = False
     sortOrder: int
     options: list[FormQuestionOptionIn] | None = None
+    i18n: dict[str, dict[str, str]] | None = None
 
     @model_validator(mode="after")
     def option_types_need_choices(self) -> Self:
+        if self.type == FORM_HEADING_TYPE:
+            self.required = False
+            self.options = None
+            return self
         if self.type in FORM_OPTION_TYPES:
             filled = [option for option in (self.options or []) if option.label.strip()]
             if len(filled) < 2:
@@ -274,6 +330,7 @@ class FormWrite(BaseModel):
     title: str
     description: str = ""
     questions: list[FormQuestionIn]
+    i18n: dict[str, dict[str, str]] | None = None
 
 
 class FormQuestionOptionOut(BaseModel):
@@ -281,6 +338,7 @@ class FormQuestionOptionOut(BaseModel):
     id: str
     label: str
     sortOrder: int
+    i18n: dict[str, dict[str, str]] = Field(default_factory=dict)
 
 
 class FormQuestionOut(BaseModel):
@@ -291,6 +349,7 @@ class FormQuestionOut(BaseModel):
     required: bool
     sortOrder: int
     options: list[FormQuestionOptionOut] | None = None
+    i18n: dict[str, dict[str, str]] = Field(default_factory=dict)
 
 
 class FormOut(BaseModel):
@@ -299,6 +358,7 @@ class FormOut(BaseModel):
     title: str
     description: str
     questions: list[FormQuestionOut]
+    i18n: dict[str, dict[str, str]] = Field(default_factory=dict)
 
 
 class FormAnswerIn(BaseModel):
@@ -319,11 +379,13 @@ class FormAssignmentOut(BaseModel):
     formId: str
     clientId: str
     title: str
+    description: str = ""
     questions: list[FormQuestionOut]
     status: FormAssignmentStatus
     assignedAt: IsoDateTime
     submittedAt: IsoDateTime | None = None
     answers: list[FormAnswerOut]
+    i18n: dict[str, dict[str, str]] = Field(default_factory=dict)
 
 
 class AssignFormIn(BaseModel):

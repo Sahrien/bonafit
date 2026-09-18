@@ -77,4 +77,21 @@ describe('PortalFormsComponent', () => {
 
     expect(router.url).toBe('/app/formularios/fa-1');
   });
+
+  it('labels a pending assignment with answers as a draft', async () => {
+    formsApi.getMyAssignments.and.returnValue(
+      of([
+        {
+          ...MOCK_FORM_ASSIGNMENTS[0],
+          answers: [{ questionId: 'q-1', value: 'no' }],
+        },
+      ]),
+    );
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/app/formularios', PortalFormsComponent);
+
+    const text = harness.routeNativeElement?.textContent ?? '';
+    expect(text).toContain(PORTAL_FORMS_LITERALS.statusDraft);
+    expect(text).not.toContain(PORTAL_FORMS_LITERALS.statusPending);
+  });
 });

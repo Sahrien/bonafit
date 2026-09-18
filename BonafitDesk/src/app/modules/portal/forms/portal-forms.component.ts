@@ -10,9 +10,9 @@ import {
 } from '../../../components/bona-grid/bona-grid.component';
 import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
 import { FormAssignmentDto } from '../../../models/form.dto';
+import { injectI18n } from '../../../core/i18n/inject-i18n';
 import { AuthApiService } from '../../../services/auth-api.service';
 import { FormsApiService } from '../../../services/forms-api.service';
-import { PORTAL_FORMS_LITERALS } from './portal-forms.literals';
 
 @Component({
   selector: 'app-portal-forms',
@@ -27,20 +27,23 @@ export class PortalFormsComponent {
   private readonly formsApi = inject(FormsApiService);
   private readonly router = inject(Router);
 
-  readonly literals = PORTAL_FORMS_LITERALS;
+  private readonly i18n = injectI18n<Record<string, string>>('portalForms');
+  get literals() {
+    return this.i18n();
+  }
   readonly loading = signal(true);
   readonly error = signal('');
   readonly rows = signal<Record<string, unknown>[]>([]);
 
-  readonly columns: BonaGridColumn[] = [
-    { field: 'title', header: PORTAL_FORMS_LITERALS.formTitle },
-    { field: 'statusLabel', header: PORTAL_FORMS_LITERALS.status },
-    { field: 'assignedAt', header: PORTAL_FORMS_LITERALS.assignedAt, type: 'date' },
-  ];
+  readonly columns = computed<BonaGridColumn[]>(() => [
+    { field: 'title', header: this.literals.formTitle },
+    { field: 'statusLabel', header: this.literals.status },
+    { field: 'assignedAt', header: this.literals.assignedAt, type: 'date' },
+  ]);
 
-  readonly actions: BonaGridAction[] = [
-    { label: PORTAL_FORMS_LITERALS.open, action: 'open' },
-  ];
+  readonly actions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.open, action: 'open' },
+  ]);
 
   constructor() {
     this.auth
@@ -90,11 +93,18 @@ export class PortalFormsComponent {
     return assignments.map((assignment) => ({
       id: assignment.id,
       title: assignment.title,
-      statusLabel:
-        assignment.status === 'completed'
-          ? PORTAL_FORMS_LITERALS.statusCompleted
-          : PORTAL_FORMS_LITERALS.statusPending,
+      statusLabel: this.statusLabel(assignment),
       assignedAt: assignment.assignedAt,
     }));
+  }
+
+  private statusLabel(assignment: FormAssignmentDto): string {
+    if (assignment.status === 'completed') {
+      return PORTAL_FORMS_LITERALS.statusCompleted;
+    }
+    if (assignment.answers.length > 0) {
+      return PORTAL_FORMS_LITERALS.statusDraft;
+    }
+    return PORTAL_FORMS_LITERALS.statusPending;
   }
 }

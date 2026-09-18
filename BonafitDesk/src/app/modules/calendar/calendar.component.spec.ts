@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
@@ -46,6 +47,7 @@ describe('CalendarComponent', () => {
       imports: [CalendarComponent],
       providers: [
         provideNoopAnimations(),
+        provideHttpClient(),
         provideRouter([]),
         { provide: CalendarApiService, useValue: calendarApi },
         { provide: ClientsApiService, useValue: clientsApi },
@@ -142,14 +144,17 @@ describe('CalendarComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.todayGroups().flatMap((group) =>
-      group.trainers.flatMap((trainer) => trainer.items.map((item) => item.id)),
+      group.items.map((item) => item.id),
     )).toEqual([
       'today-confirmed',
     ]);
     const completedEvent = fixture.componentInstance.events().find((event) => event.id === 'today-completed');
     expect(completedEvent).toBeTruthy();
-    expect(completedEvent?.color).toBe('var(--bona-color-primary)');
+    expect(completedEvent?.color).toBe(
+      'color-mix(in srgb, var(--bona-color-text-muted) 55%, var(--bona-color-surface))',
+    );
     expect(completedEvent?.classNames).toContain('bona-cal-status-completed');
+    expect(completedEvent?.interactive).toBeTrue();
     fixture.destroy();
   });
 
@@ -164,17 +169,49 @@ describe('CalendarComponent', () => {
     expect(
       fixture.componentInstance
         .todayGroups()
-        .some((group) => group.trainers.some((trainer) => trainer.items.some((item) => item.id === 'apt-cancelled'))),
+        .some((group) => group.items.some((item) => item.id === 'apt-cancelled')),
     ).toBeFalse();
     fixture.destroy();
   });
 
-  it('labels a gift appointment in the calendar title', () => {
-    calendarApi.getAppointments.and.returnValue(of([{ ...MOCK_APPOINTMENTS[0], isGift: true }]));
+  it('colors calendar events by appointment status', () => {
+    calendarApi.getAppointments.and.returnValue(
+      of([
+        { ...MOCK_APPOINTMENTS[0], id: 'apt-completed', status: 'completed' },
+        { ...MOCK_APPOINTMENTS[2], id: 'apt-pending', status: 'pending' },
+        { ...MOCK_APPOINTMENTS[2], id: 'apt-confirmed', status: 'confirmed' },
+      ]),
+    );
     fixture = TestBed.createComponent(CalendarComponent);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.events()[0].title).toContain(CALENDAR_LITERALS.gift);
+    const events = fixture.componentInstance.events();
+    expect(events.find((event) => event.id === 'apt-pending')?.color).toBe('var(--bona-color-warning)');
+    expect(events.find((event) => event.id === 'apt-confirmed')?.color).toBe('var(--bona-color-success)');
+    expect(events.find((event) => event.id === 'apt-completed')?.color).toBe(
+      'color-mix(in srgb, var(--bona-color-text-muted) 55%, var(--bona-color-surface))',
+    );
+    fixture.destroy();
+  });
+
+  it('shows trainer on week titles when several trainers are visible', () => {
+    calendarApi.getAppointments.and.returnValue(of([{ ...MOCK_APPOINTMENTS[0], isGift: true }]));
+    fixture = TestBed.createComponent(CalendarComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.onView('week');
+    fixture.detectChanges();
+
+    const title = fixture.componentInstance.events()[0].title;
+    expect(title).toBe('Marina Lopez · Entrenamiento personal · Alex Martin');
+    expect(title).not.toContain(CALENDAR_LITERALS.gift);
+    expect(title).not.toContain(CALENDAR_LITERALS.statusCompleted);
+    fixture.destroy();
+  });
+
+  it('omits trainer from day calendar titles', () => {
+    fixture.componentInstance.onView('day');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.events()[0].title).toBe('Marina Lopez · Entrenamiento personal');
   });
 
   it('opens the appointment form with field literals', () => {
@@ -213,7 +250,73 @@ describe('CalendarComponent', () => {
     expect(tabs.textContent).toContain(CALENDAR_LITERALS.day);
   });
 
-  it('groups today appointments by time and trainer', () => {
+  it('groups today appointments by trainer then time', () => {
+    const later = new Date();
+    later.setHours(12, 0, 0, 0);
+    const earlier = new Date();
+    earlier.setHours(10, 0, 0, 0);
+    calendarApi.getAppointments.and.returnValue(
+      of([
+        {
+          ...MOCK_APPOINTMENTS[2],
+          id: 'today-a',
+          trainerId: 'trainer-2',
+          startsAt: later.toISOString(),
+          endsAt: later.toISOString(),
+          status: 'confirmed',
+        },
+        {
+          ...MOCK_APPOINTMENTS[2],
+          id: 'today-b',
+          trainerId: 'trainer-1',
+          startsAt: earlier.toISOString(),
+          endsAt: earlier.toISOString(),
+          status: 'pending',
+        },
+        {
+          ...MOCK_APPOINTMENTS[2],
+          id: 'today-c',
+          trainerId: 'trainer-1',
+          startsAt: later.toISOString(),
+          endsAt: later.toISOString(),
+          status: 'confirmed',
+        },
+      ]),
+    );
+    fixture = TestBed.createComponent(CalendarComponent);
+    fixture.detectChanges();
+
+    const groups = fixture.componentInstance.todayGroups();
+    expect(groups.map((group) => group.trainerId)).toEqual(['trainer-1', 'trainer-2']);
+    expect(groups[0].items.map((item) => item.id)).toEqual(['today-b', 'today-c']);
+    expect(groups[1].items.map((item) => item.id)).toEqual(['today-a']);
+    const firstItem = fixture.nativeElement.querySelector('.calendar-today__item') as HTMLButtonElement;
+    expect(firstItem.querySelector('.calendar-today__time')?.textContent?.trim()).toBeTruthy();
+    expect(firstItem.querySelector('.calendar-today__copy strong')?.textContent).not.toContain(
+      CALENDAR_LITERALS.statusPending,
+    );
+    expect(firstItem.querySelector('.calendar-today__copy em')?.textContent).toContain(
+      CALENDAR_LITERALS.statusPending,
+    );
+    const itemTitle = firstItem.querySelector('.calendar-today__copy strong')?.textContent ?? '';
+    expect(itemTitle).not.toContain('Alex Martin');
+    expect(itemTitle).not.toContain('Sam Ortega');
+    expect(fixture.nativeElement.textContent).toContain('Alex Martin');
+    expect(fixture.nativeElement.textContent).toContain('Sam Ortega');
+    expect(fixture.nativeElement.querySelector('.calendar-today__total')?.textContent).toContain(
+      '3 citas en total',
+    );
+    const trainerCounts = Array.from(
+      fixture.nativeElement.querySelectorAll('.calendar-today__trainer-count') as NodeListOf<HTMLElement>,
+    ).map((node) => node.textContent?.trim());
+    expect(trainerCounts).toEqual(['2 citas', '1 cita']);
+    expect(getComputedStyle(fixture.nativeElement.querySelector('.calendar-today__list') as HTMLElement).display).toBe(
+      'flex',
+    );
+    fixture.destroy();
+  });
+
+  it('filters the today summary with the trainer chips', () => {
     const start = new Date();
     start.setHours(10, 0, 0, 0);
     const iso = start.toISOString();
@@ -226,15 +329,22 @@ describe('CalendarComponent', () => {
     fixture = TestBed.createComponent(CalendarComponent);
     fixture.detectChanges();
 
-    const groups = fixture.componentInstance.todayGroups();
-    expect(groups.length).toBe(1);
-    expect(groups[0].trainers.map((trainer) => trainer.trainerId)).toEqual(['trainer-1', 'trainer-2']);
+    fixture.componentInstance.toggleTrainer('trainer-1');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.todayGroups().map((group) => group.trainerId)).toEqual(['trainer-1']);
+    expect(fixture.componentInstance.todayCount()).toBe(1);
+    expect(fixture.nativeElement.querySelector('.calendar-today__total')?.textContent).toContain(
+      CALENDAR_LITERALS.todayTotalOne,
+    );
     expect(fixture.nativeElement.textContent).toContain('Alex Martin');
-    expect(fixture.nativeElement.textContent).toContain('Sam Ortega');
+    expect(
+      (fixture.nativeElement.querySelector('.calendar-today__list') as HTMLElement).textContent,
+    ).not.toContain('Sam Ortega');
     fixture.destroy();
   });
 
-  it('renders one day calendar column per trainer', () => {
+  it('stacks one day calendar per trainer', () => {
     const buttons = Array.from(
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     );
@@ -243,6 +353,8 @@ describe('CalendarComponent', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.view()).toBe('day');
     expect(fixture.nativeElement.querySelectorAll('app-bona-calendar').length).toBe(MOCK_TRAINERS.length);
+    const stack = fixture.nativeElement.querySelector('.calendar-day-trainers') as HTMLElement;
+    expect(getComputedStyle(stack).flexDirection).toBe('column');
   });
 
   it('opens the editor when an event is selected', () => {
@@ -256,6 +368,19 @@ describe('CalendarComponent', () => {
 
     expect(clientsApi.getClientBonos).toHaveBeenCalledWith(MOCK_APPOINTMENTS[0].clientId);
     expect(fixture.nativeElement.textContent).toContain(CALENDAR_LITERALS.editAppointment);
+  });
+
+  it('opens the editor for a completed appointment', () => {
+    expect(MOCK_APPOINTMENTS[0].status).toBe('completed');
+    fixture.componentInstance.onEventClick({
+      id: MOCK_APPOINTMENTS[0].id,
+      title: 'cita realizada',
+      start: MOCK_APPOINTMENTS[0].startsAt,
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(CALENDAR_LITERALS.editAppointment);
+    expect(fixture.componentInstance.formValue()['status']).toBe('completed');
   });
 
   it('keeps close and save together and opens the client ficha', () => {

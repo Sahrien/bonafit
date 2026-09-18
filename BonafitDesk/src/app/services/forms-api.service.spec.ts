@@ -135,4 +135,16 @@ describe('FormsApiService', () => {
     req.flush({ ...MOCK_FORM_ASSIGNMENTS[0], status: 'completed', answers: payload.answers });
     expect((await pending).status).toBe('completed');
   });
+
+  it('PUT /form-assignments/:id/draft', async () => {
+    const payload = { answers: [{ questionId: 'q-1', value: 'no' }] };
+    const pending = firstValueFrom(api.saveAssignmentDraft('fa-1', payload));
+    const req = http.expectOne({
+      method: 'PUT',
+      url: apiUrl(API_PATHS.formAssignments, 'fa-1', 'draft'),
+    });
+    expect(req.request.body).toEqual(payload);
+    req.flush({ ...MOCK_FORM_ASSIGNMENTS[0], answers: payload.answers });
+    expect((await pending).answers).toEqual(payload.answers);
+  });
 });

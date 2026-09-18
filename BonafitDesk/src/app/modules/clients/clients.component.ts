@@ -15,7 +15,7 @@ import { BonaPageComponent } from '../../components/bona-page/bona-page.componen
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { ClientDto } from '../../models/client.dto';
 import { ClientsApiService } from '../../services/clients-api.service';
-import { CLIENTS_LITERALS } from './clients.literals';
+import { injectI18n } from '../../core/i18n/inject-i18n';
 
 const NEW_CLIENT_ID = 'new';
 
@@ -34,22 +34,25 @@ export class ClientsComponent {
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly literals = CLIENTS_LITERALS;
+  private readonly i18n = injectI18n<Record<string, string>>('clients');
+  get literals() {
+    return this.i18n();
+  }
   readonly search = signal('');
   readonly loading = signal(true);
   private readonly clients = signal<ClientDto[]>([]);
 
-  readonly columns: BonaGridColumn[] = [
-    { field: 'firstName', header: CLIENTS_LITERALS.firstName },
-    { field: 'lastName', header: CLIENTS_LITERALS.lastName },
-    { field: 'email', header: CLIENTS_LITERALS.email },
-    { field: 'phone', header: CLIENTS_LITERALS.phone },
-  ];
+  readonly columns = computed<BonaGridColumn[]>(() => [
+    { field: 'firstName', header: this.literals.firstName },
+    { field: 'lastName', header: this.literals.lastName },
+    { field: 'email', header: this.literals.email },
+    { field: 'phone', header: this.literals.phone },
+  ]);
 
-  readonly actions: BonaGridAction[] = [
-    { label: CLIENTS_LITERALS.edit, action: 'edit' },
-    { label: CLIENTS_LITERALS.delete, action: 'delete' },
-  ];
+  readonly actions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.edit, action: 'edit' },
+    { label: this.literals.delete, action: 'delete' },
+  ]);
 
   readonly rows = computed(() => {
     const query = this.search().trim().toLowerCase();

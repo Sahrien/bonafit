@@ -37,6 +37,10 @@
   width: 5.75rem;
 }
 
+.logo__photo {
+  object-fit: contain;
+}
+
 .logo__text {
   display: flex;
   flex-direction: column;

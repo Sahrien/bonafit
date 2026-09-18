@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
@@ -30,6 +31,7 @@ describe('ADMIN_ROUTES horarios', () => {
     await TestBed.configureTestingModule({
       providers: [
         provideNoopAnimations(),
+        provideHttpClient(),
         provideRouter(routes),
         { provide: AuthApiService, useValue: auth },
         { provide: CalendarApiService, useValue: calendarApi },

@@ -11,14 +11,20 @@
     </div>
   </header>
 
-  @if (loading()) {
-    <div class="bona-page__skeleton" role="status" aria-busy="true" aria-live="polite">
-      <span class="bona-page__skeleton-label">{{ loadingLabel() }}</span>
-      <div class="bona-page__skeleton-block"></div>
-      <div class="bona-page__skeleton-block"></div>
-      <div class="bona-page__skeleton-block bona-page__skeleton-block--short"></div>
+  <div class="bona-page__body" [attr.aria-busy]="loading()">
+    @if (loading()) {
+      <div class="bona-page__skeleton" role="status" aria-live="polite">
+        <span class="bona-page__skeleton-label">{{ loadingLabel() }}</span>
+        <div class="bona-page__skeleton-block"></div>
+        <div class="bona-page__skeleton-block"></div>
+        <div class="bona-page__skeleton-block bona-page__skeleton-block--short"></div>
+      </div>
+    }
+    <div
+      class="bona-page__content"
+      [class.bona-page__content--loading]="loading()"
+      [attr.aria-hidden]="loading()">
+      <ng-content />
     </div>
-  } @else {
-    <ng-content />
-  }
+  </div>
 </div>

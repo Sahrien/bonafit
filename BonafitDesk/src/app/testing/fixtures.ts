@@ -2,6 +2,7 @@ import { AppointmentDto } from '../models/appointment.dto';
 import { AuthSessionDto, AuthUserDto } from '../models/auth-session.dto';
 import { BonoDto } from '../models/bono.dto';
 import { BookingSettingsDto } from '../models/booking-settings.dto';
+import { BrandingDto } from '../models/branding.dto';
 import { ClientBonoDto } from '../models/client-bono.dto';
 import { ClientDto } from '../models/client.dto';
 import { FormAssignmentDto, FormDto, FormQuestionDto } from '../models/form.dto';
@@ -189,27 +190,47 @@ export const MOCK_BOOKING_SETTINGS: BookingSettingsDto = {
   defaultLocation: 'studio-1',
 };
 
+export const MOCK_BRANDING: BrandingDto = {
+  id: 'branding',
+  studioName: 'Bonafit',
+  slogan: 'Wellness & Longevity',
+  primaryHex: '#0f766e',
+  accentHex: '#c2410c',
+  surfaceHex: '#f5f3f0',
+  colorScheme: 'light',
+  logoUrl: null,
+  faviconUrl: null,
+  updatedAt: '2026-09-18T00:00:00.000Z',
+};
+
 const MOCK_FORM_QUESTIONS: FormQuestionDto[] = [
+  {
+    id: 'q-heading',
+    prompt: 'Salud',
+    type: 'heading',
+    required: false,
+    sortOrder: 0,
+  },
   {
     id: 'q-1',
     prompt: '¿Tienes alguna lesión o molestia actual?',
     type: 'yesno',
     required: true,
-    sortOrder: 0,
+    sortOrder: 1,
   },
   {
     id: 'q-2',
     prompt: 'Describe la lesión o indica ninguna',
     type: 'text',
     required: false,
-    sortOrder: 1,
+    sortOrder: 2,
   },
   {
     id: 'q-3',
     prompt: '¿Cuál es tu objetivo principal?',
     type: 'singleChoice',
     required: true,
-    sortOrder: 2,
+    sortOrder: 3,
     options: [
       { id: 'opt-strength', label: 'Fuerza', sortOrder: 0 },
       { id: 'opt-weight', label: 'Pérdida de peso', sortOrder: 1 },
@@ -233,6 +254,7 @@ export const MOCK_FORM_ASSIGNMENTS: FormAssignmentDto[] = [
     formId: 'form-1',
     clientId: 'client-1',
     title: 'Cuestionario inicial',
+    description: 'Datos de salud y objetivos para el primer mes.',
     questions: MOCK_FORM_QUESTIONS,
     status: 'pending',
     assignedAt: '2026-09-01T10:00:00.000Z',
@@ -244,6 +266,7 @@ export const MOCK_FORM_ASSIGNMENTS: FormAssignmentDto[] = [
     formId: 'form-1',
     clientId: 'client-2',
     title: 'Cuestionario inicial',
+    description: 'Datos de salud y objetivos para el primer mes.',
     questions: MOCK_FORM_QUESTIONS,
     status: 'completed',
     assignedAt: '2026-08-20T10:00:00.000Z',

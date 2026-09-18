@@ -16,6 +16,7 @@ class CurrentUser:
     email: str
     display_name: str
     must_change_password: bool
+    language: str = "es"
 
     @classmethod
     def from_orm(cls, user: User) -> CurrentUser:
@@ -27,6 +28,7 @@ class CurrentUser:
             email=user.email,
             display_name=user.display_name,
             must_change_password=user.must_change_password,
+            language=getattr(user, "language", None) or "es",
         )
 
 

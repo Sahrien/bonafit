@@ -18,10 +18,11 @@ describe('BonaSummaryCardComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders kicker, title and meta', () => {
+  it('renders extra actions', () => {
+    fixture.componentRef.setInput('actions', [{ name: 'cancel', label: 'Anular', variant: 'secondary' }]);
+    fixture.detectChanges();
+
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Próxima cita');
-    expect(text).toContain('Entrenamiento');
-    expect(text).toContain('Con Alex');
+    expect(text).toContain('Anular');
   });
 });

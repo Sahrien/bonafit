@@ -22,6 +22,7 @@ import {
   BonaGridComponent,
 } from '../../components/bona-grid/bona-grid.component';
 import { BonaInputTextFieldComponent } from '../../components/bona-input-text-field/bona-input-text-field.component';
+import { MatIcon } from '@angular/material/icon';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
 import { BonaTabsComponent, BonaTabItem } from '../../components/bona-tabs/bona-tabs.component';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
@@ -33,36 +34,39 @@ import {
   FormQuestionDto,
   FormQuestionType,
   FormWriteDto,
+  isFormHeading,
   questionHasOptions,
 } from '../../models/form.dto';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { FormsApiService } from '../../services/forms-api.service';
 import { FormFillViewComponent } from './form-fill-view.component';
-import { formatQuestionAnswer, orderedQuestions, questionsToFields } from './form-question.mapper';
+import { answerDisplayItems, groupAnswerDisplayItems, groupQuestionsByHeading, orderedQuestions } from './form-question.mapper';
 import { FORMS_LITERALS } from './forms.literals';
 
 const NEW_FORM_ID = 'new';
+
+const QUESTION_TYPE_OPTIONS: NonNullable<BonaFieldDefinition['options']> = [
+  { value: 'shortText', label: FORMS_LITERALS.typeShortText },
+  { value: 'fullName', label: FORMS_LITERALS.typeFullName },
+  { value: 'email', label: FORMS_LITERALS.typeEmail },
+  { value: 'phone', label: FORMS_LITERALS.typePhone },
+  { value: 'date', label: FORMS_LITERALS.typeDate },
+  { value: 'number', label: FORMS_LITERALS.typeNumber },
+  { value: 'address', label: FORMS_LITERALS.typeAddress },
+  { value: 'text', label: FORMS_LITERALS.typeText },
+  { value: 'yesno', label: FORMS_LITERALS.typeYesNo },
+  { value: 'dropdown', label: FORMS_LITERALS.typeDropdown },
+  { value: 'singleChoice', label: FORMS_LITERALS.typeSingleChoice },
+  { value: 'multipleChoice', label: FORMS_LITERALS.typeMultipleChoice },
+  { value: 'ranking', label: FORMS_LITERALS.typeRanking },
+  { value: 'terms', label: FORMS_LITERALS.typeTerms },
+];
 
 const TYPE_FIELD: BonaFieldDefinition = {
   key: 'type',
   label: FORMS_LITERALS.type,
   type: 'select',
-  options: [
-    { value: 'shortText', label: FORMS_LITERALS.typeShortText },
-    { value: 'fullName', label: FORMS_LITERALS.typeFullName },
-    { value: 'email', label: FORMS_LITERALS.typeEmail },
-    { value: 'phone', label: FORMS_LITERALS.typePhone },
-    { value: 'date', label: FORMS_LITERALS.typeDate },
-    { value: 'number', label: FORMS_LITERALS.typeNumber },
-    { value: 'address', label: FORMS_LITERALS.typeAddress },
-    { value: 'text', label: FORMS_LITERALS.typeText },
-    { value: 'yesno', label: FORMS_LITERALS.typeYesNo },
-    { value: 'dropdown', label: FORMS_LITERALS.typeDropdown },
-    { value: 'singleChoice', label: FORMS_LITERALS.typeSingleChoice },
-    { value: 'multipleChoice', label: FORMS_LITERALS.typeMultipleChoice },
-    { value: 'ranking', label: FORMS_LITERALS.typeRanking },
-    { value: 'terms', label: FORMS_LITERALS.typeTerms },
-  ],
+  options: QUESTION_TYPE_OPTIONS,
 };
 
 const REQUIRED_FIELD: BonaFieldDefinition = {
@@ -77,7 +81,13 @@ const REQUIRED_FIELD: BonaFieldDefinition = {
 
 const DESCRIPTION_FIELD: BonaFieldDefinition = {
   key: 'description',
-  label: FORMS_LITERALS.description,
+  label: '',
+  type: 'textarea',
+};
+
+const HEADING_PROMPT_FIELD: BonaFieldDefinition = {
+  key: 'headingPrompt',
+  label: FORMS_LITERALS.sectionPrompt,
   type: 'textarea',
 };
 
@@ -92,6 +102,7 @@ const DESCRIPTION_FIELD: BonaFieldDefinition = {
     BonaPageComponent,
     BonaTabsComponent,
     FormFillViewComponent,
+    MatIcon,
   ],
   templateUrl: './form-ficha.component.html',
   styleUrl: './form-ficha.component.scss',
@@ -110,6 +121,7 @@ export class FormFichaComponent {
   readonly typeField = TYPE_FIELD;
   readonly requiredField = REQUIRED_FIELD;
   readonly descriptionField = DESCRIPTION_FIELD;
+  readonly headingPromptField = HEADING_PROMPT_FIELD;
 
   readonly title = signal('');
   readonly description = signal('');
@@ -126,6 +138,7 @@ export class FormFichaComponent {
   readonly previewError = signal('');
   readonly selectedClientIds = signal<Set<string>>(new Set());
   readonly selectedAssignmentId = signal<string | null>(null);
+  private readonly openQuestionIds = signal<ReadonlySet<string>>(new Set());
 
   private readonly clients = signal<ClientDto[]>([]);
   private readonly assignments = signal<FormAssignmentDto[]>([]);
@@ -148,8 +161,9 @@ export class FormFichaComponent {
     moveUp: FORMS_LITERALS.moveUp,
     moveDown: FORMS_LITERALS.moveDown,
   };
-  readonly previewFields = computed(() => questionsToFields(this.questions(), this.fieldLabels));
   readonly hasOptions = questionHasOptions;
+
+  readonly templateBlocks = computed(() => groupQuestionsByHeading(this.questions()));
 
   readonly pendingClientIds = computed(() => {
     const pending = new Set<string>();
@@ -229,11 +243,9 @@ export class FormFichaComponent {
     const client = this.clients().find((row) => row.id === assignment.clientId);
     return {
       clientName: client ? `${client.firstName} ${client.lastName}` : assignment.clientId,
-      items: orderedQuestions(assignment.questions).map((question) => ({
-        id: question.id,
-        prompt: question.prompt,
-        answer: formatQuestionAnswer(question, assignment.answers, labels),
-      })),
+      blocks: groupAnswerDisplayItems(
+        answerDisplayItems(assignment.questions, assignment.answers, labels),
+      ),
     };
   });
 
@@ -265,16 +277,52 @@ export class FormFichaComponent {
   }
 
   onAddQuestion(): void {
-    this.questions.update((list) => [
-      ...list,
-      {
-        id: crypto.randomUUID(),
-        prompt: '',
-        type: 'text',
-        required: true,
-        sortOrder: list.length,
-      },
-    ]);
+    this.insertQuestion('text', true, this.questions().length);
+  }
+
+  onAddQuestionToSection(headingId: string): void {
+    const list = this.questions();
+    const headingIndex = list.findIndex((question) => question.id === headingId);
+    if (headingIndex < 0) {
+      this.onAddQuestion();
+      return;
+    }
+    let insertAt = headingIndex + 1;
+    while (insertAt < list.length && !isFormHeading(list[insertAt].type)) {
+      insertAt += 1;
+    }
+    this.insertQuestion('text', true, insertAt);
+  }
+
+  onAddHeading(): void {
+    this.insertQuestion('heading', false, this.questions().length);
+  }
+
+  questionIndex(questionId: string): number {
+    return this.questions().findIndex((question) => question.id === questionId);
+  }
+
+  isQuestionOpen(questionId: string): boolean {
+    return this.openQuestionIds().has(questionId);
+  }
+
+  onToggleQuestion(questionId: string): void {
+    this.openQuestionIds.update((ids) => {
+      const next = new Set(ids);
+      if (next.has(questionId)) {
+        next.delete(questionId);
+      } else {
+        next.add(questionId);
+      }
+      return next;
+    });
+  }
+
+  typeLabel(type: FormQuestionType): string {
+    if (isFormHeading(type)) {
+      return this.literals.typeHeading;
+    }
+    return TYPE_FIELD.options?.find((option) => option.value === type)?.label ?? type;
   }
 
   onPromptChange(questionId: string, prompt: string): void {
@@ -521,6 +569,22 @@ export class FormFichaComponent {
     this.feedback.set(this.literals.previewSubmitted);
   }
 
+  private insertQuestion(type: FormQuestionType, required: boolean, index: number): void {
+    const id = crypto.randomUUID();
+    this.questions.update((list) => {
+      const next = [...list];
+      next.splice(index, 0, {
+        id,
+        prompt: '',
+        type,
+        required,
+        sortOrder: index,
+      });
+      return next.map((question, sortOrder) => ({ ...question, sortOrder }));
+    });
+    this.openQuestionIds.update((ids) => new Set(ids).add(id));
+  }
+
   private patchQuestion(questionId: string, patch: Partial<FormQuestionDto>): void {
     this.questions.update((list) =>
       list.map((question) => (question.id === questionId ? { ...question, ...patch } : question)),
@@ -555,6 +619,7 @@ export class FormFichaComponent {
         cleaned.push({
           ...question,
           prompt,
+          required: isFormHeading(question.type) ? false : question.required,
           sortOrder: cleaned.length,
           options: undefined,
         });
@@ -578,6 +643,7 @@ export class FormFichaComponent {
     this.previewing.set(false);
     this.previewValue.set({});
     this.previewError.set('');
+    this.openQuestionIds.set(new Set());
     if (!id || id === NEW_FORM_ID) {
       this.title.set('');
       this.description.set('');

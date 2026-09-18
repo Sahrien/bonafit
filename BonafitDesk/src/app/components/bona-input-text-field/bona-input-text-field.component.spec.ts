@@ -58,6 +58,15 @@ describe('BonaInputTextFieldComponent', () => {
     expect(inputEl().getAttribute('type')).toBe('email');
   });
 
+  it('marks compact types on the host and leaves text unconstrained', () => {
+    expect(fixture.nativeElement.getAttribute('data-input-type')).toBe('text');
+
+    fixture.componentRef.setInput('type', 'time');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.getAttribute('data-input-type')).toBe('time');
+  });
+
   it('hides a password until the reveal button is pressed', () => {
     fixture.componentRef.setInput('type', 'password');
     fixture.detectChanges();

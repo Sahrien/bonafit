@@ -1,9 +1,11 @@
 from datetime import UTC
 
+from app.i18n import DEFAULT_LANGUAGE, resolve_text
 from app.models import (
     Appointment,
     Bono,
     BookingSettings,
+    Branding,
     Client,
     ClientBono,
     Form,
@@ -20,6 +22,7 @@ from app.schemas import (
     AuthUserOut,
     BonoOut,
     BookingSettingsOut,
+    BrandingOut,
     ClientBonoOut,
     ClientOut,
     FormAnswerOut,
@@ -34,6 +37,9 @@ from app.schemas import (
 
 
 def user_out(user: User) -> AuthUserOut:
+    language = getattr(user, "language", None) or DEFAULT_LANGUAGE
+    if language not in ("es", "en"):
+        language = DEFAULT_LANGUAGE
     return AuthUserOut(
         id=user.id,
         displayName=user.display_name,
@@ -42,6 +48,7 @@ def user_out(user: User) -> AuthUserOut:
         clientId=user.client_id,
         email=user.email,
         mustChangePassword=user.must_change_password,
+        language=language,  # type: ignore[arg-type]
     )
 
 
@@ -67,11 +74,12 @@ def client_out(
     )
 
 
-def service_out(row: Service) -> ServiceOut:
+def service_out(row: Service, language: str = DEFAULT_LANGUAGE) -> ServiceOut:
     price = float(row.single_session_price) if row.single_session_price is not None else None
+    i18n = getattr(row, "i18n", None) or {}
     return ServiceOut(
         id=row.id,
-        name=row.name,
+        name=resolve_text(row.name, i18n, "name", language),
         sharesSessionPool=row.shares_session_pool,
         forcesSingleSession=row.forces_single_session,
         allowsSingleSession=row.allows_single_session,
@@ -79,17 +87,20 @@ def service_out(row: Service) -> ServiceOut:
         durationMinutes=row.duration_minutes,
         bookableByClient=row.bookable_by_client,
         active=row.active,
+        i18n=i18n if isinstance(i18n, dict) else {},
     )
 
 
-def bono_out(row: Bono) -> BonoOut:
+def bono_out(row: Bono, language: str = DEFAULT_LANGUAGE) -> BonoOut:
+    i18n = getattr(row, "i18n", None) or {}
     return BonoOut(
         id=row.id,
         serviceId=row.service_id,
-        name=row.name,
-        description=row.description,
+        name=resolve_text(row.name, i18n, "name", language),
+        description=resolve_text(row.description, i18n, "description", language),
         sessionCount=row.session_count,
         price=float(row.price),
+        i18n=i18n if isinstance(i18n, dict) else {},
     )
 
 
@@ -130,6 +141,27 @@ def settings_out(row: BookingSettings) -> BookingSettingsOut:
     )
 
 
+def _public_upload_url(path: str | None) -> str | None:
+    if not path:
+        return None
+    return f"/uploads/{path.lstrip('/')}"
+
+
+def branding_out(row: Branding) -> BrandingOut:
+    return BrandingOut(
+        id=row.id,
+        studioName=row.studio_name,
+        slogan=row.slogan,
+        primaryHex=row.primary_hex,
+        accentHex=row.accent_hex,
+        surfaceHex=row.surface_hex,
+        colorScheme=row.color_scheme,  # type: ignore[arg-type]
+        logoUrl=_public_upload_url(row.logo_path),
+        faviconUrl=_public_upload_url(row.favicon_path),
+        updatedAt=row.updated_at,
+    )
+
+
 def schedule_out(row: TrainerSchedule) -> TrainerScheduleOut:
     return TrainerScheduleOut(
         id=row.id,
@@ -140,26 +172,40 @@ def schedule_out(row: TrainerSchedule) -> TrainerScheduleOut:
     )
 
 
-def question_out(row: FormQuestion) -> FormQuestionOut:
+def question_out(row: FormQuestion, language: str = DEFAULT_LANGUAGE) -> FormQuestionOut:
     options = None
+    i18n = getattr(row, "i18n", None) or {}
     if row.type in FORM_OPTION_TYPES:
         options = [
-            FormQuestionOptionOut(id=option.id, label=option.label, sortOrder=option.sort_order)
+            FormQuestionOptionOut(
+                id=option.id,
+                label=resolve_text(option.label, getattr(option, "i18n", None) or {}, "label", language),
+                sortOrder=option.sort_order,
+                i18n=getattr(option, "i18n", None) or {},
+            )
             for option in sorted(row.options, key=lambda item: item.sort_order)
         ]
     return FormQuestionOut(
         id=row.id,
-        prompt=row.prompt,
+        prompt=resolve_text(row.prompt, i18n, "prompt", language),
         type=row.type,  # type: ignore[arg-type]
         required=row.required,
         sortOrder=row.sort_order,
         options=options,
+        i18n=i18n if isinstance(i18n, dict) else {},
     )
 
 
-def form_out(row: Form) -> FormOut:
-    questions = [question_out(item) for item in sorted(row.questions, key=lambda q: q.sort_order)]
-    return FormOut(id=row.id, title=row.title, description=row.description, questions=questions)
+def form_out(row: Form, language: str = DEFAULT_LANGUAGE) -> FormOut:
+    i18n = getattr(row, "i18n", None) or {}
+    questions = [question_out(item, language) for item in sorted(row.questions, key=lambda q: q.sort_order)]
+    return FormOut(
+        id=row.id,
+        title=resolve_text(row.title, i18n, "title", language),
+        description=resolve_text(row.description, i18n, "description", language),
+        questions=questions,
+        i18n=i18n if isinstance(i18n, dict) else {},
+    )
 
 
 def questions_snapshot(row: Form) -> list[dict]:
@@ -171,31 +217,71 @@ def questions_snapshot(row: Form) -> list[dict]:
             "type": question.type,
             "required": question.required,
             "sortOrder": question.sort_order,
+            "i18n": getattr(question, "i18n", None) or {},
         }
         if question.type in FORM_OPTION_TYPES:
             item["options"] = [
-                {"id": option.id, "label": option.label, "sortOrder": option.sort_order}
+                {
+                    "id": option.id,
+                    "label": option.label,
+                    "sortOrder": option.sort_order,
+                    "i18n": getattr(option, "i18n", None) or {},
+                }
                 for option in sorted(question.options, key=lambda opt: opt.sort_order)
             ]
         payload.append(item)
     return payload
 
 
-def assignment_out(row: FormAssignment) -> FormAssignmentOut:
-    questions = [FormQuestionOut.model_validate(item) for item in row.questions]
+def _snapshot_question_out(item: dict, language: str) -> FormQuestionOut:
+    options = None
+    raw_options = item.get("options")
+    if raw_options:
+        options = [
+            FormQuestionOptionOut(
+                id=option["id"],
+                label=resolve_text(option.get("label", ""), option.get("i18n"), "label", language),
+                sortOrder=option.get("sortOrder", 0),
+                i18n=option.get("i18n") or {},
+            )
+            for option in raw_options
+        ]
+    return FormQuestionOut(
+        id=item["id"],
+        prompt=resolve_text(item.get("prompt", ""), item.get("i18n"), "prompt", language),
+        type=item["type"],
+        required=bool(item.get("required")),
+        sortOrder=item.get("sortOrder", 0),
+        options=options,
+        i18n=item.get("i18n") or {},
+    )
+
+
+def assignment_out(row: FormAssignment, language: str = DEFAULT_LANGUAGE) -> FormAssignmentOut:
+    questions = [_snapshot_question_out(item, language) for item in row.questions]
     answers = [
         FormAnswerOut(questionId=answer.question_id, value=answer.value) for answer in row.answers
     ]
+    form_i18n = getattr(row.form, "i18n", None) or {} if row.form is not None else {}
+    assignment_i18n = getattr(row, "i18n", None) or {}
+    bundled = assignment_i18n or {
+        "title": (form_i18n.get("title") if isinstance(form_i18n, dict) else None) or {"es": row.title},
+        "description": (form_i18n.get("description") if isinstance(form_i18n, dict) else None)
+        or {"es": row.form.description if row.form is not None else ""},
+    }
+    description_fallback = row.form.description if row.form is not None else ""
     return FormAssignmentOut(
         id=row.id,
         formId=row.form_id,
         clientId=row.client_id,
-        title=row.title,
+        title=resolve_text(row.title, bundled, "title", language),
+        description=resolve_text(description_fallback, bundled, "description", language),
         questions=questions,
         status=row.status,  # type: ignore[arg-type]
         assignedAt=row.assigned_at,
         submittedAt=row.submitted_at,
         answers=answers,
+        i18n=bundled if isinstance(bundled, dict) else {},
     )
 
 

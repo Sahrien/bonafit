@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { BrandingService } from './branding/branding.service';
 import { ButtonComponent } from './components/button/button.component';
 import { LogoComponent } from './components/logo/logo.component';
 
@@ -11,6 +12,7 @@ import { LogoComponent } from './components/logo/logo.component';
 })
 export class AppComponent {
   private readonly router = inject(Router);
+  readonly branding = inject(BrandingService);
 
   readonly title = 'BONAFIT';
   protected readonly menuOpen = signal(false);

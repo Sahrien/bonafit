@@ -15,7 +15,7 @@ import { BonaPageComponent } from '../../components/bona-page/bona-page.componen
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { FormAssignmentDto, FormDto } from '../../models/form.dto';
 import { FormsApiService } from '../../services/forms-api.service';
-import { FORMS_LITERALS } from './forms.literals';
+import { injectI18n } from '../../core/i18n/inject-i18n';
 
 const NEW_FORM_ID = 'new';
 
@@ -34,22 +34,25 @@ export class FormsComponent {
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly literals = FORMS_LITERALS;
+  private readonly i18n = injectI18n<Record<string, string>>('forms');
+  get literals() {
+    return this.i18n();
+  }
   readonly search = signal('');
   readonly loading = signal(true);
   private readonly forms = signal<FormDto[]>([]);
   private readonly assignments = signal<FormAssignmentDto[]>([]);
 
-  readonly columns: BonaGridColumn[] = [
-    { field: 'title', header: FORMS_LITERALS.formTitle },
-    { field: 'questionCount', header: FORMS_LITERALS.questionCount, type: 'number' },
-    { field: 'assignmentCount', header: FORMS_LITERALS.assignmentCount, type: 'number' },
-  ];
+  readonly columns = computed<BonaGridColumn[]>(() => [
+    { field: 'title', header: this.literals.formTitle },
+    { field: 'questionCount', header: this.literals.questionCount, type: 'number' },
+    { field: 'assignmentCount', header: this.literals.assignmentCount, type: 'number' },
+  ]);
 
-  readonly actions: BonaGridAction[] = [
-    { label: FORMS_LITERALS.edit, action: 'edit' },
-    { label: FORMS_LITERALS.delete, action: 'delete' },
-  ];
+  readonly actions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.edit, action: 'edit' },
+    { label: this.literals.delete, action: 'delete' },
+  ]);
 
   readonly rows = computed(() => {
     const query = this.search().trim().toLowerCase();

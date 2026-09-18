@@ -25,6 +25,17 @@ describe('form answers persistence helpers', () => {
     expect(missingRequiredAnswers(questions, [{ questionId: 'q-1', value: 'no' }])).toEqual([]);
   });
 
+  it('skips heading questions when mapping and validating answers', () => {
+    const withHeading: FormQuestionDto[] = [
+      { id: 'h-1', prompt: 'Salud', type: 'heading', required: true, sortOrder: 0 },
+      { id: 'q-1', prompt: 'A', type: 'yesno', required: true, sortOrder: 1 },
+    ];
+    expect(mapToAnswers(withHeading, { 'h-1': 'ignored', 'q-1': 'yes' })).toEqual([
+      { questionId: 'q-1', value: 'yes' },
+    ]);
+    expect(missingRequiredAnswers(withHeading, [])).toEqual(['q-1']);
+  });
+
   it('requires both parts of a full name', () => {
     const nameQuestion: FormQuestionDto[] = [
       { id: 'q-name', prompt: 'Nombre', type: 'fullName', required: true, sortOrder: 0 },

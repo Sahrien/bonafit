@@ -13,6 +13,7 @@ export interface AuthUserDto {
   clientId?: string;
   email?: string;
   mustChangePassword?: boolean;
+  language?: 'es' | 'en';
 }
 
 export interface AuthSessionDto {
@@ -28,4 +29,8 @@ export interface LoginRequestDto {
 export interface ChangePasswordRequestDto {
   currentPassword?: string;
   newPassword: string;
+}
+
+export interface AuthMePatchDto {
+  language: 'es' | 'en';
 }

@@ -1,8 +1,14 @@
 <div class="login">
   <div class="login__card">
     <header class="login__intro">
-      <p class="login__slogan">{{ literals.slogan }}</p>
-      <p class="login__brand">{{ literals.brand }}</p>
+      <div class="login__lang">
+        <app-bona-language-switcher />
+      </div>
+      <p class="login__slogan">{{ brandTheme.slogan() }}</p>
+      @if (brandTheme.logoHref()) {
+        <img class="login__logo" [src]="brandTheme.logoHref()" [alt]="brandTheme.studioName()" />
+      }
+      <p class="login__brand">{{ brandTheme.studioName() }}</p>
       <h1 class="login__title">{{ literals.title }}</h1>
     </header>
 
@@ -11,7 +17,7 @@
     }
 
     <app-bona-form
-      [fields]="fields"
+      [fields]="fields()"
       [value]="formValue()"
       [submitText]="literals.submit"
       [disabled]="submitting()"

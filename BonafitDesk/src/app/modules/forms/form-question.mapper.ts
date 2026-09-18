@@ -6,7 +6,7 @@ import {
   formatFullName,
 } from '../../core/form-answers';
 import { BonaFieldControlType, BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
-import { FormAnswerDto, FormQuestionDto } from '../../models/form.dto';
+import { FormAnswerDto, FormQuestionDto, isFormHeading } from '../../models/form.dto';
 
 export { FORM_NO_VALUE, FORM_YES_VALUE };
 
@@ -25,6 +25,8 @@ export type FormFieldLabels = Pick<
   'yes' | 'no' | 'firstName' | 'lastName' | 'moveUp' | 'moveDown'
 >;
 
+export const FORM_LONG_HEADING = 80;
+
 export function orderedQuestions(questions: FormQuestionDto[]): FormQuestionDto[] {
   return [...questions]
     .sort((left, right) => left.sortOrder - right.sortOrder)
@@ -36,12 +38,52 @@ export function orderedQuestions(questions: FormQuestionDto[]): FormQuestionDto[
     }));
 }
 
+export interface FormQuestionBlock {
+  key: string;
+  heading: FormQuestionDto | null;
+  statics: FormQuestionDto[];
+  questions: FormQuestionDto[];
+}
+
+export function groupQuestionsByHeading(
+  questions: FormQuestionDto[],
+  options?: { longHeadingsAsStatic?: boolean },
+): FormQuestionBlock[] {
+  const blocks: FormQuestionBlock[] = [];
+  let current: FormQuestionBlock = {
+    key: 'ungrouped',
+    heading: null,
+    statics: [],
+    questions: [],
+  };
+  for (const question of orderedQuestions(questions)) {
+    if (isFormHeading(question.type)) {
+      if (options?.longHeadingsAsStatic && question.prompt.length > FORM_LONG_HEADING) {
+        current.statics.push(question);
+        continue;
+      }
+      if (current.heading || current.questions.length > 0 || current.statics.length > 0) {
+        blocks.push(current);
+      }
+      current = { key: question.id, heading: question, statics: [], questions: [] };
+      continue;
+    }
+    current.questions.push(question);
+  }
+  if (current.heading || current.questions.length > 0 || current.statics.length > 0) {
+    blocks.push(current);
+  }
+  return blocks;
+}
+
 export function questionsToFields(
   questions: FormQuestionDto[],
   labels: FormFieldLabels,
   disabled = false,
 ): BonaFieldDefinition[] {
-  return orderedQuestions(questions).map((question) => questionToField(question, labels, disabled));
+  return orderedQuestions(questions)
+    .filter((question) => !isFormHeading(question.type))
+    .map((question) => questionToField(question, labels, disabled));
 }
 
 export function questionToField(
@@ -100,7 +142,67 @@ export function questionToField(
       };
     case 'terms':
       return { ...base, type: 'checkbox' as const };
+    case 'heading':
+      return { ...base, type: 'text' as const, disabled: true };
   }
+}
+
+export interface FormAnswerDisplayItem {
+  id: string;
+  kind: 'heading' | 'answer';
+  prompt: string;
+  answer: string;
+  longHeading: boolean;
+}
+
+export function answerDisplayItems(
+  questions: FormQuestionDto[],
+  answers: FormAnswerDto[],
+  labels: FormAnswerLabels,
+): FormAnswerDisplayItem[] {
+  return orderedQuestions(questions).map((question) => {
+    if (isFormHeading(question.type)) {
+      return {
+        id: question.id,
+        kind: 'heading' as const,
+        prompt: question.prompt,
+        answer: '',
+        longHeading: question.prompt.length > FORM_LONG_HEADING,
+      };
+    }
+    return {
+      id: question.id,
+      kind: 'answer' as const,
+      prompt: question.prompt,
+      answer: formatQuestionAnswer(question, answers, labels),
+      longHeading: false,
+    };
+  });
+}
+
+export interface FormAnswerBlock {
+  key: string;
+  heading: FormAnswerDisplayItem | null;
+  items: FormAnswerDisplayItem[];
+}
+
+export function groupAnswerDisplayItems(items: FormAnswerDisplayItem[]): FormAnswerBlock[] {
+  const blocks: FormAnswerBlock[] = [];
+  let current: FormAnswerBlock = { key: 'ungrouped', heading: null, items: [] };
+  for (const item of items) {
+    if (item.kind === 'heading' && !item.longHeading) {
+      if (current.heading || current.items.length > 0) {
+        blocks.push(current);
+      }
+      current = { key: item.id, heading: item, items: [] };
+      continue;
+    }
+    current.items.push(item);
+  }
+  if (current.heading || current.items.length > 0) {
+    blocks.push(current);
+  }
+  return blocks;
 }
 
 export function formatQuestionAnswer(

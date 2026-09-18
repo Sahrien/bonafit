@@ -1,19 +1,33 @@
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
-from app.booking import list_availability_slots, slot_taken_for_trainer, to_madrid
+from app.booking import (
+    can_client_confirm_appointment,
+    has_active_client_appointment_for_service,
+    list_availability_slots,
+    slot_taken_for_client,
+    slot_taken_for_trainer,
+    to_madrid,
+)
 
 
 def _busy(**overrides: object) -> SimpleNamespace:
     values: dict[str, object] = {
         "id": "apt-1",
         "trainer_id": "trainer-1",
+        "client_id": "client-1",
         "status": "confirmed",
         "starts_at": datetime(2026, 9, 9, 6, 0, tzinfo=UTC),
         "ends_at": datetime(2026, 9, 9, 7, 0, tzinfo=UTC),
     }
     values.update(overrides)
     return SimpleNamespace(**values)
+
+
+def test_client_can_confirm_only_pending() -> None:
+    assert can_client_confirm_appointment("pending")
+    assert not can_client_confirm_appointment("confirmed")
+    assert not can_client_confirm_appointment("completed")
 
 
 def test_slot_taken_for_trainer_capacity_one() -> None:
@@ -38,6 +52,29 @@ def test_slot_taken_for_trainer_capacity_two() -> None:
         end,
         2,
     )
+
+
+def test_slot_taken_for_client_across_trainers() -> None:
+    start = to_madrid(datetime(2026, 9, 9, 6, 0, tzinfo=UTC))
+    end = to_madrid(datetime(2026, 9, 9, 7, 0, tzinfo=UTC))
+    busy = [_busy()]
+    assert slot_taken_for_client(busy, "client-1", start, end)
+    assert not slot_taken_for_client(busy, "client-2", start, end)
+    assert not slot_taken_for_client(
+        [_busy(status="cancelled")],
+        "client-1",
+        start,
+        end,
+    )
+    assert not slot_taken_for_client(
+        [_busy(status="completed")],
+        "client-1",
+        start,
+        end,
+    )
+    later_start = to_madrid(datetime(2026, 9, 9, 7, 0, tzinfo=UTC))
+    later_end = to_madrid(datetime(2026, 9, 9, 8, 0, tzinfo=UTC))
+    assert not slot_taken_for_client(busy, "client-1", later_start, later_end)
 
 
 def test_list_availability_slots_keeps_seat_until_capacity() -> None:
@@ -66,7 +103,7 @@ def test_list_availability_slots_keeps_seat_until_capacity() -> None:
     full = list_availability_slots(
         duration_minutes=60,
         schedules=[schedule],
-        appointments=[_busy(), _busy(id="apt-2")],
+        appointments=[_busy(), _busy(id="apt-2", client_id="client-2")],
         cutoff_time="18:00",
         now=datetime(2026, 9, 9, 6, 0, tzinfo=UTC),
         from_dt=datetime(2026, 9, 9, 0, 0, tzinfo=UTC),
@@ -77,3 +114,21 @@ def test_list_availability_slots_keeps_seat_until_capacity() -> None:
     assert not any(slot["startsAt"] == "2026-09-09T06:00:00.000Z" for slot in full)
     default_capacity = list_availability_slots(**kwargs)
     assert not any(slot["startsAt"] == "2026-09-09T06:00:00.000Z" for slot in default_capacity)
+    hidden_for_client = list_availability_slots(
+        **kwargs,
+        trainer_capacities={"trainer-1": 2},
+        client_id="client-1",
+    )
+    assert not any(slot["startsAt"] == "2026-09-09T06:00:00.000Z" for slot in hidden_for_client)
+
+
+def test_has_active_client_appointment_for_service() -> None:
+    rows = [
+        _busy(id="ep", service_id="svc-ep", status="confirmed"),
+        _busy(id="hipo", service_id="svc-hipo", status="pending"),
+        _busy(id="done", service_id="svc-ep", status="completed"),
+    ]
+    assert has_active_client_appointment_for_service(rows, "svc-ep")
+    assert has_active_client_appointment_for_service(rows, "svc-hipo")
+    assert not has_active_client_appointment_for_service(rows, "svc-ep", "ep")
+    assert not has_active_client_appointment_for_service(rows, "svc-masaje")

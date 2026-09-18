@@ -56,6 +56,16 @@ export class FormsApiService implements FormsApi {
     });
   }
 
+  saveAssignmentDraft(
+    id: string,
+    payload: SubmitFormAssignmentDto,
+  ): Observable<FormAssignmentDto> {
+    return this.http.put<FormAssignmentDto>(
+      apiUrl(API_PATHS.formAssignments, id, 'draft'),
+      payload,
+    );
+  }
+
   submitAssignment(
     id: string,
     payload: SubmitFormAssignmentDto,

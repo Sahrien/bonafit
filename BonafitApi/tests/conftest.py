@@ -6,6 +6,7 @@ from app.database import Database
 from app.emailer import Emailer
 from app.security import Security
 from app.services.auth import AuthService
+from app.services.branding import BrandingService
 from app.services.calendar import CalendarService
 from app.services.catalog import CatalogService
 from app.services.clients import ClientService
@@ -62,3 +63,8 @@ def calendar_service(db: Database) -> CalendarService:
 @pytest.fixture
 def form_service(db: Database) -> FormService:
     return FormService(session_factory=db.session)
+
+
+@pytest.fixture
+def branding_service(db: Database, tmp_path) -> BrandingService:
+    return BrandingService(session_factory=db.session, uploads_dir=str(tmp_path))

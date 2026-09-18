@@ -14,23 +14,36 @@
     @if (feedback()) {
       <p class="portal-page__status">{{ feedback() }}</p>
     }
-    <dl class="answers">
-      @for (item of answers(); track item.id) {
-        <dt>{{ item.prompt }}</dt>
-        <dd>{{ item.answer }}</dd>
-      }
-    </dl>
+    @for (block of answerBlocks(); track block.key) {
+      <section class="answers-block" [class.answers-block--plain]="!block.heading">
+        @if (block.heading) {
+          <h3 class="answers-block__title">{{ block.heading.prompt }}</h3>
+        }
+        <dl class="answers">
+          @for (item of block.items; track item.id) {
+            @if (item.kind === 'heading') {
+              <p class="answers__static">{{ item.prompt }}</p>
+            } @else {
+              <dt>{{ item.prompt }}</dt>
+              <dd>{{ item.answer }}</dd>
+            }
+          }
+        </dl>
+      </section>
+    }
   } @else if (assignment()) {
     <app-form-fill-view
-      [fields]="fields()"
+      [description]="assignment()?.description ?? ''"
+      [questions]="assignment()?.questions ?? []"
+      [labels]="fieldLabels"
       [value]="formValue()"
       [submitText]="literals.submit"
+      [saveText]="literals.saveDraft"
       [disabled]="saving()"
       [error]="error()"
+      [requiredError]="literals.requiredError"
       (valueChange)="onFormChange($event)"
+      (saved)="onSaveDraft($event)"
       (submitted)="onSubmit($event)" />
-    @if (feedback()) {
-      <p class="portal-page__status">{{ feedback() }}</p>
-    }
   }
 </app-bona-page>

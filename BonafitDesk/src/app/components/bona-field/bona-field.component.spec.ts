@@ -47,6 +47,14 @@ describe('BonaFieldComponent', () => {
     expect(textarea.value).toBe('Hola');
   });
 
+  it('caps text fields and leaves textarea full width', () => {
+    fixture = createField({ key: 'nombre', label: 'Nombre' });
+    expect(fixture.nativeElement.classList.contains('bona-field--capped')).toBeTrue();
+
+    fixture = createField({ key: 'notas', label: 'Notas', type: 'textarea' });
+    expect(fixture.nativeElement.classList.contains('bona-field--capped')).toBeFalse();
+  });
+
   it('renders select options from the field definition', () => {
     fixture = createField({
       key: 'trainerId',

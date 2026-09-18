@@ -1,13 +1,56 @@
 @if (banner()) {
   <p class="form-fill-view__banner">{{ banner() }}</p>
 }
+@if (description()) {
+  <p class="form-fill-view__description">{{ description() }}</p>
+}
 @if (error()) {
   <p class="form-fill-view__error">{{ error() }}</p>
 }
-<app-bona-form
-  [fields]="fields()"
-  [value]="value()"
-  [submitText]="submitText()"
-  [disabled]="disabled()"
-  (valueChange)="valueChange.emit($event)"
-  (submitted)="submitted.emit($event)" />
+@if (missingFields().length) {
+  <div class="form-fill-view__error" role="alert">
+    <p>{{ requiredError() }}</p>
+    <ul class="form-fill-view__missing-list">
+      @for (item of missingFields(); track item.id) {
+        <li>
+          <button type="button" class="form-fill-view__missing" (click)="focusField(item.id)">
+            {{ item.prompt }}
+          </button>
+        </li>
+      }
+    </ul>
+  </div>
+}
+<form class="form-fill-view__form" novalidate (submit)="onSubmit($event)">
+  @for (block of blocks(); track block.key) {
+    <section
+      class="form-fill-view__section"
+      [class.form-fill-view__section--tinted]="!!block.heading">
+      @if (block.heading) {
+        <h2 class="form-fill-view__heading">{{ block.heading.prompt }}</h2>
+      }
+      @for (note of block.statics; track note.id) {
+        <div class="form-fill-view__static">{{ note.prompt }}</div>
+      }
+      @for (question of block.questions; track question.id) {
+        <div class="form-fill-view__field" [id]="fieldAnchor(question.id)">
+          <app-bona-field
+            [definition]="fieldOf(question)"
+            [value]="fieldValue(question.id)"
+            (valueChange)="onFieldValue(question.id, $event)" />
+        </div>
+      }
+    </section>
+  }
+  <div class="form-fill-view__actions">
+    @if (saveText()) {
+      <app-bona-button
+        [text]="saveText()"
+        variant="secondary"
+        type="button"
+        [disabled]="disabled()"
+        (action)="onSave()" />
+    }
+    <app-bona-button [text]="submitText()" type="submit" [disabled]="disabled()" />
+  </div>
+</form>

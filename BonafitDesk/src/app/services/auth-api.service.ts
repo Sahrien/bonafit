@@ -5,7 +5,9 @@ import { catchError, map, tap } from 'rxjs/operators';
 import { API_PATHS, apiUrl } from '../core/api-url';
 import { AuthApi } from '../core/auth-api';
 import { AuthTokenStore } from '../core/auth/auth-token.store';
+import { LanguageService } from '../core/i18n/language.service';
 import {
+  AuthMePatchDto,
   AuthSessionDto,
   ChangePasswordRequestDto,
   LoginRequestDto,
@@ -15,10 +17,14 @@ import {
 export class AuthApiService implements AuthApi {
   private readonly http = inject(HttpClient);
   private readonly tokens = inject(AuthTokenStore);
+  private readonly language = inject(LanguageService);
 
   login(payload: LoginRequestDto): Observable<AuthSessionDto> {
     return this.http.post<AuthSessionDto>(apiUrl(API_PATHS.authLogin), payload).pipe(
-      tap((session) => this.tokens.set(session.token)),
+      tap((session) => {
+        this.tokens.set(session.token);
+        this.language.applyFromAccount(session.user.language);
+      }),
     );
   }
 
@@ -43,10 +49,19 @@ export class AuthApiService implements AuthApi {
         }
         return { user: session.user, token };
       }),
+      tap((session) => {
+        if (session) {
+          this.language.applyFromAccount(session.user.language);
+        }
+      }),
     );
   }
 
   changePassword(payload: ChangePasswordRequestDto): Observable<void> {
     return this.http.post<void>(apiUrl(API_PATHS.authChangePassword), payload);
+  }
+
+  updateMe(payload: AuthMePatchDto): Observable<AuthSessionDto> {
+    return this.http.patch<AuthSessionDto>(apiUrl(API_PATHS.authMe), payload);
   }
 }

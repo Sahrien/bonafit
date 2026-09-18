@@ -9,7 +9,8 @@ from app.booking import (
     add_minutes,
     can_admin_cancel_appointment,
     can_cancel_appointment,
-    is_active_client_appointment,
+    can_client_confirm_appointment,
+    has_active_client_appointment_for_service,
     is_bono_usable,
     is_gift_credit,
     list_availability_slots,
@@ -18,6 +19,7 @@ from app.booking import (
     pick_preferred_bono,
     session_delta,
     slot_matches,
+    slot_taken_for_client,
     slot_taken_for_trainer,
     status_on_client_reschedule,
     status_on_create,
@@ -204,6 +206,7 @@ class CalendarService:
                 trainer_id=trainer_id,
                 ignore_appointment_id=ignore_appointment_id,
                 trainer_capacities=_trainer_capacities(db),
+                client_id=user.client_id if user.role == UserRole.CLIENT else None,
             )
             return [AvailabilitySlotOut.model_validate(slot) for slot in slots]
 
@@ -373,6 +376,13 @@ def _assert_client_write(
         raise BusinessError(E["invalidStatus"])
     if payload.status == "cancelled":
         return
+    if (
+        payload.status == "confirmed"
+        and previous is not None
+        and can_client_confirm_appointment(previous.status)
+        and _is_client_status_only(previous, payload, starts_at)
+    ):
+        return
     if not service.bookable_by_client or not service.active:
         raise BusinessError(E["serviceNotBookable"])
     if previous and previous.status in {"completed", "cancelled"}:
@@ -392,13 +402,12 @@ def _assert_client_write(
     )
     if not slot_matches(slots, payload.trainerId, starts_at, ends_at):
         raise BusinessError(E["cutoff"])
-    has_other = db.scalars(
-        select(Appointment).where(
-            Appointment.client_id == payload.clientId,
-            Appointment.id != (previous.id if previous else ""),
-        )
-    ).all()
-    if any(is_active_client_appointment(row.status) for row in has_other):
+    existing = db.scalars(select(Appointment).where(Appointment.client_id == payload.clientId)).all()
+    if has_active_client_appointment_for_service(
+        existing,
+        payload.serviceId,
+        previous.id if previous else None,
+    ):
         raise BusinessError(E["oneAppointment"])
 
 
@@ -496,6 +505,13 @@ def _resolve_status(
     if actor == "client":
         if payload.status == "cancelled":
             return "cancelled"
+        if (
+            payload.status == "confirmed"
+            and previous is not None
+            and can_client_confirm_appointment(previous.status)
+            and _is_client_status_only(previous, payload, ensure_aware(payload.startsAt))
+        ):
+            return "confirmed"
         if previous and (
             ensure_aware(payload.startsAt) != ensure_aware(previous.starts_at)
             or payload.trainerId != previous.trainer_id
@@ -509,21 +525,40 @@ def _resolve_status(
     return previous.status if previous else status_on_create(actor, instant_confirm)
 
 
+def _is_client_status_only(
+    previous: Appointment | None,
+    payload: AppointmentWrite,
+    starts_at: datetime,
+) -> bool:
+    if previous is None:
+        return False
+    return payload.trainerId == previous.trainer_id and ensure_aware(previous.starts_at) == starts_at
+
+
 def _assert_slot_free(db: Session, appointment: Appointment, ignore_id: str | None) -> None:
     if not occupies_trainer_slot(appointment.status):
         return
     start = ensure_aware(appointment.starts_at)
     end = ensure_aware(appointment.ends_at)
-    busy = db.scalars(
+    ignore = ignore_id or ""
+    busy_trainer = db.scalars(
         select(Appointment).where(
             Appointment.trainer_id == appointment.trainer_id,
-            Appointment.id != (ignore_id or ""),
+            Appointment.id != ignore,
         )
     ).all()
     trainer = db.get(Trainer, appointment.trainer_id)
     capacity = trainer.concurrent_capacity if trainer is not None else 1
-    if slot_taken_for_trainer(busy, appointment.trainer_id, start, end, capacity):
+    if slot_taken_for_trainer(busy_trainer, appointment.trainer_id, start, end, capacity):
         raise BusinessError(E["slotTaken"])
+    busy_client = db.scalars(
+        select(Appointment).where(
+            Appointment.client_id == appointment.client_id,
+            Appointment.id != ignore,
+        )
+    ).all()
+    if slot_taken_for_client(busy_client, appointment.client_id, start, end):
+        raise BusinessError(E["clientSlotTaken"])
 
 
 def _apply_session_delta(

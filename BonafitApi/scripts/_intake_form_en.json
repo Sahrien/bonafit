@@ -1,0 +1,98 @@
+{
+  "title": "Initial questionnaire",
+  "description": "Health, lifestyle and goals so we can design a safe programme. Please answer honestly; this information is treated confidentially.",
+  "questions": [
+    { "prompt": "Personal information", "sortOrder": 0 },
+    { "prompt": "Full name", "sortOrder": 1 },
+    { "prompt": "Email", "sortOrder": 2 },
+    { "prompt": "Phone number", "sortOrder": 3 },
+    { "prompt": "Date of birth", "sortOrder": 4 },
+    {
+      "prompt": "Sex",
+      "sortOrder": 5,
+      "options": [
+        { "label": "Woman", "sortOrder": 0 },
+        { "label": "Man", "sortOrder": 1 },
+        { "label": "Prefer not to say", "sortOrder": 2 }
+      ]
+    },
+    { "prompt": "Address", "sortOrder": 6 },
+    { "prompt": "Emergency contact phone", "sortOrder": 7 },
+    { "prompt": "Emergency contact name", "sortOrder": 8 },
+    { "prompt": "Emergency contact relationship", "sortOrder": 9 },
+    { "prompt": "Health", "sortOrder": 10 },
+    { "prompt": "Current weight (kg)", "sortOrder": 11 },
+    { "prompt": "Height (cm)", "sortOrder": 12 },
+    {
+      "prompt": "Tobacco or vape use",
+      "sortOrder": 13,
+      "options": [
+        { "label": "No", "sortOrder": 0 },
+        { "label": "Occasional", "sortOrder": 1 },
+        { "label": "Daily", "sortOrder": 2 }
+      ]
+    },
+    {
+      "prompt": "Alcohol use",
+      "sortOrder": 14,
+      "options": [
+        { "label": "No", "sortOrder": 0 },
+        { "label": "Occasional", "sortOrder": 1 },
+        { "label": "Daily", "sortOrder": 2 }
+      ]
+    },
+    { "prompt": "Do you have any allergies? List them below", "sortOrder": 15 },
+    { "prompt": "Have you had an injury in the last year? List them below", "sortOrder": 16 },
+    { "prompt": "Do you take any medication daily or regularly? List drugs and doses", "sortOrder": 17 },
+    { "prompt": "Has a health professional ever told you not to do a certain exercise or movement? Tell us about it", "sortOrder": 18 },
+    { "prompt": "Have you had any medical procedure or pregnancy in the last 5 years? List them below", "sortOrder": 19 },
+    { "prompt": "Lifestyle", "sortOrder": 20 },
+    {
+      "prompt": "Rate your physical activity level",
+      "sortOrder": 21,
+      "options": [
+        { "label": "None", "sortOrder": 0 },
+        { "label": "Low", "sortOrder": 1 },
+        { "label": "Regular", "sortOrder": 2 },
+        { "label": "Frequent", "sortOrder": 3 }
+      ]
+    },
+    {
+      "prompt": "Rate your diet",
+      "sortOrder": 22,
+      "options": [
+        { "label": "Disordered", "sortOrder": 0 },
+        { "label": "Could improve", "sortOrder": 1 },
+        { "label": "Good", "sortOrder": 2 }
+      ]
+    },
+    { "prompt": "Hours of sleep per day", "sortOrder": 23 },
+    {
+      "prompt": "Rate your stress level",
+      "sortOrder": 24,
+      "options": [
+        { "label": "Relaxed", "sortOrder": 0 },
+        { "label": "Moderate", "sortOrder": 1 },
+        { "label": "High", "sortOrder": 2 },
+        { "label": "Overwhelmed", "sortOrder": 3 }
+      ]
+    },
+    { "prompt": "Describe your physical activity in a typical week", "sortOrder": 25 },
+    { "prompt": "Have you trained before? Describe your experience", "sortOrder": 26 },
+    { "prompt": "How many times do you eat per day? Describe the meals in a typical day", "sortOrder": 27 },
+    { "prompt": "Goals", "sortOrder": 28 },
+    { "prompt": "Describe your main physical goals and why they matter to you now. If there are several, rank them by priority", "sortOrder": 29 },
+    { "prompt": "Which days and times would you like to train?", "sortOrder": 30 },
+    { "prompt": "How many times would you like to train per week?", "sortOrder": 31 },
+    { "prompt": "Do you have training equipment at home? List it", "sortOrder": 32 },
+    { "prompt": "Is there anything else you want to tell us before your first session?", "sortOrder": 33 },
+    { "prompt": "Informed consent", "sortOrder": 34 },
+    {
+      "prompt": "I, ______________________________, declare that the information given in this form is true and complete, and that I have disclosed all relevant medical conditions, injuries, medication and allergies. I understand that physical exercise involves risks and that withholding information may endanger my health. I authorise Héctor Bordajandi Moleón to contact my emergency person or medical services if needed during training.\n\nI also authorise Héctor Bordajandi Moleón, NIF 48722797B, email bordamtg@gmail.com, to process my personal and health data solely to design and supervise my training and manage the professional relationship. The legal basis is my explicit consent (art. 6.1.a and art. 9.2.a GDPR) and performance of the service contract (art. 6.1.b GDPR). I may exercise my rights of access, rectification, erasure, objection, restriction and portability by writing to bordamtg@gmail.com, and lodge a complaint with the Spanish Data Protection Agency.",
+      "sortOrder": 35
+    },
+    { "prompt": "Full name", "sortOrder": 36 },
+    { "prompt": "I have read and accept the informed consent", "sortOrder": 37 },
+    { "prompt": "Date", "sortOrder": 38 }
+  ]
+}

@@ -16,7 +16,7 @@ app/identity.py      # CurrentUser, actor_of
 app/models.py        # SQLAlchemy tables (snake_case columns, UUID string PKs)
 app/schemas.py       # Pydantic request/response (camelCase field names)
 app/serializers.py   # ORM row → schema
-app/services/        # auth, clients, catalog, calendar, forms
+app/services/        # auth, clients, catalog, calendar, forms, branding
 app/errors.py        # NotFoundError, BusinessError, UnauthorizedError, ForbiddenError
 app/booking.py       # slot/cutoff/bono rules (keep in sync with Desk core/booking.ts)
 app/security.py      # bcrypt + JWT
@@ -28,7 +28,7 @@ scripts/create_user.py
 tests/               # pytest (provider override, no DB required for container tests)
 ```
 
-Routers mount at the server root (`/auth/login`, `/clients`, …). OpenAPI: `http://localhost:8080/docs`. Desk `apiUrl` is the origin (`http://localhost:8080`).
+Routers mount at the server root (`/auth/login`, `/clients`, `/branding`, …). OpenAPI: `http://localhost:8080/docs`. Desk `apiUrl` is the origin (`http://localhost:8080`). `GET /branding` is public (login and Webonafit). `PUT /branding` and logo/favicon uploads are admin-only. Uploaded files are served from `/uploads`.
 
 ## Run
 

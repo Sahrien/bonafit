@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { ApiBusinessError, BOOKING_ERROR_CODES } from '../../core/api-business.error';
-import { CHANGE_PASSWORD_LITERALS } from '../../i18n/es';
+import { injectI18n } from '../../core/i18n/inject-i18n';
 import { AuthApiService } from '../../services/auth-api.service';
 
 @Component({
@@ -14,7 +14,7 @@ import { AuthApiService } from '../../services/auth-api.service';
       <p class="password-change-form__error">{{ error() }}</p>
     }
     <app-bona-form
-      [fields]="fields"
+      [fields]="fields()"
       [value]="formValue()"
       [submitText]="literals.submit"
       [disabled]="submitting()"
@@ -34,25 +34,28 @@ export class PasswordChangeFormComponent {
 
   readonly saved = output<void>();
 
-  readonly literals = CHANGE_PASSWORD_LITERALS;
+  private readonly i18n = injectI18n<Record<string, string>>('changePassword');
+  get literals() {
+    return this.i18n();
+  }
   readonly submitting = signal(false);
   readonly error = signal('');
   readonly formValue = signal<BonaFormValue>({ currentPassword: '', newPassword: '' });
 
-  readonly fields: BonaFieldDefinition[] = [
+  readonly fields = computed<BonaFieldDefinition[]>(() => [
     {
       key: 'currentPassword',
-      label: CHANGE_PASSWORD_LITERALS.currentPassword,
+      label: this.literals.currentPassword,
       type: 'password',
       required: true,
     },
     {
       key: 'newPassword',
-      label: CHANGE_PASSWORD_LITERALS.newPassword,
+      label: this.literals.newPassword,
       type: 'password',
       required: true,
     },
-  ];
+  ]);
 
   onFormChange(value: BonaFormValue): void {
     this.formValue.set(value);

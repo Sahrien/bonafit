@@ -1,8 +1,10 @@
 # Webonafit — agent notes
 
-Public marketing site for Bonafit (personal training in the Bonalba / Mutxamel area). No API, no auth, no Desk `bona-*` kit.
+Public marketing site for Bonafit (personal training in the Bonalba / Mutxamel area). No auth and no Desk `bona-*` kit.
 
-Dev server: `npm start` → `http://localhost:4200`. Tests: `npm test`. Use `--port 4201` if BonafitDesk is already on 4200.
+It may call **only** `GET /branding` (and load `/uploads` image URLs) from BonafitApi to apply studio name, slogan, logo, and color seeds. Do not add other API resources, login, or the client portal here.
+
+Dev server: `npm start` → `http://localhost:4200`. Tests: `npm test`. Use `--port 4201` if BonafitDesk is already on 4200. `environment.apiUrl` is `http://localhost:8080` in development.
 
 ## Layout
 
@@ -31,5 +33,5 @@ Colocate `*.spec.ts`. Components are shallow-tested with TestBed. Preserve the `
 ## Do not
 
 - Add Angular Material or BonafitDesk kit components.
-- Point this app at `localhost:8080` unless building an explicit marketing→API feature.
+- Point this app at `localhost:8080` only for `GET /branding` and branding asset URLs.
 - Turn it into the client portal; that is BonafitDesk `/app`.

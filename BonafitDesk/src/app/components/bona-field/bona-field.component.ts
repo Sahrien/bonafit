@@ -33,6 +33,9 @@ const YES_VALUE = 'yes';
   ],
   templateUrl: './bona-field.component.html',
   styleUrl: './bona-field.component.scss',
+  host: {
+    '[class.bona-field--capped]': 'cappedWidth()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BonaFieldComponent {
@@ -41,6 +44,11 @@ export class BonaFieldComponent {
   readonly valueChange = output<string>();
 
   protected readonly isTextInput = isBonaTextInputType;
+
+  readonly cappedWidth = computed(() => {
+    const type = this.definition().type ?? 'text';
+    return type === 'text' || type === 'select';
+  });
 
   readonly rankedOptions = computed(() => this.orderOptions(this.definition().options ?? []));
 

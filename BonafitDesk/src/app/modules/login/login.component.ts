@@ -1,15 +1,18 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
+import { BonaLanguageSwitcherComponent } from '../../components/bona-language-switcher/bona-language-switcher.component';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { AUTH_PATHS, homeForRole } from '../../core/auth/auth.paths';
-import { LOGIN_LITERALS } from '../../i18n/es';
+import { injectI18n } from '../../core/i18n/inject-i18n';
+import { LanguageService } from '../../core/i18n/language.service';
 import { AuthApiService } from '../../services/auth-api.service';
+import { BrandThemeService } from '../../core/brand-theme.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [BonaFormComponent],
+  imports: [BonaFormComponent, BonaLanguageSwitcherComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -17,28 +20,33 @@ import { AuthApiService } from '../../services/auth-api.service';
 export class LoginComponent {
   private readonly auth = inject(AuthApiService);
   private readonly router = inject(Router);
+  private readonly language = inject(LanguageService);
+  readonly brandTheme = inject(BrandThemeService);
 
-  readonly literals = LOGIN_LITERALS;
+  private readonly i18n = injectI18n<Record<string, string>>('login');
+  get literals() {
+    return this.i18n();
+  }
   readonly submitting = signal(false);
   readonly error = signal('');
   readonly formValue = signal<BonaFormValue>({ email: '', password: '' });
 
-  readonly fields: BonaFieldDefinition[] = [
+  readonly fields = computed<BonaFieldDefinition[]>(() => [
     {
       key: 'email',
-      label: LOGIN_LITERALS.email,
+      label: this.literals.email,
       type: 'email',
       required: true,
       autocomplete: 'username',
     },
     {
       key: 'password',
-      label: LOGIN_LITERALS.password,
+      label: this.literals.password,
       type: 'password',
       required: true,
       autocomplete: 'current-password',
     },
-  ];
+  ]);
 
   onFormChange(value: BonaFormValue): void {
     this.formValue.set(value);
@@ -55,6 +63,7 @@ export class LoginComponent {
     this.error.set('');
     this.auth.login({ email, password }).subscribe({
       next: (session) => {
+        this.language.applyFromAccount(session.user.language);
         this.submitting.set(false);
         const path = session.user.mustChangePassword
           ? AUTH_PATHS.changePassword

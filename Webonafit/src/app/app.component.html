@@ -2,8 +2,13 @@
 
 <header class="site-header">
   <div class="wrap header-bar">
-    <a routerLink="/" class="brand" aria-label="BONAFIT, inicio" (click)="closeMenu()">
-      <app-logo size="sm" [showTagline]="false" />
+    <a routerLink="/" class="brand" [attr.aria-label]="branding.studioName() + ', inicio'" (click)="closeMenu()">
+      <app-logo
+        size="sm"
+        [showTagline]="false"
+        [studioName]="branding.studioName()"
+        [slogan]="branding.slogan()"
+        [imageUrl]="branding.logoHref()" />
     </a>
 
     <button
@@ -43,7 +48,13 @@
 <footer class="site-footer">
   <div class="wrap footer-grid">
     <div>
-      <app-logo size="sm" [showTagline]="true" [inverted]="true" />
+      <app-logo
+        size="sm"
+        [showTagline]="true"
+        [inverted]="true"
+        [studioName]="branding.studioName()"
+        [slogan]="branding.slogan()"
+        [imageUrl]="branding.logoHref()" />
       <p class="footer-claim">Más fuerza. Más movilidad. Más vida.</p>
     </div>
     <div>
@@ -57,5 +68,5 @@
       <p>Lunes a viernes 8:00–20:00 · Sábados 9:00–13:00</p>
     </div>
   </div>
-  <p class="legal">© 2026 BONAFIT Wellness &amp; Longevity. Todos los derechos reservados.</p>
+  <p class="legal">© 2026 {{ branding.studioName() }} {{ branding.slogan() }}. Todos los derechos reservados.</p>
 </footer>

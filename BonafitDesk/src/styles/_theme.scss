@@ -35,19 +35,23 @@ html {
   --bona-color-bg: var(--mat-sys-surface-container);
   --bona-color-surface: var(--mat-sys-surface-container-lowest);
   --bona-color-header: var(--mat-sys-surface-container-high);
-  --bona-color-nested: var(--mat-sys-surface-container-low);
   --bona-color-text: var(--mat-sys-on-surface);
   --bona-color-text-muted: var(--mat-sys-on-surface-variant);
   --bona-color-border: var(--mat-sys-outline);
   --bona-color-primary: var(--mat-sys-primary);
   --bona-color-primary-contrast: var(--mat-sys-on-primary);
+  --bona-color-tint: color-mix(in srgb, var(--bona-color-primary) 8%, var(--bona-color-surface));
+  --bona-color-tint-strong: color-mix(in srgb, var(--bona-color-primary) 14%, var(--bona-color-surface));
+  --bona-color-tint-border: color-mix(in srgb, var(--bona-color-primary) 28%, var(--bona-color-border));
+  --bona-color-rail: var(--bona-color-primary);
+  --bona-color-nested: var(--bona-color-tint);
   --bona-color-secondary: var(--mat-sys-surface-container-lowest);
   --bona-color-secondary-contrast: var(--mat-sys-on-surface);
   --bona-color-accent: var(--mat-sys-tertiary);
   --bona-color-accent-contrast: var(--mat-sys-on-tertiary);
   --bona-color-danger: var(--mat-sys-error);
-  --bona-color-success: #0f766e;
-  --bona-color-warning: #d97706;
+  --bona-color-success: light-dark(#0f766e, #5eead4);
+  --bona-color-warning: light-dark(#d97706, #fbbf24);
   --bona-radius-sm: var(--mat-sys-corner-extra-small, 4px);
   --bona-radius-md: var(--mat-sys-corner-small, 8px);
   --bona-radius-lg: var(--mat-sys-corner-large, 20px);
@@ -62,6 +66,14 @@ html {
   --bona-bottom-nav-height: 4.25rem;
   --bona-page-title-size: 1.35rem;
   --bona-focus-ring: 0 0 0 3px color-mix(in srgb, var(--bona-color-primary) 35%, transparent);
+  --bona-input-max-time: 11rem;
+  --bona-input-max-date: 14rem;
+  --bona-input-max-datetime: 20rem;
+  --bona-input-max-number: 10rem;
+  --bona-input-max-tel: 16rem;
+  --bona-input-max-password: 22rem;
+  --bona-input-max-email: 24rem;
+  --bona-input-max-text: 28rem;
 }
 
 @media (max-width: 48rem) {

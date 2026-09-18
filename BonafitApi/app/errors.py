@@ -40,6 +40,7 @@ class ForbiddenError(Exception):
 BOOKING_ERROR_CODES = {
     "cutoff": "booking.cutoff",
     "slotTaken": "booking.slotTaken",
+    "clientSlotTaken": "booking.clientSlotTaken",
     "oneAppointment": "booking.oneAppointment",
     "serviceNotBookable": "booking.serviceNotBookable",
     "bonoRequired": "booking.bonoRequired",

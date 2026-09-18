@@ -1,7 +1,7 @@
 from dependency_injector.wiring import inject
 from fastapi import APIRouter
 
-from app.schemas import AuthSessionOut, ChangePasswordRequest, LoginRequest
+from app.schemas import AuthMePatch, AuthSessionOut, ChangePasswordRequest, LoginRequest
 from app.wiring import AuthSvc, AuthorizationHeader
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -22,6 +22,16 @@ def logout() -> None:
 @inject
 def me(auth_service: AuthSvc, authorization: AuthorizationHeader = None) -> AuthSessionOut | None:
     return auth_service.me(authorization)
+
+
+@router.patch("/me", response_model=AuthSessionOut)
+@inject
+def update_me(
+    payload: AuthMePatch,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> AuthSessionOut:
+    return auth_service.update_me(authorization, payload)
 
 
 @router.post("/change-password")

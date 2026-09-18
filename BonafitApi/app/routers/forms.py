@@ -14,8 +14,8 @@ def list_forms(
     auth_service: AuthSvc,
     authorization: AuthorizationHeader = None,
 ) -> list[FormOut]:
-    auth_service.require_admin(authorization)
-    return form_service.list_forms()
+    user = auth_service.require_admin(authorization)
+    return form_service.list_forms(user)
 
 
 @router.get("/forms/{form_id}", response_model=FormOut)
@@ -26,8 +26,8 @@ def get_form(
     auth_service: AuthSvc,
     authorization: AuthorizationHeader = None,
 ) -> FormOut:
-    auth_service.require_admin(authorization)
-    return form_service.get_form(form_id)
+    user = auth_service.require_admin(authorization)
+    return form_service.get_form(form_id, user)
 
 
 @router.post("/forms", response_model=FormOut)
@@ -76,8 +76,8 @@ def assign_form(
     auth_service: AuthSvc,
     authorization: AuthorizationHeader = None,
 ) -> list[FormAssignmentOut]:
-    auth_service.require_admin(authorization)
-    return form_service.assign_form(payload)
+    user = auth_service.require_admin(authorization)
+    return form_service.assign_form(payload, user)
 
 
 @router.get("/form-assignments", response_model=list[FormAssignmentOut])
@@ -116,3 +116,16 @@ def submit_assignment(
 ) -> FormAssignmentOut:
     user = auth_service.require_not_must_change(authorization)
     return form_service.submit_assignment(assignment_id, payload, user)
+
+
+@router.put("/form-assignments/{assignment_id}/draft", response_model=FormAssignmentOut)
+@inject
+def save_assignment_draft(
+    assignment_id: str,
+    payload: SubmitFormIn,
+    form_service: FormSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> FormAssignmentOut:
+    user = auth_service.require_not_must_change(authorization)
+    return form_service.save_assignment_draft(assignment_id, payload, user)

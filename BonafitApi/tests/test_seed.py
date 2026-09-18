@@ -1,7 +1,7 @@
 import pytest
 
 from app.database import Database
-from app.models import User
+from app.models import Form, FormAssignment, User
 from app.roles import UserRole
 from scripts.seed import CONFIRM_PHRASE, main, prompt_force_confirmation, seed_database
 
@@ -45,6 +45,12 @@ def test_seed_then_skip() -> None:
     assert seed_database(database) == "Database already seeded."
     with database.session() as db:
         assert db.get(User, "user-extra") is not None
+        form = db.get(Form, "form-1")
+        assert form is not None
+        assert any(question.type == "heading" for question in form.questions)
+        completed = db.get(FormAssignment, "fa-2")
+        assert completed is not None
+        assert any(answer.value == "Molestia de rodilla" for answer in completed.answers)
 
 
 def test_force_aborts_without_confirmation(capsys: pytest.CaptureFixture[str]) -> None:

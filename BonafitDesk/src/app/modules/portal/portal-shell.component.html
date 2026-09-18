@@ -1,12 +1,16 @@
 <app-bona-shell-app
-  [brand]="literals.brand"
+  [brand]="brandTheme.studioName()"
+  [brandLogoUrl]="brandTheme.logoHref()"
   [brandSubtitle]="literals.roleSubtitle"
   [userName]="userName()"
-  [navItems]="navItems"
-  [menuItems]="menuItems"
+  [navItems]="navItems()"
+  [menuItems]="menuItems()"
   [logoutLabel]="literals.logout"
   [menuLabel]="literals.menu"
   [profileMenuLabel]="literals.profileMenu"
+  [colorSchemeLabel]="colorSchemeLabel()"
+  [colorSchemeIcon]="colorSchemeIcon()"
+  (colorSchemeToggle)="brandTheme.cycleColorScheme()"
   (logout)="onLogout()">
   <router-outlet />
 </app-bona-shell-app>

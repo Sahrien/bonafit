@@ -1,5 +1,40 @@
 :host {
   display: block;
+  width: 100%;
+  max-width: var(--bona-input-max, 100%);
+}
+
+:host([data-input-type='time']) {
+  --bona-input-max: var(--bona-input-max-time);
+}
+
+:host([data-input-type='date']) {
+  --bona-input-max: var(--bona-input-max-date);
+}
+
+:host([data-input-type='datetime-local']) {
+  --bona-input-max: var(--bona-input-max-datetime);
+}
+
+:host([data-input-type='number']) {
+  --bona-input-max: var(--bona-input-max-number);
+}
+
+:host([data-input-type='tel']) {
+  --bona-input-max: var(--bona-input-max-tel);
+}
+
+:host([data-input-type='password']) {
+  --bona-input-max: var(--bona-input-max-password);
+}
+
+:host([data-input-type='email']) {
+  --bona-input-max: var(--bona-input-max-email);
+}
+
+:host-context(.login) {
+  --bona-input-max: 100%;
+  max-width: 100%;
 }
 
 .bona-input {

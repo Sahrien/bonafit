@@ -10,11 +10,11 @@ import {
   signal,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { TranslateService } from '@ngx-translate/core';
 import { MatIconButton } from '@angular/material/button';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
-import { PASSWORD_FIELD_LITERALS } from '../../i18n/es';
 
 export type BonaInputType =
   | 'text'
@@ -32,6 +32,9 @@ export type BonaInputType =
   imports: [MatFormField, MatLabel, MatInput, MatIconButton, MatIcon, MatSuffix],
   templateUrl: './bona-input-text-field.component.html',
   styleUrl: './bona-input-text-field.component.scss',
+  host: {
+    '[attr.data-input-type]': 'type',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
@@ -43,6 +46,7 @@ export type BonaInputType =
 })
 export class BonaInputTextFieldComponent implements ControlValueAccessor {
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly translate = inject(TranslateService);
 
   @Input() label = '';
   @Input() placeholder = '';
@@ -54,7 +58,6 @@ export class BonaInputTextFieldComponent implements ControlValueAccessor {
 
   @Output() valueChange = new EventEmitter<string>();
 
-  readonly literals = PASSWORD_FIELD_LITERALS;
   readonly revealed = signal(false);
 
   private onChange: (value: string) => void = () => undefined;
@@ -69,7 +72,7 @@ export class BonaInputTextFieldComponent implements ControlValueAccessor {
   }
 
   revealLabel(): string {
-    return this.revealed() ? this.literals.hide : this.literals.show;
+    return this.translate.instant(this.revealed() ? 'password.hide' : 'password.show');
   }
 
   toggleReveal(): void {

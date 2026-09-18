@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     smtp_from: str = ""
     smtp_starttls: bool = True
     timezone: str = "Europe/Madrid"
+    uploads_dir: str = "uploads"
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -1,16 +1,3 @@
-export const BONOS_LITERALS = {
-  title: 'Bonos contratados',
-  subtitle: 'Sesiones que tienes disponibles en el estudio',
-  emptyTitle: 'Sin bonos todavía',
-  catalogCta: 'Ver catálogo',
-  loading: 'Cargando tus bonos…',
-  loadError: 'No se pudieron cargar tus bonos.',
-  noSession: 'No hay un cliente asociado a esta sesión.',
-  empty: 'Todavía no tienes bonos contratados.',
-  bono: 'Bono',
-  gift: 'Regalo',
-  remainingSessions: 'Sesiones restantes',
-  purchasedAt: 'Contratado',
-  expiresAt: 'Caducidad',
-  noExpiry: 'Sin caducidad',
-} as const;
+import es from '../../../../assets/i18n/es.json';
+
+export const BONOS_LITERALS = es.bonos;

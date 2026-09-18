@@ -1,4 +1,4 @@
-<app-bona-page [title]="literals.title" [subtitle]="literals.subtitle" [loading]="loading()">
+<app-bona-page [title]="literals.title" [subtitle]="subtitle()" [loading]="loading()">
   <app-bona-button
     bonaPageActions
     [text]="literals.newAppointment"
@@ -6,30 +6,56 @@
 
   <section class="calendar-today" [attr.aria-label]="literals.todayTitle">
     <header class="calendar-today__header">
-      <h2>{{ literals.todayTitle }}</h2>
-      <span>{{ todayCount() }}</span>
+      <div class="calendar-today__heading">
+        <h2>{{ literals.todayTitle }}</h2>
+        <p class="calendar-today__total">{{ todayTotalLabel() }}</p>
+      </div>
+      <div
+        class="calendar-today__filters"
+        role="group"
+        [attr.aria-label]="literals.trainerFilter">
+        <button
+          type="button"
+          class="calendar-today__chip"
+          [class.is-active]="allTrainersSelected()"
+          (click)="selectAllTrainers()">
+          {{ literals.allTrainers }}
+        </button>
+        @for (trainer of catalogTrainers(); track trainer.id) {
+          <button
+            type="button"
+            class="calendar-today__chip"
+            [class.is-active]="isTrainerFilterActive(trainer.id)"
+            (click)="toggleTrainer(trainer.id)">
+            {{ trainer.name }}
+          </button>
+        }
+      </div>
     </header>
     @if (todayCount() === 0) {
-      <p class="calendar-today__empty">{{ literals.emptyToday }}</p>
+      <p class="calendar-today__empty">
+        {{ allTrainersSelected() ? literals.emptyToday : literals.emptyTodayFilter }}
+      </p>
     } @else {
       <ul class="calendar-today__list">
-        @for (group of todayGroups(); track group.time) {
+        @for (group of todayGroups(); track group.trainerId) {
           <li class="calendar-today__group">
-            <p class="calendar-today__hour">{{ group.time }}</p>
-            @for (trainer of group.trainers; track trainer.trainerId) {
-              <p class="calendar-today__trainer">{{ trainer.trainerName }}</p>
-              @for (row of trainer.items; track row.id) {
-                <button
-                  type="button"
-                  class="calendar-today__item"
-                  [attr.data-status]="row.statusKey"
-                  (click)="onTodayClick(row.id)">
-                  <span class="calendar-today__copy">
-                    <strong>{{ row.title }}</strong>
-                    <em>{{ row.status }}</em>
-                  </span>
-                </button>
-              }
+            <h3 class="calendar-today__trainer">
+              <span class="calendar-today__trainer-name">{{ group.trainerName }}</span>
+              <span class="calendar-today__trainer-count">{{ trainerCountLabel(group.items.length) }}</span>
+            </h3>
+            @for (row of group.items; track row.id) {
+              <button
+                type="button"
+                class="calendar-today__item"
+                [attr.data-status]="row.statusKey"
+                (click)="onTodayClick(row.id)">
+                <span class="calendar-today__time">{{ row.time }}</span>
+                <span class="calendar-today__copy">
+                  <strong>{{ row.title }}</strong>
+                  <em>{{ row.status }}</em>
+                </span>
+              </button>
             }
           </li>
         }
@@ -40,34 +66,14 @@
   <div class="calendar-layout" [class.calendar-layout--panel]="formOpen()">
     <app-bona-tabs
       class="calendar-view-tabs"
-      [tabs]="viewTabs"
+      [tabs]="viewTabs()"
       [active]="view()"
       [label]="literals.viewLabel"
       (activeChange)="onView($event)" />
-    <div
-      class="calendar-trainer-filters"
-      role="group"
-      [attr.aria-label]="literals.trainerFilter">
-      <button
-        type="button"
-        class="calendar-trainer-filters__chip"
-        [class.is-active]="allTrainersSelected()"
-        (click)="selectAllTrainers()">
-        {{ literals.allTrainers }}
-      </button>
-      @for (trainer of catalogTrainers(); track trainer.id) {
-        <button
-          type="button"
-          class="calendar-trainer-filters__chip"
-          [class.is-active]="isTrainerFilterActive(trainer.id)"
-          (click)="toggleTrainer(trainer.id)">
-          {{ trainer.name }}
-        </button>
-      }
-    </div>
     <div class="calendar-layout__main">
       @if (view() === 'week') {
         <app-bona-calendar
+          [locale]="language.language()"
           [view]="view()"
           [events]="events()"
           (eventClick)="onEventClick($event)"
@@ -79,12 +85,13 @@
           <app-bona-button [text]="literals.dayToday" variant="secondary" (action)="onFocusToday()" />
           <app-bona-button [text]="literals.dayNext" variant="secondary" (action)="onNextDay()" />
         </div>
-        <div class="calendar-day-columns">
+        <div class="calendar-day-trainers">
           @for (trainer of visibleTrainers(); track trainer.id) {
-            <section class="calendar-day-column">
+            <section class="calendar-day-trainer">
               <h3>{{ trainer.name }}</h3>
               <app-bona-calendar
                 view="day"
+                [locale]="language.language()"
                 [showHeader]="false"
                 [focusDate]="focusDate()"
                 [events]="eventsForTrainer(trainer.id)"

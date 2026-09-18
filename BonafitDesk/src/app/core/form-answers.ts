@@ -1,4 +1,4 @@
-import { FormAnswerDto, FormQuestionDto } from '../models/form.dto';
+import { FormAnswerDto, FormQuestionDto, isFormHeading } from '../models/form.dto';
 
 export const FORM_YES_VALUE = 'yes';
 export const FORM_NO_VALUE = 'no';
@@ -21,6 +21,7 @@ export function mapToAnswers(
   values: Record<string, string>,
 ): FormAnswerDto[] {
   return questions
+    .filter((question) => !isFormHeading(question.type))
     .map((question) => ({
       questionId: question.id,
       value: (values[question.id] ?? '').trim(),
@@ -100,7 +101,7 @@ export function missingRequiredAnswers(
   const values = answersToMap(answers);
   return questions
     .filter((question) => {
-      if (!question.required) {
+      if (!question.required || isFormHeading(question.type)) {
         return false;
       }
       const raw = (values[question.id] ?? '').trim();

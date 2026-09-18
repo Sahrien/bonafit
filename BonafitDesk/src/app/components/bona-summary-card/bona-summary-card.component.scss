@@ -8,8 +8,9 @@
   align-items: flex-start;
   gap: var(--bona-space-2);
   padding: var(--bona-space-4);
-  background: var(--bona-color-surface);
-  border: 1px solid var(--bona-color-border);
+  background: var(--bona-color-tint);
+  border: 1px solid var(--bona-color-tint-border);
+  border-left: 4px solid var(--bona-color-rail);
   border-radius: var(--bona-radius-lg);
   box-shadow: var(--bona-shadow-card);
 }
@@ -35,6 +36,18 @@
   color: var(--bona-color-text-muted);
 }
 
-.bona-summary-card app-bona-button {
+.bona-summary-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bona-space-2);
   margin-top: var(--bona-space-2);
+
+  &:not(:has(*)) {
+    display: none;
+    margin: 0;
+  }
+}
+
+.bona-summary-card app-bona-button {
+  margin: 0;
 }

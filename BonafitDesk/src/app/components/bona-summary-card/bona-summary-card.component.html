@@ -9,7 +9,15 @@
   @if (hint) {
     <p class="bona-summary-card__hint">{{ hint }}</p>
   }
-  @if (actionLabel) {
-    <app-bona-button [text]="actionLabel" [variant]="actionVariant" (action)="action.emit()" />
-  }
+  <div class="bona-summary-card__actions">
+    @for (item of actions; track item.name) {
+      <app-bona-button
+        [text]="item.label"
+        [variant]="item.variant ?? 'primary'"
+        (action)="cardAction.emit(item.name)" />
+    }
+    @if (actionLabel) {
+      <app-bona-button [text]="actionLabel" [variant]="actionVariant" (action)="action.emit()" />
+    }
+  </div>
 </article>

@@ -18,7 +18,7 @@ import { BonaTabItem, BonaTabsComponent } from '../../components/bona-tabs/bona-
 import { BonaFieldDefinition, BonaFieldOption } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { ApiBusinessError } from '../../core/api-business.error';
-import { addMinutes, canAdminCancelAppointment, isBonoUsable, isGiftCredit, overlappingOccupancy, pickPreferredBono } from '../../core/booking';
+import { addMinutes, canAdminCancelAppointment, isBonoUsable, isGiftCredit, pickPreferredBono } from '../../core/booking';
 import { AppointmentDto, AppointmentStatus, AppointmentWriteDto } from '../../models/appointment.dto';
 import { BonoDto } from '../../models/bono.dto';
 import { BookingSettingsDto } from '../../models/booking-settings.dto';
@@ -26,12 +26,15 @@ import { ClientBonoDto } from '../../models/client-bono.dto';
 import { ClientDto } from '../../models/client.dto';
 import { ServiceDto } from '../../models/service.dto';
 import { TrainerDto } from '../../models/trainer.dto';
+import { TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ServicesApiService } from '../../services/services-api.service';
+import { BrandThemeService } from '../../core/brand-theme.service';
+import { injectI18n } from '../../core/i18n/inject-i18n';
+import { LanguageService } from '../../core/i18n/language.service';
 import { fromDatetimeLocalValue, toDatetimeLocalValue } from './calendar-datetime';
-import { BOOKING_ERROR_LITERALS, CALENDAR_LITERALS } from './calendar.literals';
 
 const EMPTY_FORM: BonaFormValue = {
   trainerId: '',
@@ -45,12 +48,12 @@ const EMPTY_FORM: BonaFormValue = {
   notes: '',
 };
 
-const TRAINER_COLORS = [
-  'var(--bona-color-primary)',
-  'var(--bona-color-accent)',
-  'var(--bona-color-success)',
-  'var(--bona-color-warning)',
-] as const;
+const STATUS_COLORS: Record<AppointmentStatus, string> = {
+  pending: 'var(--bona-color-warning)',
+  confirmed: 'var(--bona-color-success)',
+  completed: 'color-mix(in srgb, var(--bona-color-text-muted) 55%, var(--bona-color-surface))',
+  cancelled: 'color-mix(in srgb, var(--bona-color-text-muted) 40%, var(--bona-color-surface))',
+};
 
 @Component({
   selector: 'app-calendar',
@@ -79,12 +82,21 @@ export class CalendarComponent {
   private readonly confirm = inject(BonaConfirm);
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly brandTheme = inject(BrandThemeService);
+  readonly language = inject(LanguageService);
+  private readonly translate = inject(TranslateService);
 
-  readonly literals = CALENDAR_LITERALS;
-  readonly viewTabs: BonaTabItem[] = [
-    { id: 'week', label: CALENDAR_LITERALS.week },
-    { id: 'day', label: CALENDAR_LITERALS.day },
-  ];
+  private readonly i18n = injectI18n<Record<string, string>>('calendar');
+  get literals() {
+    return this.i18n();
+  }
+  readonly subtitle = computed(() =>
+    this.literals.subtitle.replace('{{studio}}', this.brandTheme.studioName()),
+  );
+  readonly viewTabs = computed<BonaTabItem[]>(() => [
+    { id: 'week', label: this.literals.week },
+    { id: 'day', label: this.literals.day },
+  ]);
   readonly view = signal<BonaCalendarView>('week');
   readonly selectedTrainerIds = signal<string[]>([]);
   readonly focusDate = signal(new Date());
@@ -116,7 +128,7 @@ export class CalendarComponent {
   readonly allTrainersSelected = computed(() => this.selectedTrainerIds().length === 0);
 
   readonly dayTitle = computed(() =>
-    this.focusDate().toLocaleDateString('es-ES', {
+    this.focusDate().toLocaleDateString(this.language.locale(), {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -132,47 +144,44 @@ export class CalendarComponent {
 
   readonly todayGroups = computed(() => {
     const todayKey = this.dayKey(new Date());
+    const visible = new Set(this.visibleTrainers().map((trainer) => trainer.id));
     const rows = this.appointments()
       .filter(
         (appointment) =>
           appointment.status !== 'cancelled' &&
           appointment.status !== 'completed' &&
+          visible.has(appointment.trainerId) &&
           this.dayKey(new Date(appointment.startsAt)) === todayKey,
       )
       .sort((left, right) => {
-        const byTime = new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime();
-        if (byTime !== 0) {
-          return byTime;
+        const byTrainer = this.trainerName(left.trainerId).localeCompare(
+          this.trainerName(right.trainerId),
+          this.language.locale(),
+        );
+        if (byTrainer !== 0) {
+          return byTrainer;
         }
-        return this.trainerName(left.trainerId).localeCompare(this.trainerName(right.trainerId), 'es');
+        return new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime();
       });
     const groups: {
-      time: string;
-      trainers: {
-        trainerId: string;
-        trainerName: string;
-        items: { id: string; title: string; status: string; statusKey: AppointmentStatus }[];
-      }[];
+      trainerId: string;
+      trainerName: string;
+      items: { id: string; time: string; title: string; status: string; statusKey: AppointmentStatus }[];
     }[] = [];
     for (const appointment of rows) {
-      const time = this.formatTime(appointment.startsAt);
-      let group = groups.find((item) => item.time === time);
+      let group = groups.find((item) => item.trainerId === appointment.trainerId);
       if (!group) {
-        group = { time, trainers: [] };
-        groups.push(group);
-      }
-      let trainerGroup = group.trainers.find((item) => item.trainerId === appointment.trainerId);
-      if (!trainerGroup) {
-        trainerGroup = {
+        group = {
           trainerId: appointment.trainerId,
           trainerName: this.trainerName(appointment.trainerId),
           items: [],
         };
-        group.trainers.push(trainerGroup);
+        groups.push(group);
       }
-      trainerGroup.items.push({
+      group.items.push({
         id: appointment.id,
-        title: this.toCalendarEvent(appointment).title,
+        time: this.formatTime(appointment.startsAt),
+        title: this.appointmentTitle(appointment, { includeTrainer: false }),
         status: this.statusLabel(appointment.status),
         statusKey: appointment.status,
       });
@@ -181,11 +190,10 @@ export class CalendarComponent {
   });
 
   readonly todayCount = computed(() =>
-    this.todayGroups().reduce(
-      (total, group) => total + group.trainers.reduce((sum, trainer) => sum + trainer.items.length, 0),
-      0,
-    ),
+    this.todayGroups().reduce((total, group) => total + group.items.length, 0),
   );
+
+  readonly todayTotalLabel = computed(() => this.formatAppointmentCount(this.todayCount(), true));
 
   readonly editorTitle = computed(() =>
     this.editingId() ? this.literals.editAppointment : this.literals.newAppointment,
@@ -278,6 +286,10 @@ export class CalendarComponent {
       this.view.set('day');
     }
     this.loadCatalog();
+  }
+
+  trainerCountLabel(count: number): string {
+    return this.formatAppointmentCount(count, false);
   }
 
   onView(view: string): void {
@@ -553,10 +565,21 @@ export class CalendarComponent {
   }
 
   private formatTime(value: string): string {
-    return new Date(value).toLocaleTimeString('es-ES', {
+    return new Date(value).toLocaleTimeString(this.language.locale(), {
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  private formatAppointmentCount(count: number, total: boolean): string {
+    if (total) {
+      return count === 1
+        ? this.literals.todayTotalOne
+        : this.literals.todayTotalOther.replace('{{count}}', String(count));
+    }
+    return count === 1
+      ? this.literals.todayTrainerOne
+      : this.literals.todayTrainerOther.replace('{{count}}', String(count));
   }
 
   private clientLabel(client: ClientDto): string {
@@ -627,48 +650,42 @@ export class CalendarComponent {
 
   private toCalendarEvent(appointment: AppointmentDto): BonaCalendarEvent {
     const client = this.clients().find((item) => item.id === appointment.clientId);
-    const service = this.services().find((item) => item.id === appointment.serviceId);
     const trainer = this.trainers().find((item) => item.id === appointment.trainerId);
-    const parts = [
-      client ? this.clientLabel(client) : appointment.clientId,
-      service ? this.serviceLabel(service) : appointment.serviceId,
-    ];
-    if (appointment.isGift) {
-      parts.push(this.literals.gift);
-    }
-    parts.push(this.statusLabel(appointment.status));
-    const occupancy = overlappingOccupancy(
-      this.appointments(),
-      appointment.trainerId,
-      new Date(appointment.startsAt),
-      new Date(appointment.endsAt),
-    );
-    const capacity = trainer?.concurrentCapacity ?? 1;
-    if (occupancy > 1) {
-      parts.push(`${occupancy}/${capacity}`);
-    }
     return {
       id: appointment.id,
-      title: parts.join(' · '),
+      title: this.appointmentTitle(appointment),
       start: appointment.startsAt,
       end: appointment.endsAt,
       trainer: trainer?.name,
       client: client ? this.clientLabel(client) : undefined,
       location: appointment.location,
       resourceId: appointment.trainerId,
-      color: this.trainerColor(appointment.trainerId),
+      color: STATUS_COLORS[appointment.status],
       classNames: [`bona-cal-status-${appointment.status}`],
+      interactive: true,
     };
+  }
+
+  private appointmentTitle(
+    appointment: AppointmentDto,
+    options?: { includeTrainer?: boolean },
+  ): string {
+    const client = this.clients().find((item) => item.id === appointment.clientId);
+    const service = this.services().find((item) => item.id === appointment.serviceId);
+    const parts = [
+      client ? this.clientLabel(client) : appointment.clientId,
+      service ? this.serviceLabel(service) : appointment.serviceId,
+    ];
+    const includeTrainer =
+      options?.includeTrainer ?? (this.view() === 'week' && this.visibleTrainers().length > 1);
+    if (includeTrainer) {
+      parts.push(this.trainerName(appointment.trainerId));
+    }
+    return parts.join(' · ');
   }
 
   private trainerName(trainerId: string): string {
     return this.trainers().find((trainer) => trainer.id === trainerId)?.name ?? trainerId;
-  }
-
-  private trainerColor(trainerId: string): string {
-    const index = this.trainers().findIndex((trainer) => trainer.id === trainerId);
-    const paletteIndex = index >= 0 ? index % TRAINER_COLORS.length : 0;
-    return TRAINER_COLORS[paletteIndex];
   }
 
   private shiftFocusDate(days: number): void {
@@ -751,7 +768,9 @@ export class CalendarComponent {
 
   private messageFor(error: unknown): string {
     if (error instanceof ApiBusinessError) {
-      return BOOKING_ERROR_LITERALS[error.code] ?? this.literals.errorSave;
+      const key = `calendar.errors.${error.code}`;
+      const translated = this.translate.instant(key);
+      return translated !== key ? translated : this.literals.errorSave;
     }
     return this.literals.errorSave;
   }

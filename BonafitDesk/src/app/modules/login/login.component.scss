@@ -18,7 +18,8 @@
   max-width: 24rem;
   padding: var(--bona-space-6) var(--bona-space-5);
   background: var(--bona-color-surface);
-  border: 1px solid var(--bona-color-border);
+  border: 1px solid var(--bona-color-tint-border);
+  border-left: 4px solid var(--bona-color-rail);
   border-radius: var(--bona-radius-lg);
   box-shadow: var(--bona-shadow-card);
 }
@@ -31,6 +32,11 @@
   margin: 0 0 var(--bona-space-5);
   padding-bottom: var(--bona-space-5);
   border-bottom: 1px solid var(--bona-color-border);
+}
+
+.login__lang {
+  align-self: flex-end;
+  margin-bottom: var(--bona-space-3);
 }
 
 .login__slogan {
@@ -49,6 +55,14 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1.1;
+  color: var(--bona-color-primary);
+}
+
+.login__logo {
+  width: 4.5rem;
+  height: 4.5rem;
+  margin-top: var(--bona-space-3);
+  object-fit: contain;
 }
 
 .login__title,

@@ -29,10 +29,25 @@
   gap: var(--bona-space-2);
 }
 
+.bona-page__body {
+  display: grid;
+}
+
+.bona-page__skeleton,
+.bona-page__content {
+  grid-area: 1 / 1;
+}
+
 .bona-page__skeleton {
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: var(--bona-space-3);
+}
+
+.bona-page__content--loading {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .bona-page__skeleton-label {

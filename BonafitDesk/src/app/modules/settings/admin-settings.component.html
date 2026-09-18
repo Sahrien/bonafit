@@ -13,12 +13,59 @@
         <dd>{{ userEmail() }}</dd>
       }
     </dl>
+    <h3>{{ literals.language }}</h3>
+    <app-bona-language-switcher />
+  </section>
+
+  <section class="settings-section">
+    <h2>{{ literals.brandTitle }}</h2>
+    <div class="settings-brand-preview" [style.--preview-primary]="primaryHex()">
+      <p class="settings-brand-preview__kicker">{{ literals.preview }}</p>
+      <p class="settings-brand-preview__name">{{ brandForm()['studioName'] || brandTheme.studioName() }}</p>
+      <p class="settings-brand-preview__slogan">{{ brandForm()['slogan'] }}</p>
+    </div>
+    <app-bona-form
+      [fields]="brandFields()"
+      [value]="brandForm()"
+      [submitText]="literals.save"
+      (valueChange)="onBrandChange($event)"
+      (submitted)="onSaveBrand($event)" />
+    <div class="settings-colors">
+      <label class="settings-color">
+        <span>{{ literals.primaryColor }}</span>
+        <input type="color" [value]="primaryHex()" (input)="onPrimaryColor($event)" />
+      </label>
+      <label class="settings-color">
+        <span>{{ literals.accentColor }}</span>
+        <input type="color" [value]="accentHex()" (input)="onAccentColor($event)" />
+      </label>
+      <label class="settings-color">
+        <span>{{ literals.surfaceColor }}</span>
+        <input type="color" [value]="surfaceHex()" (input)="onSurfaceColor($event)" />
+      </label>
+    </div>
+    <div class="settings-uploads">
+      <label class="settings-upload">
+        <span>{{ literals.logo }}</span>
+        @if (logoHref()) {
+          <img [src]="logoHref()" [alt]="literals.logo" />
+        }
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onLogoSelected($event)" />
+      </label>
+      <label class="settings-upload">
+        <span>{{ literals.favicon }}</span>
+        @if (faviconHref()) {
+          <img [src]="faviconHref()" [alt]="literals.favicon" />
+        }
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onFaviconSelected($event)" />
+      </label>
+    </div>
   </section>
 
   <section class="settings-section">
     <h2>{{ literals.bookingTitle }}</h2>
     <app-bona-form
-      [fields]="bookingFields"
+      [fields]="bookingFields()"
       [value]="bookingForm()"
       [submitText]="literals.save"
       (valueChange)="onBookingChange($event)"
@@ -27,6 +74,8 @@
 
   <section class="settings-section">
     <h2>{{ literals.passwordTitle }}</h2>
+    <h3>{{ literals.language }}</h3>
+    <app-bona-language-switcher />
     <app-password-change-form (saved)="onPasswordSaved()" />
   </section>
 </app-bona-page>

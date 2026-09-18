@@ -1,9 +1,10 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AUTH_PATHS } from '../../core/auth/auth.paths';
-import { LOGIN_LITERALS } from '../../i18n/es';
+import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { AuthApiService } from '../../services/auth-api.service';
 import { MOCK_ACCOUNTS, createMockSession } from '../../testing/fixtures';
 import { LoginComponent } from './login.component';
@@ -19,6 +20,8 @@ describe('LoginComponent', () => {
       imports: [LoginComponent],
       providers: [
         provideNoopAnimations(),
+        provideHttpClient(),
+        provideDeskTranslate(),
         provideRouter([]),
         { provide: AuthApiService, useValue: auth },
       ],

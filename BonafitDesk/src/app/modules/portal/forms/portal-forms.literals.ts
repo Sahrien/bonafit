@@ -1,30 +1,3 @@
-export const PORTAL_FORMS_LITERALS = {
-  title: 'Formularios',
-  subtitle: 'Cuestionarios que te ha enviado el estudio',
-  emptyTitle: 'No hay formularios pendientes',
-  loading: 'Cargando…',
-  empty: 'No tienes formularios',
-  loadError: 'No se han podido cargar los formularios.',
-  noSession: 'No hay sesión de cliente.',
-  formTitle: 'Formulario',
-  status: 'Estado',
-  statusPending: 'Pendiente',
-  statusCompleted: 'Completado',
-  assignedAt: 'Recibido',
-  open: 'Abrir',
-  answer: 'Responder',
-  view: 'Ver',
-  submit: 'Enviar',
-  back: 'Volver',
-  submitted: 'Respuestas enviadas.',
-  alreadySubmitted: 'Este formulario ya está respondido.',
-  requiredError: 'Completa las preguntas obligatorias.',
-  saveError: 'No se han podido enviar las respuestas.',
-  yes: 'Sí',
-  no: 'No',
-  emptyAnswer: 'Sin respuesta',
-  firstName: 'Nombre',
-  lastName: 'Apellidos',
-  moveUp: 'Subir',
-  moveDown: 'Bajar',
-} as const;
+import es from '../../../../assets/i18n/es.json';
+
+export const PORTAL_FORMS_LITERALS = es.portalForms;

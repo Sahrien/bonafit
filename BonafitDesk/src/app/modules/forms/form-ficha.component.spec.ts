@@ -98,6 +98,7 @@ describe('FormFichaComponent', () => {
 
     const text = harness.routeNativeElement?.textContent ?? '';
     expect(text).toContain(FORMS_LITERALS.answersTitle);
+    expect(text).toContain('Salud');
     expect(text).toContain('Molestia de rodilla');
   });
 
@@ -120,6 +121,7 @@ describe('FormFichaComponent', () => {
     component.onTitleChange('Borrador');
     component.onAddQuestion();
     const question = component.questions()[0];
+    expect(question.required).toBeTrue();
     component.onPromptChange(question.id, '¿Cómo te llamas?');
     harness.fixture.detectChanges();
 
@@ -138,5 +140,20 @@ describe('FormFichaComponent', () => {
     expect(harness.routeNativeElement?.querySelector('app-form-fill-view')).toBeTruthy();
     expect(formsApi.createForm).not.toHaveBeenCalled();
     expect(formsApi.assignForm).not.toHaveBeenCalled();
+  });
+
+  it('adds a collapsed heading section to the template', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/forms/new', FormFichaComponent);
+
+    component.onAddHeading();
+    harness.fixture.detectChanges();
+
+    expect(component.questions()[0].type).toBe('heading');
+    expect(component.questions()[0].required).toBeFalse();
+    const text = harness.routeNativeElement?.textContent ?? '';
+    expect(text).toContain(FORMS_LITERALS.templateHint);
+    expect(text).toContain(FORMS_LITERALS.sectionKind);
+    expect(text).toContain(FORMS_LITERALS.addHeading);
   });
 });

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { EMPTY, filter, forkJoin, switchMap, take } from 'rxjs';
@@ -16,7 +16,13 @@ import { BonaPageComponent } from '../../../components/bona-page/bona-page.compo
 import { BonaSummaryCardComponent } from '../../../components/bona-summary-card/bona-summary-card.component';
 import { BonaToast } from '../../../components/bona-toast/bona-toast.service';
 import { ApiBusinessError } from '../../../core/api-business.error';
-import { canCancelAppointment, isActiveClientAppointment, isBonoUsable, isGiftCredit } from '../../../core/booking';
+import {
+  canCancelAppointment,
+  hasActiveClientAppointmentForService,
+  isBonoUsable,
+  isGiftCredit,
+  pickNextClientAppointment,
+} from '../../../core/booking';
 import {
   AppointmentDto,
   AppointmentStatus,
@@ -27,11 +33,13 @@ import { BookingSettingsDto } from '../../../models/booking-settings.dto';
 import { ClientBonoDto } from '../../../models/client-bono.dto';
 import { ServiceDto } from '../../../models/service.dto';
 import { TrainerDto } from '../../../models/trainer.dto';
+import { TranslateService } from '@ngx-translate/core';
+import { injectI18n } from '../../../core/i18n/inject-i18n';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { AuthApiService } from '../../../services/auth-api.service';
 import { CalendarApiService } from '../../../services/calendar-api.service';
 import { ClientsApiService } from '../../../services/clients-api.service';
 import { ServicesApiService } from '../../../services/services-api.service';
-import { PORTAL_AGENDA_LITERALS, PORTAL_BOOKING_ERROR_LITERALS } from './portal-agenda.literals';
 
 @Component({
   selector: 'app-portal-agenda',
@@ -45,9 +53,6 @@ import { PORTAL_AGENDA_LITERALS, PORTAL_BOOKING_ERROR_LITERALS } from './portal-
   ],
   templateUrl: './portal-agenda.component.html',
   styleUrl: './portal-agenda.component.scss',
-  host: {
-    '[class.portal-agenda--booking]': 'bookingOpen()',
-  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PortalAgendaComponent {
@@ -59,14 +64,19 @@ export class PortalAgendaComponent {
   private readonly toast = inject(BonaToast);
   private readonly confirm = inject(BonaConfirm);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly language = inject(LanguageService);
+  private readonly translate = inject(TranslateService);
 
-  readonly literals = PORTAL_AGENDA_LITERALS;
+  private readonly i18n = injectI18n<Record<string, string>>('agenda');
+  get literals() {
+    return this.i18n();
+  }
   readonly loading = signal(true);
   readonly error = signal('');
   readonly feedback = signal('');
   readonly filterValue = signal<BonaFormValue>({ serviceId: '', trainerId: '' });
   readonly changingId = signal<string | null>(null);
-  readonly bookingOpen = signal(false);
+  readonly selectedDayKey = signal('');
 
   private clientId = '';
   private readonly trainers = signal<TrainerDto[]>([]);
@@ -77,7 +87,7 @@ export class PortalAgendaComponent {
   private readonly slots = signal<AvailabilitySlotDto[]>([]);
   private readonly bookingSettings = signal<BookingSettingsDto | null>(null);
 
-  readonly bookableServices = computed(() => {
+  readonly contractedBookableServices = computed(() => {
     const now = new Date();
     return this.services().filter((service) => {
       if (!service.bookableByClient) {
@@ -91,6 +101,31 @@ export class PortalAgendaComponent {
         return bono?.serviceId === service.id && isBonoUsable(row, now);
       });
     });
+  });
+
+  readonly bookableServices = computed(() => {
+    const changingId = this.changingId();
+    if (changingId) {
+      const appointment = this.appointments().find((row) => row.id === changingId);
+      const service = this.services().find((item) => item.id === appointment?.serviceId);
+      if (service?.bookableByClient && service.active) {
+        return [service];
+      }
+      return [];
+    }
+    return this.contractedBookableServices().filter(
+      (service) => !hasActiveClientAppointmentForService(this.appointments(), service.id),
+    );
+  });
+
+  readonly bookingBlockedHint = computed(() => {
+    if (this.bookableServices().length > 0) {
+      return '';
+    }
+    if (this.contractedBookableServices().length === 0) {
+      return this.literals.noService;
+    }
+    return this.literals.allServicesBooked;
   });
 
   readonly filterFields = computed((): BonaFieldDefinition[] => [
@@ -130,12 +165,7 @@ export class PortalAgendaComponent {
     return this.literals.remainingHint.replace('{{count}}', String(count));
   });
 
-  readonly nextAppointment = computed(() => {
-    const now = Date.now();
-    return this.appointments()
-      .filter((row) => isActiveClientAppointment(row.status) && new Date(row.startsAt).getTime() >= now)
-      .sort((left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime())[0];
-  });
+  readonly nextAppointment = computed(() => pickNextClientAppointment(this.appointments(), new Date()));
 
   readonly nextAppointmentTitle = computed(() => {
     const appointment = this.nextAppointment();
@@ -148,10 +178,31 @@ export class PortalAgendaComponent {
   readonly nextAppointmentMeta = computed(() => {
     const appointment = this.nextAppointment();
     if (!appointment) {
-      return this.literals.noNextHint;
+      if (this.contractedBookableServices().length === 0) {
+        return this.literals.noNextHint;
+      }
+      if (this.bookableServices().length === 0) {
+        return this.literals.allServicesBooked;
+      }
+      return this.literals.noNextPickSlot;
     }
     const trainer = this.trainers().find((item) => item.id === appointment.trainerId)?.name ?? appointment.trainerId;
     return `${this.formatDate(appointment.startsAt)} · ${trainer} · ${this.statusLabel(appointment.status)}`;
+  });
+
+  readonly canCancelNext = computed(() => {
+    const appointment = this.nextAppointment();
+    if (!appointment) {
+      return false;
+    }
+    return this.canOfferCancel(appointment.status, appointment.startsAt);
+  });
+
+  readonly nextCardActions = computed(() => {
+    if (!this.canCancelNext()) {
+      return [];
+    }
+    return [{ name: 'cancel', label: this.literals.cancel, variant: 'secondary' as const }];
   });
 
   readonly visibleSlots = computed(() => {
@@ -171,21 +222,33 @@ export class PortalAgendaComponent {
 
   readonly slotGroups = computed(() => {
     const slots = this.visibleSlots();
-    const groups: { key: string; label: string; slots: typeof slots }[] = [];
+    const groups: { key: string; label: string; chipLabel: string; slots: typeof slots }[] = [];
     for (const slot of slots) {
       const existing = groups.find((group) => group.key === slot.dayKey);
       if (existing) {
         existing.slots.push(slot);
       } else {
-        groups.push({ key: slot.dayKey, label: slot.dayLabel, slots: [slot] });
+        groups.push({
+          key: slot.dayKey,
+          label: slot.dayLabel,
+          chipLabel: this.formatDayChip(slot.startsAt),
+          slots: [slot],
+        });
       }
     }
     return groups;
   });
 
+  readonly selectedDayGroup = computed(() => {
+    const groups = this.slotGroups();
+    const key = this.selectedDayKey();
+    return groups.find((group) => group.key === key) ?? groups[0] ?? null;
+  });
+
   readonly appointmentRows = computed(() =>
-    this.appointments()
+    [...this.appointments()]
       .filter((row) => row.status !== 'cancelled')
+      .sort((left, right) => Date.parse(right.startsAt) - Date.parse(left.startsAt))
       .map((row) => ({
         ...row,
         serviceLabel: this.serviceLabel(this.services().find((service) => service.id === row.serviceId)),
@@ -195,31 +258,30 @@ export class PortalAgendaComponent {
       })),
   );
 
-  readonly appointmentColumns: BonaGridColumn[] = [
-    { field: 'serviceLabel', header: PORTAL_AGENDA_LITERALS.service },
-    { field: 'trainerLabel', header: PORTAL_AGENDA_LITERALS.trainerName },
-    { field: 'startsLabel', header: PORTAL_AGENDA_LITERALS.startsAt },
-    { field: 'statusLabel', header: PORTAL_AGENDA_LITERALS.status },
-  ];
+  readonly appointmentColumns = computed<BonaGridColumn[]>(() => [
+    { field: 'serviceLabel', header: this.literals.service },
+    { field: 'trainerLabel', header: this.literals.trainerName },
+    {
+      field: 'startsLabel',
+      header: this.literals.startsAt,
+      sortField: 'startsAt',
+      type: 'date',
+    },
+    { field: 'statusLabel', header: this.literals.status },
+  ]);
 
-  readonly appointmentActions = computed<BonaGridAction[]>(() => {
-    const cutoff = this.bookingSettings()?.nextDayCutoffTime ?? '18:00';
-    const now = new Date();
-    return [
-      { label: PORTAL_AGENDA_LITERALS.change, action: 'change' },
-      {
-        label: PORTAL_AGENDA_LITERALS.cancel,
-        action: 'cancel',
-        visible: (item) =>
-          canCancelAppointment(
-            item['status'] as AppointmentStatus,
-            new Date(String(item['startsAt'] ?? '')),
-            now,
-            cutoff,
-          ),
-      },
-    ];
-  });
+  readonly appointmentActions = computed<BonaGridAction[]>(() => [
+    {
+      label: this.literals.change,
+      action: 'change',
+      visible: (item) => this.canOfferCancel(item['status'] as AppointmentStatus, String(item['startsAt'] ?? '')),
+    },
+    {
+      label: this.literals.cancel,
+      action: 'cancel',
+      visible: (item) => this.canOfferCancel(item['status'] as AppointmentStatus, String(item['startsAt'] ?? '')),
+    },
+  ]);
 
   constructor() {
     this.auth
@@ -253,18 +315,22 @@ export class PortalAgendaComponent {
           this.clientBonos.set(clientBonos);
           this.appointments.set(appointments);
           this.bookingSettings.set(settings);
-          const first = this.bookableServices()[0];
-          this.filterValue.set({ serviceId: first?.id ?? '', trainerId: '' });
           this.loading.set(false);
-          if (first) {
-            this.loadSlots(first.id);
-          }
+          this.selectFirstBookableService();
         },
         error: () => {
           this.error.set(this.literals.loadError);
           this.loading.set(false);
         },
       });
+
+    effect(() => {
+      const groups = this.slotGroups();
+      const current = this.selectedDayKey();
+      if (!groups.some((group) => group.key === current)) {
+        untracked(() => this.selectedDayKey.set(groups[0]?.key ?? ''));
+      }
+    });
   }
 
   onFilterChange(value: BonaFormValue): void {
@@ -311,7 +377,6 @@ export class PortalAgendaComponent {
         next: () => {
           this.toast.success(this.literals.booked);
           this.changingId.set(null);
-          this.bookingOpen.set(false);
           this.reload();
         },
         error: (error) => this.error.set(this.messageFor(error)),
@@ -321,65 +386,50 @@ export class PortalAgendaComponent {
   onAppointmentAction(event: BonaGridActionEvent<Record<string, unknown>>): void {
     const id = String(event.item['id'] ?? '');
     const appointment = this.appointments().find((row) => row.id === id);
-    if (!appointment || !isActiveClientAppointment(appointment.status)) {
+    if (!appointment) {
       return;
     }
     if (event.action === 'cancel') {
-      if (
-        !canCancelAppointment(
-          appointment.status,
-          new Date(appointment.startsAt),
-          new Date(),
-          this.bookingSettings()?.nextDayCutoffTime ?? '18:00',
-        )
-      ) {
-        return;
-      }
-      this.confirm
-        .open({
-          title: this.literals.confirmCancelTitle,
-          message: this.literals.confirmCancelMessage,
-          confirmLabel: this.literals.cancel,
-        })
-        .pipe(
-          filter((ok) => ok),
-          switchMap(() =>
-            this.calendarApi.updateAppointment(id, { ...appointment, status: 'cancelled' }),
-          ),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: () => {
-            this.toast.success(this.literals.cancelled);
-            this.changingId.set(null);
-            this.bookingOpen.set(false);
-            this.reload();
-          },
-          error: (error) => this.error.set(this.messageFor(error)),
-        });
+      this.cancelAppointment(appointment);
+      return;
+    }
+    if (event.action !== 'change' || !this.canOfferCancel(appointment.status, appointment.startsAt)) {
       return;
     }
     this.changingId.set(id);
-    this.bookingOpen.set(true);
     this.filterValue.set({
       ...this.filterValue(),
       serviceId: appointment.serviceId,
       trainerId: '',
     });
     this.loadSlots(appointment.serviceId, id);
+    this.scrollToBooking();
+  }
+
+  onSelectDay(key: string): void {
+    this.selectedDayKey.set(key);
+  }
+
+  onCancelNext(): void {
+    const appointment = this.nextAppointment();
+    if (appointment) {
+      this.cancelAppointment(appointment);
+    }
+  }
+
+  onNextCardAction(name: string): void {
+    if (name === 'cancel') {
+      this.onCancelNext();
+    }
   }
 
   onCloseChange(): void {
     this.changingId.set(null);
-    this.bookingOpen.set(false);
-    const serviceId = this.filterValue()['serviceId'] ?? '';
-    if (serviceId) {
-      this.loadSlots(serviceId);
-    }
+    this.selectFirstBookableService();
   }
 
-  onOpenBooking(): void {
-    this.bookingOpen.set(true);
+  onGoBooking(): void {
+    this.scrollToBooking();
   }
 
   onGoCatalog(): void {
@@ -393,10 +443,37 @@ export class PortalAgendaComponent {
     });
   }
 
+  private cancelAppointment(appointment: AppointmentDto): void {
+    if (!this.canOfferCancel(appointment.status, appointment.startsAt)) {
+      return;
+    }
+    this.confirm
+      .open({
+        title: this.literals.confirmCancelTitle,
+        message: this.literals.confirmCancelMessage,
+        confirmLabel: this.literals.cancel,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() =>
+          this.calendarApi.updateAppointment(appointment.id, { ...appointment, status: 'cancelled' }),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.toast.success(this.literals.cancelled);
+          this.changingId.set(null);
+          this.reload();
+        },
+        error: (error) => this.error.set(this.messageFor(error)),
+      });
+  }
+
   private loadSlots(serviceId: string, ignoreAppointmentId?: string): void {
     const from = new Date();
     const to = new Date();
-    to.setDate(to.getDate() + 14);
+    to.setDate(to.getDate() + 28);
     this.calendarApi
       .getAvailability({
         serviceId,
@@ -421,11 +498,30 @@ export class PortalAgendaComponent {
       .subscribe(({ clientBonos, appointments }) => {
         this.clientBonos.set(clientBonos);
         this.appointments.set(appointments);
-        const serviceId = this.filterValue()['serviceId'] ?? this.bookableServices()[0]?.id ?? '';
-        if (serviceId) {
-          this.loadSlots(serviceId);
-        }
+        this.selectFirstBookableService();
       });
+  }
+
+  private selectFirstBookableService(): void {
+    const first = this.bookableServices()[0];
+    this.filterValue.set({ serviceId: first?.id ?? '', trainerId: '' });
+    if (first) {
+      this.loadSlots(first.id);
+    } else {
+      this.slots.set([]);
+    }
+  }
+
+  private scrollToBooking(): void {
+    document.getElementById('portal-agenda-book')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  private canOfferCancel(status: AppointmentStatus, startsAt: string): boolean {
+    const cutoff = this.bookingSettings()?.nextDayCutoffTime;
+    if (!cutoff) {
+      return false;
+    }
+    return canCancelAppointment(status, new Date(startsAt), new Date(), cutoff);
   }
 
   private serviceLabel(service: ServiceDto | undefined): string {
@@ -453,15 +549,23 @@ export class PortalAgendaComponent {
   }
 
   private formatDay(value: string): string {
-    return new Date(value).toLocaleDateString('es-ES', {
+    return new Date(value).toLocaleDateString(this.language.locale(), {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
     });
   }
 
+  private formatDayChip(value: string): string {
+    return new Date(value).toLocaleDateString(this.language.locale(), {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    });
+  }
+
   private formatTime(value: string): string {
-    return new Date(value).toLocaleTimeString('es-ES', {
+    return new Date(value).toLocaleTimeString(this.language.locale(), {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -478,7 +582,7 @@ export class PortalAgendaComponent {
   }
 
   private formatDate(value: string): string {
-    return new Date(value).toLocaleString('es-ES', {
+    return new Date(value).toLocaleString(this.language.locale(), {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
@@ -489,7 +593,9 @@ export class PortalAgendaComponent {
 
   private messageFor(error: unknown): string {
     if (error instanceof ApiBusinessError) {
-      return PORTAL_BOOKING_ERROR_LITERALS[error.code] ?? this.literals.errorSave;
+      const key = `agenda.errors.${error.code}`;
+      const translated = this.translate.instant(key);
+      return translated !== key ? translated : this.literals.errorSave;
     }
     return this.literals.errorSave;
   }

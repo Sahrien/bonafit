@@ -1,3 +1,5 @@
+import { CatalogI18n } from './service.dto';
+
 export type FormQuestionType =
   | 'text'
   | 'shortText'
@@ -12,7 +14,10 @@ export type FormQuestionType =
   | 'singleChoice'
   | 'multipleChoice'
   | 'ranking'
-  | 'terms';
+  | 'terms'
+  | 'heading';
+
+export const FORM_HEADING_TYPE: FormQuestionType = 'heading';
 
 export const FORM_OPTION_TYPES: ReadonlySet<FormQuestionType> = new Set([
   'dropdown',
@@ -25,12 +30,17 @@ export function questionHasOptions(type: FormQuestionType): boolean {
   return FORM_OPTION_TYPES.has(type);
 }
 
+export function isFormHeading(type: FormQuestionType): boolean {
+  return type === FORM_HEADING_TYPE;
+}
+
 export type FormAssignmentStatus = 'pending' | 'completed';
 
 export interface FormQuestionOptionDto {
   id: string;
   label: string;
   sortOrder: number;
+  i18n?: CatalogI18n;
 }
 
 export interface FormQuestionDto {
@@ -40,6 +50,7 @@ export interface FormQuestionDto {
   required: boolean;
   sortOrder: number;
   options?: FormQuestionOptionDto[];
+  i18n?: CatalogI18n;
 }
 
 export interface FormDto {
@@ -47,6 +58,7 @@ export interface FormDto {
   title: string;
   description: string;
   questions: FormQuestionDto[];
+  i18n?: CatalogI18n;
 }
 
 export type FormWriteDto = Omit<FormDto, 'id'>;
@@ -61,11 +73,13 @@ export interface FormAssignmentDto {
   formId: string;
   clientId: string;
   title: string;
+  description?: string;
   questions: FormQuestionDto[];
   status: FormAssignmentStatus;
   assignedAt: string;
   submittedAt: string | null;
   answers: FormAnswerDto[];
+  i18n?: CatalogI18n;
 }
 
 export interface AssignFormDto {

@@ -15,6 +15,36 @@ export function isActiveClientAppointment(status: AppointmentStatus): boolean {
   return status === 'pending' || status === 'confirmed';
 }
 
+export function hasActiveClientAppointmentForService(
+  rows: Pick<AppointmentDto, 'id' | 'serviceId' | 'status'>[],
+  serviceId: string,
+  ignoreAppointmentId?: string,
+): boolean {
+  return rows.some(
+    (row) =>
+      row.serviceId === serviceId &&
+      row.id !== ignoreAppointmentId &&
+      isActiveClientAppointment(row.status),
+  );
+}
+
+export function pickNextClientAppointment<
+  T extends Pick<AppointmentDto, 'status' | 'startsAt' | 'endsAt'>,
+>(rows: T[], now: Date): T | undefined {
+  const active = rows.filter((row) => isActiveClientAppointment(row.status));
+  if (active.length === 0) {
+    return undefined;
+  }
+  const nowMs = now.getTime();
+  const notFinished = active.filter((row) => new Date(row.endsAt).getTime() >= nowMs);
+  const pool = notFinished.length > 0 ? notFinished : active;
+  const direction = notFinished.length > 0 ? 1 : -1;
+  return [...pool].sort(
+    (left, right) =>
+      direction * (new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()),
+  )[0];
+}
+
 export function isBonoExpired(expiresAt: string | null, now: Date): boolean {
   if (!expiresAt) {
     return false;
@@ -130,6 +160,20 @@ export function slotTakenForTrainer(
   return overlappingOccupancy(busy, trainerId, slotStart, slotEnd) >= capacity;
 }
 
+export function slotTakenForClient(
+  busy: Pick<AppointmentDto, 'clientId' | 'status' | 'startsAt' | 'endsAt'>[],
+  clientId: string,
+  slotStart: Date,
+  slotEnd: Date,
+): boolean {
+  return busy.some(
+    (row) =>
+      row.clientId === clientId &&
+      occupiesTrainerSlot(row.status) &&
+      rangesOverlap(slotStart, slotEnd, new Date(row.startsAt), new Date(row.endsAt)),
+  );
+}
+
 export function statusOnCreate(actor: BookingActor, instantConfirm: boolean): AppointmentStatus {
   if (actor === 'trainer' || instantConfirm) {
     return 'confirmed';
@@ -153,6 +197,7 @@ export interface AvailabilityInput {
   trainerId?: string;
   ignoreAppointmentId?: string;
   trainers?: Pick<TrainerDto, 'id' | 'concurrentCapacity'>[];
+  clientId?: string;
 }
 
 export function listAvailabilitySlots(input: AvailabilityInput): AvailabilitySlotDto[] {
@@ -190,13 +235,17 @@ export function listAvailabilitySlots(input: AvailabilityInput): AvailabilitySlo
       let slotStart = new Date(windowStart);
       while (addMinutes(slotStart, duration).getTime() <= windowEnd.getTime()) {
         const slotEnd = addMinutes(slotStart, duration);
-        const taken = slotTakenForTrainer(
-          busy,
-          schedule.trainerId,
-          slotStart,
-          slotEnd,
-          concurrentCapacityOf(schedule.trainerId, input.trainers),
-        );
+        const taken =
+          slotTakenForTrainer(
+            busy,
+            schedule.trainerId,
+            slotStart,
+            slotEnd,
+            concurrentCapacityOf(schedule.trainerId, input.trainers),
+          ) ||
+          Boolean(
+            input.clientId && slotTakenForClient(busy, input.clientId, slotStart, slotEnd),
+          );
         if (!taken) {
           slots.push({
             trainerId: schedule.trainerId,
@@ -245,6 +294,10 @@ export function canCancelAppointment(
     return false;
   }
   return isClientStartAllowed(startsAt, now, cutoffTime);
+}
+
+export function canClientConfirmAppointment(status: AppointmentStatus): boolean {
+  return status === 'pending';
 }
 
 export function canAdminCancelAppointment(status: AppointmentStatus): boolean {

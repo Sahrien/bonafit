@@ -40,10 +40,13 @@
   @if (previewing()) {
     <app-form-fill-view
       [banner]="literals.previewBanner"
-      [fields]="previewFields()"
+      [description]="description()"
+      [questions]="questions()"
+      [labels]="fieldLabels"
       [value]="previewValue()"
       [submitText]="literals.previewSubmit"
       [error]="previewError()"
+      [requiredError]="literals.requiredError"
       (valueChange)="onPreviewValue($event)"
       (submitted)="onPreviewSubmit($event)" />
   } @else {
@@ -54,79 +57,166 @@
     @if (isNew() || tab() === 'template') {
       <section class="page-section">
         <h2>{{ literals.templateSection }}</h2>
-        <app-bona-input-text-field
-          [label]="literals.formTitle"
-          [value]="title()"
-          (valueChange)="onTitleChange($event)" />
-        <app-bona-field
-          [definition]="descriptionField"
-          [value]="description()"
-          (valueChange)="onDescriptionChange($event)" />
+        <div class="template-meta">
+          <div class="template-meta__item">
+            <span class="template-meta__label">{{ literals.formTitle }}</span>
+            <app-bona-input-text-field
+              [value]="title()"
+              (valueChange)="onTitleChange($event)" />
+          </div>
+          <div class="template-meta__item">
+            <span class="template-meta__label">{{ literals.description }}</span>
+            <app-bona-field
+              [definition]="descriptionField"
+              [value]="description()"
+              (valueChange)="onDescriptionChange($event)" />
+          </div>
+        </div>
 
         <h3 class="questions-heading">{{ literals.questionsSection }}</h3>
+        <p class="page-hint">{{ literals.templateHint }}</p>
 
-        <ol class="question-list">
-          @for (question of questions(); track question.id; let index = $index; let last = $last) {
-            <li class="question-card">
-              <app-bona-input-text-field
-                [label]="literals.prompt"
-                [value]="question.prompt"
-                (valueChange)="onPromptChange(question.id, $event)" />
-              <div class="question-card__row">
-                <app-bona-field
-                  [definition]="typeField"
-                  [value]="question.type"
-                  (valueChange)="onTypeChange(question.id, $event)" />
-                <app-bona-field
-                  [definition]="requiredField"
-                  [value]="question.required ? 'true' : 'false'"
-                  (valueChange)="onRequiredChange(question.id, $event)" />
-              </div>
-
-              @if (hasOptions(question.type)) {
-                <div class="question-card__options">
-                  <p>{{ literals.options }}</p>
-                  @for (option of question.options ?? []; track option.id) {
-                    <div class="question-card__option">
-                      <app-bona-input-text-field
-                        [label]="literals.optionLabel"
-                        [value]="option.label"
-                        (valueChange)="onOptionLabelChange(question.id, option.id, $event)" />
+        <ol class="template-list">
+          @for (block of templateBlocks(); track block.key) {
+            <li class="template-block" [class.template-block--section]="!!block.heading">
+              @if (block.heading; as heading) {
+                <article
+                  class="question-card question-card--heading"
+                  [class.question-card--open]="isQuestionOpen(heading.id)">
+                  <button
+                    type="button"
+                    class="question-card__toggle"
+                    [attr.aria-expanded]="isQuestionOpen(heading.id)"
+                    (click)="onToggleQuestion(heading.id)">
+                    <span class="question-card__kind">{{ literals.sectionKind }}</span>
+                    <span class="question-card__summary">
+                      {{ heading.prompt || literals.sectionPrompt }}
+                    </span>
+                    <mat-icon class="question-card__icon" aria-hidden="true">expand_more</mat-icon>
+                  </button>
+                  @if (isQuestionOpen(heading.id)) {
+                    <p class="page-hint">{{ literals.sectionHint }}</p>
+                    <app-bona-field
+                      [definition]="headingPromptField"
+                      [value]="heading.prompt"
+                      (valueChange)="onPromptChange(heading.id, $event)" />
+                    <div class="question-card__actions">
+                      <app-bona-button
+                        [text]="literals.moveUp"
+                        variant="secondary"
+                        [disabled]="questionIndex(heading.id) === 0"
+                        (action)="onMoveQuestion(heading.id, -1)" />
+                      <app-bona-button
+                        [text]="literals.moveDown"
+                        variant="secondary"
+                        [disabled]="questionIndex(heading.id) === questions().length - 1"
+                        (action)="onMoveQuestion(heading.id, 1)" />
                       <app-bona-button
                         [text]="literals.remove"
                         variant="secondary"
-                        (action)="onRemoveOption(question.id, option.id)" />
+                        (action)="onRemoveQuestion(heading.id)" />
                     </div>
                   }
-                  <app-bona-button
-                    [text]="literals.addOption"
-                    variant="secondary"
-                    (action)="onAddOption(question.id)" />
-                </div>
+                </article>
+              } @else {
+                <p class="template-block__label">{{ literals.ungroupedQuestions }}</p>
+                <p class="page-hint">{{ literals.ungroupedHint }}</p>
               }
 
-              <div class="question-card__actions">
-                <app-bona-button
-                  [text]="literals.moveUp"
-                  variant="secondary"
-                  [disabled]="index === 0"
-                  (action)="onMoveQuestion(question.id, -1)" />
-                <app-bona-button
-                  [text]="literals.moveDown"
-                  variant="secondary"
-                  [disabled]="last"
-                  (action)="onMoveQuestion(question.id, 1)" />
-                <app-bona-button
-                  [text]="literals.remove"
-                  variant="secondary"
-                  (action)="onRemoveQuestion(question.id)" />
-              </div>
+              <ol class="question-list">
+                @for (question of block.questions; track question.id) {
+                  <li
+                    class="question-card"
+                    [class.question-card--open]="isQuestionOpen(question.id)">
+                    <button
+                      type="button"
+                      class="question-card__toggle"
+                      [attr.aria-expanded]="isQuestionOpen(question.id)"
+                      (click)="onToggleQuestion(question.id)">
+                      <span class="question-card__kind">{{ literals.questionKind }}</span>
+                      <span class="question-card__summary">
+                        {{ question.prompt || literals.prompt }}
+                      </span>
+                      <span class="question-card__meta">{{ typeLabel(question.type) }}</span>
+                      <mat-icon class="question-card__icon" aria-hidden="true">expand_more</mat-icon>
+                    </button>
+                    @if (isQuestionOpen(question.id)) {
+                      <app-bona-input-text-field
+                        [label]="literals.prompt"
+                        [value]="question.prompt"
+                        (valueChange)="onPromptChange(question.id, $event)" />
+                      <div class="question-card__row">
+                        <app-bona-field
+                          [definition]="typeField"
+                          [value]="question.type"
+                          (valueChange)="onTypeChange(question.id, $event)" />
+                        <app-bona-field
+                          [definition]="requiredField"
+                          [value]="question.required ? 'true' : 'false'"
+                          (valueChange)="onRequiredChange(question.id, $event)" />
+                      </div>
+
+                      @if (hasOptions(question.type)) {
+                        <div class="question-card__options">
+                          <p>{{ literals.options }}</p>
+                          @for (option of question.options ?? []; track option.id) {
+                            <div class="question-card__option">
+                              <app-bona-input-text-field
+                                [label]="literals.optionLabel"
+                                [value]="option.label"
+                                (valueChange)="onOptionLabelChange(question.id, option.id, $event)" />
+                              <app-bona-button
+                                [text]="literals.remove"
+                                variant="secondary"
+                                (action)="onRemoveOption(question.id, option.id)" />
+                            </div>
+                          }
+                          <app-bona-button
+                            [text]="literals.addOption"
+                            variant="secondary"
+                            (action)="onAddOption(question.id)" />
+                        </div>
+                      }
+
+                      <div class="question-card__actions">
+                        <app-bona-button
+                          [text]="literals.moveUp"
+                          variant="secondary"
+                          [disabled]="questionIndex(question.id) === 0"
+                          (action)="onMoveQuestion(question.id, -1)" />
+                        <app-bona-button
+                          [text]="literals.moveDown"
+                          variant="secondary"
+                          [disabled]="questionIndex(question.id) === questions().length - 1"
+                          (action)="onMoveQuestion(question.id, 1)" />
+                        <app-bona-button
+                          [text]="literals.remove"
+                          variant="secondary"
+                          (action)="onRemoveQuestion(question.id)" />
+                      </div>
+                    }
+                  </li>
+                }
+              </ol>
+
+              @if (block.heading; as heading) {
+                <div class="template-block__add">
+                  <app-bona-button
+                    [text]="literals.addQuestionToSection"
+                    variant="secondary"
+                    (action)="onAddQuestionToSection(heading.id)" />
+                </div>
+              }
             </li>
           }
         </ol>
 
         <div class="question-list__add">
-          <app-bona-button [text]="literals.addQuestion" (action)="onAddQuestion()" />
+          <app-bona-button [text]="literals.addHeading" (action)="onAddHeading()" />
+          <app-bona-button
+            [text]="literals.addQuestion"
+            variant="secondary"
+            (action)="onAddQuestion()" />
         </div>
 
         @if (!isNew()) {
@@ -198,12 +288,25 @@
                 variant="secondary"
                 (action)="onCloseAnswers()" />
             </header>
-            <dl class="answers__list">
-              @for (item of answers.items; track item.id) {
-                <dt>{{ item.prompt }}</dt>
-                <dd>{{ item.answer }}</dd>
-              }
-            </dl>
+            @for (block of answers.blocks; track block.key) {
+              <section
+                class="answers-block"
+                [class.answers-block--plain]="!block.heading">
+                @if (block.heading) {
+                  <h3 class="answers-block__title">{{ block.heading.prompt }}</h3>
+                }
+                <dl class="answers__list">
+                  @for (item of block.items; track item.id) {
+                    @if (item.kind === 'heading') {
+                      <p class="answers__static">{{ item.prompt }}</p>
+                    } @else {
+                      <dt>{{ item.prompt }}</dt>
+                      <dd>{{ item.answer }}</dd>
+                    }
+                  }
+                </dl>
+              </section>
+            }
           </div>
         }
       </section>

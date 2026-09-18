@@ -504,6 +504,58 @@ def test_slot_taken_allows_second_client_when_capacity_is_two(
     assert other_full.value.code == "booking.slotTaken"
 
 
+def test_client_cannot_book_overlapping_slot(
+    calendar_service: CalendarService, db: Database
+) -> None:
+    add_trainer(db, concurrent_capacity=2)
+    add_trainer(db, id="trainer-2", name="Sam", concurrent_capacity=2)
+    add_client(db)
+    add_settings(db)
+    add_service(db, id="svc-masaje", name="Masaje", shares_session_pool=False, allows_single_session=True)
+    add_bono(db, id="bono-m", service_id="svc-masaje", session_count=1)
+    add_service(db, id="svc-hipo", name="Hipopresivos", shares_session_pool=True, allows_single_session=False)
+    add_bono(db, id="bono-h", service_id="svc-hipo", session_count=4)
+    start = datetime(2026, 9, 9, 8, 0, tzinfo=UTC)
+    end = datetime(2026, 9, 9, 9, 0, tzinfo=UTC)
+    calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-masaje",
+            clientBonoId=None,
+            startsAt=start,
+            endsAt=end,
+        ),
+        admin_user(),
+    )
+    with pytest.raises(BusinessError) as same_trainer:
+        calendar_service.create_appointment(
+            AppointmentWrite(
+                trainerId="trainer-1",
+                clientId="client-1",
+                serviceId="svc-masaje",
+                clientBonoId=None,
+                startsAt=start,
+                endsAt=end,
+            ),
+            admin_user(),
+        )
+    assert same_trainer.value.code == "booking.clientSlotTaken"
+    with pytest.raises(BusinessError) as other_trainer:
+        calendar_service.create_appointment(
+            AppointmentWrite(
+                trainerId="trainer-2",
+                clientId="client-1",
+                serviceId="svc-hipo",
+                clientBonoId=None,
+                startsAt=start,
+                endsAt=end,
+            ),
+            admin_user(),
+        )
+    assert other_trainer.value.code == "booking.clientSlotTaken"
+
+
 def test_availability_respects_concurrent_capacity(
     calendar_service: CalendarService, db: Database, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -730,6 +782,44 @@ def test_client_cannot_cancel_confirmed_appointment_after_cutoff(
     assert exc.value.code == "booking.cutoff"
 
 
+def test_client_can_confirm_pending_appointment(
+    calendar_service: CalendarService, db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "app.services.calendar.utcnow",
+        lambda: datetime(2026, 9, 8, 16, 0, tzinfo=UTC),
+    )
+    add_trainer(db)
+    add_client(db)
+    add_settings(db)
+    add_service(db)
+    add_bono(db)
+    add_client_bono(db, remaining_sessions=2)
+    created = calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-1",
+            startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+            status="pending",
+        ),
+        admin_user(),
+    )
+    assert created.status == "pending"
+    updated = calendar_service.update_appointment(
+        created.id,
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-1",
+            startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+            status="confirmed",
+        ),
+        client_user(),
+    )
+    assert updated.status == "confirmed"
+
+
 def test_client_cannot_cancel_today_appointment(
     calendar_service: CalendarService, db: Database, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -847,3 +937,106 @@ def test_availability(calendar_service: CalendarService, db: Database, monkeypat
     )
     assert slots
     assert slots[0].trainerId == "trainer-1"
+
+
+def _seed_client_booking(db: Database) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_settings(db)
+    add_schedule(db)
+    add_service(db)
+    add_bono(db)
+    add_client_bono(db, remaining_sessions=5)
+
+
+def test_client_cannot_book_second_appointment_of_same_service(
+    calendar_service: CalendarService, db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "app.services.calendar.utcnow",
+        lambda: datetime(2026, 9, 8, 15, 59, tzinfo=UTC),
+    )
+    _seed_client_booking(db)
+    calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-1",
+            startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+        ),
+        admin_user(),
+    )
+    with pytest.raises(BusinessError) as exc:
+        calendar_service.create_appointment(
+            AppointmentWrite(
+                trainerId="trainer-1",
+                clientId="client-1",
+                serviceId="svc-1",
+                startsAt=datetime(2026, 9, 9, 9, 0, tzinfo=UTC),
+            ),
+            client_user(),
+        )
+    assert exc.value.code == "booking.oneAppointment"
+
+
+def test_client_can_book_another_service_while_one_is_active(
+    calendar_service: CalendarService, db: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "app.services.calendar.utcnow",
+        lambda: datetime(2026, 9, 8, 15, 59, tzinfo=UTC),
+    )
+    _seed_client_booking(db)
+    add_schedule(db, id="sch-long", end_time="14:00")
+    add_service(db, id="svc-hipo", name="Hipopresivos", duration_minutes=45)
+    add_bono(db, id="bono-hipo", service_id="svc-hipo", session_count=8)
+    add_client_bono(db, id="cb-hipo", bono_id="bono-hipo", remaining_sessions=4)
+    calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-1",
+            startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+        ),
+        admin_user(),
+    )
+    created = calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-hipo",
+            startsAt=datetime(2026, 9, 9, 9, 30, tzinfo=UTC),
+        ),
+        client_user(),
+    )
+    assert created.serviceId == "svc-hipo"
+
+
+def test_admin_can_book_second_appointment_of_same_service(
+    calendar_service: CalendarService, db: Database
+) -> None:
+    add_trainer(db)
+    add_client(db)
+    add_settings(db)
+    add_service(db)
+    add_bono(db)
+    add_client_bono(db, remaining_sessions=5)
+    calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-1",
+            startsAt=datetime(2026, 9, 9, 8, 0, tzinfo=UTC),
+        ),
+        admin_user(),
+    )
+    second = calendar_service.create_appointment(
+        AppointmentWrite(
+            trainerId="trainer-1",
+            clientId="client-1",
+            serviceId="svc-1",
+            startsAt=datetime(2026, 9, 9, 10, 0, tzinfo=UTC),
+        ),
+        admin_user(),
+    )
+    assert second.serviceId == "svc-1"

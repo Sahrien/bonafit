@@ -95,8 +95,35 @@ def slot_taken_for_trainer(
     return overlapping_occupancy(busy, trainer_id, slot_start, slot_end) >= capacity
 
 
+def slot_taken_for_client(
+    busy: list,
+    client_id: str,
+    slot_start: datetime,
+    slot_end: datetime,
+) -> bool:
+    return any(
+        getattr(row, "client_id", None) == client_id
+        and occupies_trainer_slot(row.status)
+        and ranges_overlap(slot_start, slot_end, to_madrid(row.starts_at), to_madrid(row.ends_at))
+        for row in busy
+    )
+
+
 def is_active_client_appointment(status: str) -> bool:
     return status in OCCUPIES_SLOT
+
+
+def has_active_client_appointment_for_service(
+    rows: list,
+    service_id: str,
+    ignore_appointment_id: str | None = None,
+) -> bool:
+    return any(
+        getattr(row, "service_id", None) == service_id
+        and getattr(row, "id", None) != ignore_appointment_id
+        and is_active_client_appointment(row.status)
+        for row in rows
+    )
 
 
 def consumes_session(status: str) -> bool:
@@ -107,6 +134,10 @@ def can_cancel_appointment(status: str, starts_at: datetime, now: datetime, cuto
     if status not in OCCUPIES_SLOT:
         return False
     return is_client_start_allowed(starts_at, now, cutoff_time)
+
+
+def can_client_confirm_appointment(status: str) -> bool:
+    return status == "pending"
 
 
 def can_admin_cancel_appointment(status: str) -> bool:
@@ -170,6 +201,7 @@ def list_availability_slots(
     trainer_id: str | None = None,
     ignore_appointment_id: str | None = None,
     trainer_capacities: dict[str, int] | None = None,
+    client_id: str | None = None,
 ) -> list[dict]:
     if duration_minutes <= 0:
         return []
@@ -208,6 +240,8 @@ def list_availability_slots(
                     slot_end,
                     concurrent_capacity_of(trainer_capacities, schedule.trainer_id),
                 )
+                if not taken and client_id:
+                    taken = slot_taken_for_client(busy, client_id, slot_start, slot_end)
                 if not taken:
                     slots.append(
                         {

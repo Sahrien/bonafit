@@ -1,5 +1,6 @@
 import { afterNextRender, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { BrandingService } from '../../branding/branding.service';
 import { ButtonComponent } from '../../components/button/button.component';
 import { LogoComponent } from '../../components/logo/logo.component';
 import { ContactComponent } from '../contact/contact.component';
@@ -12,6 +13,7 @@ import { ContactComponent } from '../contact/contact.component';
 })
 export class HomeComponent {
   private readonly router = inject(Router);
+  readonly branding = inject(BrandingService);
 
   protected readonly territories = ['Fuerza', 'Movilidad', 'Longevidad', 'Bienestar'];
 

@@ -1,313 +1,272 @@
 {
-  "title": "Ficha de salud y objetivos",
-  "description": "Cuestionario inicial para diseñar un entrenamiento seguro y personalizado. Responde con sinceridad; la información se trata de forma confidencial.",
+  "title": "Cuestionario inicial",
+  "description": "Ficha de salud, estilo de vida y objetivos para diseñar un entrenamiento seguro. Responde con sinceridad; la información se trata de forma confidencial.",
   "questions": [
+    {
+      "prompt": "Información personal",
+      "type": "heading",
+      "required": false,
+      "sortOrder": 0
+    },
     {
       "prompt": "Nombre completo",
       "type": "fullName",
       "required": true,
-      "sortOrder": 0
-    },
-    {
-      "prompt": "Correo electrónico",
-      "type": "email",
-      "required": true,
       "sortOrder": 1
     },
     {
-      "prompt": "Teléfono",
-      "type": "phone",
+      "prompt": "Email",
+      "type": "email",
       "required": true,
       "sortOrder": 2
+    },
+    {
+      "prompt": "Número de teléfono",
+      "type": "phone",
+      "required": true,
+      "sortOrder": 3
     },
     {
       "prompt": "Fecha de nacimiento",
       "type": "date",
       "required": true,
-      "sortOrder": 3
+      "sortOrder": 4
     },
     {
-      "prompt": "Género",
+      "prompt": "Sexo",
       "type": "singleChoice",
       "required": true,
-      "sortOrder": 4,
+      "sortOrder": 5,
       "options": [
         { "label": "Mujer", "sortOrder": 0 },
         { "label": "Hombre", "sortOrder": 1 },
-        { "label": "No binario", "sortOrder": 2 },
-        { "label": "Prefiero no decirlo", "sortOrder": 3 }
+        { "label": "Prefiero no decirlo", "sortOrder": 2 }
       ]
     },
     {
       "prompt": "Dirección",
       "type": "address",
-      "required": false,
-      "sortOrder": 5
-    },
-    {
-      "prompt": "Nombre del contacto de emergencia",
-      "type": "shortText",
       "required": true,
       "sortOrder": 6
     },
     {
-      "prompt": "Teléfono del contacto de emergencia",
+      "prompt": "Teléfono de contacto de emergencia",
       "type": "phone",
       "required": true,
       "sortOrder": 7
     },
     {
-      "prompt": "Relación con el contacto de emergencia",
+      "prompt": "Nombre de contacto de emergencia",
       "type": "shortText",
       "required": true,
       "sortOrder": 8
     },
     {
-      "prompt": "Peso actual (kg)",
-      "type": "number",
+      "prompt": "Parentesco contacto de emergencia",
+      "type": "shortText",
       "required": true,
       "sortOrder": 9
     },
     {
-      "prompt": "Estatura (cm)",
-      "type": "number",
-      "required": true,
+      "prompt": "Salud",
+      "type": "heading",
+      "required": false,
       "sortOrder": 10
     },
     {
-      "prompt": "¿Te han diagnosticado alguna de estas condiciones? (puedes marcar varias)",
-      "type": "multipleChoice",
+      "prompt": "Peso actual (kg)",
+      "type": "number",
       "required": true,
-      "sortOrder": 11,
-      "options": [
-        { "label": "Enfermedad cardiovascular", "sortOrder": 0 },
-        { "label": "Hipertensión", "sortOrder": 1 },
-        { "label": "Diabetes", "sortOrder": 2 },
-        { "label": "Asma o problemas respiratorios", "sortOrder": 3 },
-        { "label": "Problemas de espalda", "sortOrder": 4 },
-        { "label": "Lesiones o problemas articulares", "sortOrder": 5 },
-        { "label": "Embarazo actual o reciente", "sortOrder": 6 },
-        { "label": "Ninguna de las anteriores", "sortOrder": 7 }
-      ]
+      "sortOrder": 11
     },
     {
-      "prompt": "¿Tomas actualmente medicación o suplementos?",
-      "type": "yesno",
+      "prompt": "Altura (cm)",
+      "type": "number",
       "required": true,
       "sortOrder": 12
     },
     {
-      "prompt": "Si es así, indica medicación y suplementos",
-      "type": "text",
-      "required": false,
-      "sortOrder": 13
-    },
-    {
-      "prompt": "¿Has tenido cirugías u hospitalizaciones en los últimos 5 años?",
-      "type": "yesno",
+      "prompt": "Consumo de tabaco o vaper",
+      "type": "singleChoice",
       "required": true,
-      "sortOrder": 14
+      "sortOrder": 13,
+      "options": [
+        { "label": "No", "sortOrder": 0 },
+        { "label": "Ocasional", "sortOrder": 1 },
+        { "label": "Diario", "sortOrder": 2 }
+      ]
     },
     {
-      "prompt": "Si es así, indica fechas y procedimientos",
+      "prompt": "Consumo de alcohol",
+      "type": "singleChoice",
+      "required": true,
+      "sortOrder": 14,
+      "options": [
+        { "label": "No", "sortOrder": 0 },
+        { "label": "Ocasional", "sortOrder": 1 },
+        { "label": "Diario", "sortOrder": 2 }
+      ]
+    },
+    {
+      "prompt": "¿Sufres alguna alergia? Enuméralas a continuación",
       "type": "text",
-      "required": false,
+      "required": true,
       "sortOrder": 15
     },
     {
-      "prompt": "¿Tienes lesiones, dolor crónico o limitaciones físicas que debamos tener en cuenta?",
-      "type": "yesno",
+      "prompt": "¿Has sufrido una lesión en el último año? Enuméralas a continuación",
+      "type": "text",
       "required": true,
       "sortOrder": 16
     },
     {
-      "prompt": "Si es así, describe la lesión o limitación y las restricciones de movimiento",
+      "prompt": "¿Tomas alguna medicación diariamente o de forma regular? Enumera a continuación fármacos y dosis",
       "type": "text",
-      "required": false,
+      "required": true,
       "sortOrder": 17
     },
     {
-      "prompt": "¿Algún médico te ha desaconsejado hacer ejercicio?",
-      "type": "yesno",
+      "prompt": "¿Alguna vez un profesional de la salud te ha dicho que no debes hacer cierto ejercicio o movimiento? Háblanos sobre ello",
+      "type": "text",
       "required": true,
       "sortOrder": 18
     },
     {
-      "prompt": "¿Notas mareo, dolor en el pecho o falta de aire con la actividad física?",
-      "type": "yesno",
+      "prompt": "¿Has pasado por alguna operación médica o embarazo en los últimos 5 años? Enuméralas a continuación",
+      "type": "text",
       "required": true,
       "sortOrder": 19
     },
     {
-      "prompt": "¿Cómo describirías tu nivel de actividad actual?",
-      "type": "dropdown",
+      "prompt": "Estilo de vida",
+      "type": "heading",
+      "required": false,
+      "sortOrder": 20
+    },
+    {
+      "prompt": "Valora tu nivel de actividad física",
+      "type": "singleChoice",
       "required": true,
-      "sortOrder": 20,
+      "sortOrder": 21,
       "options": [
-        { "label": "Sedentario", "sortOrder": 0 },
-        { "label": "Ligero", "sortOrder": 1 },
-        { "label": "Moderado", "sortOrder": 2 },
-        { "label": "Activo", "sortOrder": 3 },
-        { "label": "Muy activo", "sortOrder": 4 }
+        { "label": "Nula", "sortOrder": 0 },
+        { "label": "Escasa", "sortOrder": 1 },
+        { "label": "Regular", "sortOrder": 2 },
+        { "label": "Frecuente", "sortOrder": 3 }
       ]
     },
     {
-      "prompt": "Describe tu rutina de ejercicio actual o más reciente (tipo, frecuencia y duración)",
-      "type": "text",
-      "required": false,
-      "sortOrder": 21
-    },
-    {
-      "prompt": "¿Cómo valorarías tu alimentación actual?",
-      "type": "dropdown",
+      "prompt": "Valora tu dieta",
+      "type": "singleChoice",
       "required": true,
       "sortOrder": 22,
       "options": [
-        { "label": "Poco saludable", "sortOrder": 0 },
-        { "label": "Regular", "sortOrder": 1 },
-        { "label": "Buena", "sortOrder": 2 },
-        { "label": "Muy buena", "sortOrder": 3 }
+        { "label": "Desordenada", "sortOrder": 0 },
+        { "label": "Mejorable", "sortOrder": 1 },
+        { "label": "Buena", "sortOrder": 2 }
       ]
     },
     {
-      "prompt": "¿Tienes restricciones o preferencias alimentarias? (puedes marcar varias)",
-      "type": "multipleChoice",
+      "prompt": "Horas de sueño diario",
+      "type": "number",
       "required": true,
-      "sortOrder": 23,
-      "options": [
-        { "label": "Vegetariana", "sortOrder": 0 },
-        { "label": "Vegana", "sortOrder": 1 },
-        { "label": "Sin gluten", "sortOrder": 2 },
-        { "label": "Sin lactosa", "sortOrder": 3 },
-        { "label": "Alergias alimentarias", "sortOrder": 4 },
-        { "label": "Ninguna", "sortOrder": 5 }
-      ]
+      "sortOrder": 23
     },
     {
-      "prompt": "Si tienes alergias u otras necesidades alimentarias, especifícalas",
-      "type": "text",
-      "required": false,
-      "sortOrder": 24
-    },
-    {
-      "prompt": "¿Cuántas horas sueles dormir por noche?",
-      "type": "dropdown",
+      "prompt": "Valora tu nivel de estrés",
+      "type": "singleChoice",
       "required": true,
-      "sortOrder": 25,
+      "sortOrder": 24,
       "options": [
-        { "label": "Menos de 5", "sortOrder": 0 },
-        { "label": "5–6", "sortOrder": 1 },
-        { "label": "7–8", "sortOrder": 2 },
-        { "label": "Más de 8", "sortOrder": 3 }
-      ]
-    },
-    {
-      "prompt": "¿Cómo valorarías tu nivel de estrés actual?",
-      "type": "dropdown",
-      "required": true,
-      "sortOrder": 26,
-      "options": [
-        { "label": "Bajo", "sortOrder": 0 },
+        { "label": "Relajado", "sortOrder": 0 },
         { "label": "Moderado", "sortOrder": 1 },
         { "label": "Alto", "sortOrder": 2 },
-        { "label": "Muy alto", "sortOrder": 3 }
+        { "label": "Desbordado", "sortOrder": 3 }
       ]
     },
     {
-      "prompt": "¿Cuáles son tus objetivos principales? (puedes marcar varios)",
-      "type": "multipleChoice",
-      "required": true,
-      "sortOrder": 27,
-      "options": [
-        { "label": "Ganar fuerza", "sortOrder": 0 },
-        { "label": "Pérdida de peso", "sortOrder": 1 },
-        { "label": "Salud general", "sortOrder": 2 },
-        { "label": "Mejorar la postura", "sortOrder": 3 },
-        { "label": "Suelo pélvico / hipopresivos", "sortOrder": 4 },
-        { "label": "Más energía y condición física", "sortOrder": 5 }
-      ]
-    },
-    {
-      "prompt": "Describe tus objetivos con más detalle, incluyendo metas o plazos concretos",
+      "prompt": "Describe tu actividad física de una semana típica",
       "type": "text",
+      "required": true,
+      "sortOrder": 25
+    },
+    {
+      "prompt": "¿Has entrenado previamente? Describe tu experiencia",
+      "type": "text",
+      "required": true,
+      "sortOrder": 26
+    },
+    {
+      "prompt": "¿Cuántas veces comes al día? Describe las comidas que haces en un día típico",
+      "type": "text",
+      "required": true,
+      "sortOrder": 27
+    },
+    {
+      "prompt": "Objetivos",
+      "type": "heading",
       "required": false,
       "sortOrder": 28
     },
     {
-      "prompt": "Ordena tus objetivos de mayor a menor prioridad",
-      "type": "ranking",
-      "required": true,
-      "sortOrder": 29,
-      "options": [
-        { "label": "Ganar fuerza", "sortOrder": 0 },
-        { "label": "Pérdida de peso", "sortOrder": 1 },
-        { "label": "Salud general", "sortOrder": 2 },
-        { "label": "Mejorar la postura", "sortOrder": 3 },
-        { "label": "Suelo pélvico / hipopresivos", "sortOrder": 4 },
-        { "label": "Más energía y condición física", "sortOrder": 5 }
-      ]
-    },
-    {
-      "prompt": "¿Qué días puedes entrenar? (puedes marcar varios)",
-      "type": "multipleChoice",
-      "required": true,
-      "sortOrder": 30,
-      "options": [
-        { "label": "Lunes", "sortOrder": 0 },
-        { "label": "Martes", "sortOrder": 1 },
-        { "label": "Miércoles", "sortOrder": 2 },
-        { "label": "Jueves", "sortOrder": 3 },
-        { "label": "Viernes", "sortOrder": 4 },
-        { "label": "Sábado", "sortOrder": 5 },
-        { "label": "Domingo", "sortOrder": 6 }
-      ]
-    },
-    {
-      "prompt": "¿En qué momento del día prefieres entrenar?",
-      "type": "dropdown",
-      "required": true,
-      "sortOrder": 31,
-      "options": [
-        { "label": "Mañana", "sortOrder": 0 },
-        { "label": "Mediodía", "sortOrder": 1 },
-        { "label": "Tarde", "sortOrder": 2 },
-        { "label": "Noche", "sortOrder": 3 }
-      ]
-    },
-    {
-      "prompt": "¿Cuántas sesiones por semana te interesan?",
-      "type": "dropdown",
-      "required": true,
-      "sortOrder": 32,
-      "options": [
-        { "label": "1", "sortOrder": 0 },
-        { "label": "2", "sortOrder": 1 },
-        { "label": "3", "sortOrder": 2 },
-        { "label": "4 o más", "sortOrder": 3 }
-      ]
-    },
-    {
-      "prompt": "¿Dónde prefieres entrenar?",
-      "type": "dropdown",
-      "required": true,
-      "sortOrder": 33,
-      "options": [
-        { "label": "En el estudio", "sortOrder": 0 },
-        { "label": "A domicilio", "sortOrder": 1 },
-        { "label": "Indiferente", "sortOrder": 2 }
-      ]
-    },
-    {
-      "prompt": "¿Hay algo más que quieras que sepa tu entrenador/a antes de la primera sesión?",
+      "prompt": "Describe a continuación tus principales objetivos físicos y por qué son importantes para ti ahora mismo. En caso de ser varios ordénalos por prioridad",
       "type": "text",
+      "required": true,
+      "sortOrder": 29
+    },
+    {
+      "prompt": "¿Qué días y a qué horas te gustaría entrenar?",
+      "type": "text",
+      "required": true,
+      "sortOrder": 30
+    },
+    {
+      "prompt": "¿Cuántas veces te gustaría entrenar por semana?",
+      "type": "number",
+      "required": true,
+      "sortOrder": 31
+    },
+    {
+      "prompt": "¿Tienes material de entrenamiento disponible en casa? Enuméralo",
+      "type": "text",
+      "required": true,
+      "sortOrder": 32
+    },
+    {
+      "prompt": "¿Hay algo más que quieras decirnos antes de tu primera sesión?",
+      "type": "text",
+      "required": false,
+      "sortOrder": 33
+    },
+    {
+      "prompt": "Consentimiento informado",
+      "type": "heading",
       "required": false,
       "sortOrder": 34
     },
     {
-      "prompt": "Confirmo que la información es veraz a mi leal saber y entender. Entiendo que mi entrenador/a no es un profesional médico y consultaré a un médico antes de empezar un programa de ejercicio si tengo alguna duda de salud. Asumo la responsabilidad de mi salud y seguridad durante el entrenamiento.",
+      "prompt": "Yo, ______________________________, declaro que la información facilitada en este formulario es veraz y completa, y que he informado de todas mis condiciones médicas, lesiones, medicación y alergias relevantes. Entiendo que el ejercicio físico conlleva riesgos y que ocultar información puede poner en peligro mi salud. Autorizo a Héctor Bordajandi Moleón a contactar con mi persona de emergencia o con servicios médicos si fuera necesario durante el entrenamiento.\n\nAsimismo, autorizo a Héctor Bordajandi Moleón, con NIF 48722797B y email  bordamtg@gmail.com, a tratar mis datos personales y de salud con la única finalidad de diseñar y supervisar mi entrenamiento y gestionar la relación profesional. La base legal es mi consentimiento explícito (art. 6.1.a y art. 9.2.a RGPD) y la ejecución del contrato de servicios (art. 6.1.b RGPD). Puedo ejercer mis derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a  bordamtg@gmail.com, y reclamar ante la Agencia Española de Protección de Datos.",
+      "type": "heading",
+      "required": false,
+      "sortOrder": 35
+    },
+    {
+      "prompt": "Nombre y apellidos",
+      "type": "shortText",
+      "required": true,
+      "sortOrder": 36
+    },
+    {
+      "prompt": "He leído y acepto el consentimiento informado",
       "type": "terms",
       "required": true,
-      "sortOrder": 35
+      "sortOrder": 37
+    },
+    {
+      "prompt": "Fecha",
+      "type": "date",
+      "required": true,
+      "sortOrder": 38
     }
   ]
 }

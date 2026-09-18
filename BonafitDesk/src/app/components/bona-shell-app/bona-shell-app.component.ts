@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { MatAnchor, MatButton } from '@angular/material/button';
+import { MatAnchor, MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatToolbar } from '@angular/material/toolbar';
@@ -18,6 +18,7 @@ export interface BonaShellNavItem {
   imports: [
     MatToolbar,
     MatButton,
+    MatIconButton,
     MatAnchor,
     MatIcon,
     MatMenu,
@@ -32,6 +33,7 @@ export interface BonaShellNavItem {
 })
 export class BonaShellAppComponent {
   readonly brand = input('Bonafit');
+  readonly brandLogoUrl = input<string | null>(null);
   readonly brandSubtitle = input('');
   readonly userName = input('');
   readonly navItems = input<BonaShellNavItem[]>([]);
@@ -39,6 +41,9 @@ export class BonaShellAppComponent {
   readonly logoutLabel = input('Salir');
   readonly menuLabel = input('Menú');
   readonly profileMenuLabel = input('Cuenta');
+  readonly colorSchemeLabel = input('Tema');
+  readonly colorSchemeIcon = input('contrast');
 
   readonly logout = output<void>();
+  readonly colorSchemeToggle = output<void>();
 }

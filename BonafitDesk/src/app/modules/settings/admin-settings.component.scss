@@ -15,6 +15,11 @@
     margin: 0 0 var(--bona-space-4);
     font-size: 1.125rem;
   }
+
+  h3 {
+    margin: 0 0 var(--bona-space-3);
+    font-size: 1rem;
+  }
 }
 
 .settings-account {
@@ -30,5 +35,55 @@
   dd {
     margin: 0;
     font-weight: 600;
+  }
+}
+
+.settings-brand-preview {
+  margin-bottom: var(--bona-space-4);
+  padding: var(--bona-space-3);
+  border: 1px solid var(--bona-color-border);
+  border-left: 4px solid var(--preview-primary, var(--bona-color-primary));
+  border-radius: var(--bona-radius-md);
+  background: var(--bona-color-tint);
+
+  &__kicker {
+    margin: 0;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--bona-color-text-muted);
+  }
+
+  &__name {
+    margin: var(--bona-space-2) 0 0;
+    font-weight: 700;
+    color: var(--preview-primary, var(--bona-color-primary));
+  }
+
+  &__slogan {
+    margin: var(--bona-space-1) 0 0;
+    color: var(--bona-color-text-muted);
+  }
+}
+
+.settings-colors,
+.settings-uploads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bona-space-4);
+  margin-top: var(--bona-space-4);
+}
+
+.settings-color,
+.settings-upload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bona-space-2);
+  font-size: 0.875rem;
+
+  img {
+    width: 3rem;
+    height: 3rem;
+    object-fit: contain;
   }
 }

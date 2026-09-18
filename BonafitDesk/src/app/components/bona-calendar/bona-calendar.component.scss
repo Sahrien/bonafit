@@ -10,19 +10,35 @@
   border-radius: var(--bona-radius-lg);
   font-family: var(--bona-font-family);
 
-  ::ng-deep .fc-event.bona-calendar__event--cancelled {
-    background: color-mix(in srgb, var(--bona-color-text-muted) 40%, var(--bona-color-surface));
-    border-color: var(--bona-color-border);
-    color: var(--bona-color-text-muted);
+  ::ng-deep .fc-event {
+    cursor: pointer;
+  }
+
+  ::ng-deep .fc-event.bona-calendar__event--cancelled,
+  ::ng-deep .fc-event.bona-cal-status-cancelled {
+    background: color-mix(in srgb, var(--bona-color-text-muted) 40%, var(--bona-color-surface)) !important;
+    border-color: var(--bona-color-border) !important;
+    color: var(--bona-color-text-muted) !important;
     text-decoration: line-through;
     pointer-events: none;
+    cursor: default;
   }
 
   ::ng-deep .fc-event.bona-cal-status-pending {
-    box-shadow: inset 0 0 0 2px var(--bona-color-warning);
+    background: var(--bona-color-warning) !important;
+    border-color: var(--bona-color-warning) !important;
+    color: #fff !important;
+  }
+
+  ::ng-deep .fc-event.bona-cal-status-confirmed {
+    background: var(--bona-color-success) !important;
+    border-color: var(--bona-color-success) !important;
+    color: #fff !important;
   }
 
   ::ng-deep .fc-event.bona-cal-status-completed {
-    opacity: 0.72;
+    background: color-mix(in srgb, var(--bona-color-text-muted) 55%, var(--bona-color-surface)) !important;
+    border-color: var(--bona-color-border) !important;
+    color: var(--bona-color-text) !important;
   }
 }

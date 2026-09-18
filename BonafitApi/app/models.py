@@ -74,6 +74,7 @@ class User(Base):
     trainer_id: Mapped[str | None] = mapped_column(ForeignKey("trainers.id"))
     client_id: Mapped[str | None] = mapped_column(ForeignKey("clients.id"))
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    language: Mapped[str] = mapped_column(String(8), default="es", nullable=False, server_default="es")
 
     trainer: Mapped[Trainer | None] = relationship(back_populates="user")
     client: Mapped[Client | None] = relationship(back_populates="user")
@@ -91,6 +92,7 @@ class Service(Base):
     duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     bookable_by_client: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    i18n: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), default=dict, nullable=False)
 
     bonos: Mapped[list["Bono"]] = relationship(back_populates="service")
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="service")
@@ -105,6 +107,7 @@ class Bono(Base):
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)
     session_count: Mapped[int] = mapped_column(Integer, nullable=False)
     price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    i18n: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), default=dict, nullable=False)
 
     service: Mapped[Service] = relationship(back_populates="bonos")
     client_bonos: Mapped[list["ClientBono"]] = relationship(back_populates="bono")
@@ -147,6 +150,21 @@ class BookingSettings(Base):
     default_location: Mapped[str] = mapped_column(String(120), nullable=False)
 
 
+class Branding(Base):
+    __tablename__ = "branding"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    studio_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    slogan: Mapped[str] = mapped_column(String(200), nullable=False)
+    primary_hex: Mapped[str] = mapped_column(String(7), nullable=False)
+    accent_hex: Mapped[str] = mapped_column(String(7), nullable=False)
+    surface_hex: Mapped[str] = mapped_column(String(7), nullable=False)
+    color_scheme: Mapped[str] = mapped_column(String(20), nullable=False)
+    logo_path: Mapped[str | None] = mapped_column(String(500))
+    favicon_path: Mapped[str | None] = mapped_column(String(500))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class Appointment(Base):
     __tablename__ = "appointments"
 
@@ -173,6 +191,7 @@ class Form(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    i18n: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), default=dict, nullable=False)
 
     questions: Mapped[list["FormQuestion"]] = relationship(
         back_populates="form",
@@ -191,6 +210,7 @@ class FormQuestion(Base):
     type: Mapped[str] = mapped_column(String(20), nullable=False)
     required: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    i18n: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), default=dict, nullable=False)
 
     form: Mapped[Form] = relationship(back_populates="questions")
     options: Mapped[list["FormQuestionOption"]] = relationship(
@@ -207,6 +227,7 @@ class FormQuestionOption(Base):
     question_id: Mapped[str] = mapped_column(ForeignKey("form_questions.id"), nullable=False)
     label: Mapped[str] = mapped_column(String(200), nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    i18n: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), default=dict, nullable=False)
 
     question: Mapped[FormQuestion] = relationship(back_populates="options")
 
@@ -219,6 +240,7 @@ class FormAssignment(Base):
     client_id: Mapped[str] = mapped_column(ForeignKey("clients.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     questions: Mapped[list] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), nullable=False)
+    i18n: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), default=dict, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

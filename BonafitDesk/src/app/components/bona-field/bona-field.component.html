@@ -10,7 +10,9 @@
         (valueChange)="onValueChange($event)" />
 } @else if (definition().type === 'textarea') {
   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bona-field">
-    <mat-label>{{ definition().label }}</mat-label>
+    @if (definition().label) {
+      <mat-label>{{ definition().label }}</mat-label>
+    }
     <textarea
       matInput
       rows="4"

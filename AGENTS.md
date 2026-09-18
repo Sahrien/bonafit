@@ -13,7 +13,7 @@ Three independent apps for a personal-training studio. There is no npm/pnpm work
 ## Which package
 
 - Admin calendar, clients, services/bonos, forms, or client portal → **BonafitDesk**, and **BonafitApi** if the contract or persistence changes.
-- Public landing, brand, or contact page → **Webonafit** only. Do not import Desk `bona-*` components or the API.
+- Public landing, brand, or contact page → **Webonafit** only. Do not import Desk `bona-*` components. Webonafit may `GET /branding` from BonafitApi for studio colors, name, slogan, and logo.
 - Database, auth tokens, booking rules on the server, SMTP → **BonafitApi**.
 
 Keep Desk and API DTO/JSON shapes in lockstep (camelCase). Booking rules exist in both `BonafitDesk/src/app/core/booking.ts` and `BonafitApi/app/booking.py`; change them together.

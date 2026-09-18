@@ -17,6 +17,10 @@ export interface FormsApi {
   getAssignments(formId?: string): Observable<FormAssignmentDto[]>;
   getAssignment(id: string): Observable<FormAssignmentDto>;
   getMyAssignments(): Observable<FormAssignmentDto[]>;
+  saveAssignmentDraft(
+    id: string,
+    payload: SubmitFormAssignmentDto,
+  ): Observable<FormAssignmentDto>;
   submitAssignment(
     id: string,
     payload: SubmitFormAssignmentDto,

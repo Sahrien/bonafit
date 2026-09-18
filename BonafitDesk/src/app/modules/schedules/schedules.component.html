@@ -1,8 +1,48 @@
 <app-bona-page [title]="literals.title" [subtitle]="literals.subtitle" [loading]="loading()">
+  <app-bona-button
+    bonaPageActions
+    variant="secondary"
+    [text]="literals.capacitySettings"
+    (action)="onToggleCapacity()" />
   <app-bona-button bonaPageActions [text]="literals.newSchedule" (action)="onCreate()" />
 
   @if (error() && !formOpen()) {
     <p class="page-error">{{ error() }}</p>
+  }
+
+  @if (capacityOpen()) {
+    <section class="schedules-capacity" [attr.aria-label]="literals.capacityTitle">
+      <h2>{{ literals.capacityTitle }}</h2>
+      <p>{{ literals.capacityHint }}</p>
+      <ul class="schedules-capacity__trainers">
+        @for (trainer of catalogTrainers(); track trainer.id) {
+          <li
+            class="schedules-capacity__trainer"
+            [class.schedules-capacity__trainer--open]="isTrainerOpen(trainer.id)">
+            <button
+              type="button"
+              class="schedules-capacity__trainer-toggle"
+              [attr.aria-expanded]="isTrainerOpen(trainer.id)"
+              [attr.aria-label]="
+                isTrainerOpen(trainer.id) ? literals.hideTrainerCapacity : literals.showTrainerCapacity
+              "
+              (click)="onToggleTrainer(trainer.id)">
+              <span>{{ trainer.name }}</span>
+              <span class="schedules-capacity__value">{{ capacityDraft(trainer) }}</span>
+              <mat-icon class="schedules-capacity__icon" aria-hidden="true">expand_more</mat-icon>
+            </button>
+            @if (isTrainerOpen(trainer.id)) {
+              <app-bona-field
+                class="schedules-capacity__field"
+                [definition]="capacityField()"
+                [value]="capacityDraft(trainer)"
+                (valueChange)="onCapacityDraftChange(trainer.id, $event)" />
+            }
+          </li>
+        }
+      </ul>
+      <app-bona-button [text]="literals.saveCapacity" (action)="onSaveCapacities()" />
+    </section>
   }
 
   <div class="page-toolbar">
@@ -12,18 +52,6 @@
       [showSubmit]="false"
       (valueChange)="onFilterChange($event)" />
   </div>
-
-  <section class="schedules-capacity" [attr.aria-label]="literals.capacityTitle">
-    <h2>{{ literals.capacityTitle }}</h2>
-    <p>{{ literals.capacityHint }}</p>
-    @for (trainer of catalogTrainers(); track trainer.id) {
-      <app-bona-form
-        [fields]="capacityFields"
-        [value]="capacityFormValue(trainer)"
-        [submitText]="literals.saveCapacity"
-        (submitted)="onSaveCapacity(trainer, $event)" />
-    }
-  </section>
 
   @if (formOpen()) {
     <section class="page-nested">
@@ -45,8 +73,8 @@
 
   <app-bona-grid
     [data]="rows()"
-    [columns]="columns"
-    [actions]="actions"
+    [columns]="columns()"
+    [actions]="actions()"
     [emptyMessage]="literals.empty"
     [emptyTitle]="literals.emptyTitle"
     [emptyActionLabel]="literals.newSchedule"

@@ -5,6 +5,7 @@ from app.database import Database
 from app.emailer import Emailer
 from app.security import Security
 from app.services.auth import AuthService
+from app.services.branding import BrandingService
 from app.services.calendar import CalendarService
 from app.services.catalog import CatalogService
 from app.services.clients import ClientService
@@ -19,6 +20,7 @@ class Container(containers.DeclarativeContainer):
             "app.routers.services",
             "app.routers.calendar",
             "app.routers.forms",
+            "app.routers.branding",
         ],
         auto_wire=False,
     )
@@ -61,4 +63,10 @@ class Container(containers.DeclarativeContainer):
     form_service = providers.Factory(
         FormService,
         session_factory=db.provided.session,
+    )
+
+    branding_service = providers.Factory(
+        BrandingService,
+        session_factory=db.provided.session,
+        uploads_dir=settings.provided.uploads_dir,
     )

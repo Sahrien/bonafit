@@ -25,6 +25,8 @@ class Database:
         self._session_factory = sessionmaker(bind=self._engine, autoflush=False, autocommit=False)
         _ensure_appointment_notes(self._engine)
         _ensure_trainer_concurrent_capacity(self._engine)
+        _ensure_user_language(self._engine)
+        _ensure_catalog_i18n(self._engine)
 
     @property
     def engine(self) -> Engine:
@@ -37,6 +39,8 @@ class Database:
         _flatten_legacy_categories(self._engine)
         _ensure_appointment_notes(self._engine)
         _ensure_trainer_concurrent_capacity(self._engine)
+        _ensure_user_language(self._engine)
+        _ensure_catalog_i18n(self._engine)
 
     def clear_tables(self) -> None:
         import app.models  # noqa: F401
@@ -156,5 +160,51 @@ def _ensure_trainer_concurrent_capacity(engine: Engine) -> None:
         connection.execute(
             text("ALTER TABLE trainers ADD COLUMN concurrent_capacity INTEGER NOT NULL DEFAULT 1")
         )
+
+
+def _json_default(dialect: str) -> str:
+    return "'{}'" if dialect == "postgresql" else "'{}'"
+
+
+def _ensure_user_language(engine: Engine) -> None:
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    if "users" not in tables:
+        return
+    columns = {column["name"] for column in inspector.get_columns("users")}
+    if "language" in columns:
+        return
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE users ADD COLUMN language VARCHAR(8) NOT NULL DEFAULT 'es'"))
+
+
+def _ensure_catalog_i18n(engine: Engine) -> None:
+    inspector = inspect(engine)
+    tables = inspector.get_table_names()
+    dialect = engine.dialect.name
+    json_type = "JSONB" if dialect == "postgresql" else "JSON"
+    default = _json_default(dialect)
+    specs = (
+        ("services", "i18n"),
+        ("bonos", "i18n"),
+        ("forms", "i18n"),
+        ("form_questions", "i18n"),
+        ("form_question_options", "i18n"),
+        ("form_assignments", "i18n"),
+    )
+    missing: list[tuple[str, str]] = []
+    for table, column in specs:
+        if table not in tables:
+            continue
+        existing = {item["name"] for item in inspector.get_columns(table)}
+        if column not in existing:
+            missing.append((table, column))
+    if not missing:
+        return
+    with engine.begin() as connection:
+        for table, column in missing:
+            connection.execute(
+                text(f"ALTER TABLE {table} ADD COLUMN {column} {json_type} NOT NULL DEFAULT {default}")
+            )
 
 

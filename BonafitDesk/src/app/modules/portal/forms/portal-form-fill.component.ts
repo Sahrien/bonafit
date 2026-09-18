@@ -14,6 +14,7 @@ import { map } from 'rxjs';
 import { BonaButtonComponent } from '../../../components/bona-button/bona-button.component';
 import { BonaFormValue } from '../../../components/bona-form/bona-form.component';
 import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
+import { BonaToast } from '../../../components/bona-toast/bona-toast.service';
 import { FormAssignmentDto } from '../../../models/form.dto';
 import { FormsApiService } from '../../../services/forms-api.service';
 import {
@@ -22,11 +23,7 @@ import {
   missingRequiredAnswers,
 } from '../../../core/form-answers';
 import { FormFillViewComponent } from '../../forms/form-fill-view.component';
-import {
-  formatQuestionAnswer,
-  orderedQuestions,
-  questionsToFields,
-} from '../../forms/form-question.mapper';
+import { answerDisplayItems, FormFieldLabels, groupAnswerDisplayItems } from '../../forms/form-question.mapper';
 import { PORTAL_FORMS_LITERALS } from './portal-forms.literals';
 
 @Component({
@@ -41,6 +38,7 @@ export class PortalFormFillComponent {
   private readonly formsApi = inject(FormsApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly literals = PORTAL_FORMS_LITERALS;
@@ -58,40 +56,26 @@ export class PortalFormFillComponent {
 
   readonly isCompleted = computed(() => this.assignment()?.status === 'completed');
 
-  readonly fields = computed(() => {
-    const assignment = this.assignment();
-    if (!assignment) {
-      return [];
-    }
-    return questionsToFields(assignment.questions, {
-      yes: this.literals.yes,
-      no: this.literals.no,
-      firstName: this.literals.firstName,
-      lastName: this.literals.lastName,
-      moveUp: this.literals.moveUp,
-      moveDown: this.literals.moveDown,
-    });
-  });
+  readonly fieldLabels: FormFieldLabels = {
+    yes: this.literals.yes,
+    no: this.literals.no,
+    firstName: this.literals.firstName,
+    lastName: this.literals.lastName,
+    moveUp: this.literals.moveUp,
+    moveDown: this.literals.moveDown,
+  };
 
-  readonly answers = computed(() => {
+  readonly answerBlocks = computed(() => {
     const assignment = this.assignment();
     if (!assignment) {
       return [];
     }
-    const labels = {
-      yes: this.literals.yes,
-      no: this.literals.no,
-      empty: this.literals.emptyAnswer,
-      firstName: this.literals.firstName,
-      lastName: this.literals.lastName,
-      moveUp: this.literals.moveUp,
-      moveDown: this.literals.moveDown,
-    };
-    return orderedQuestions(assignment.questions).map((question) => ({
-      id: question.id,
-      prompt: question.prompt,
-      answer: formatQuestionAnswer(question, assignment.answers, labels),
-    }));
+    return groupAnswerDisplayItems(
+      answerDisplayItems(assignment.questions, assignment.answers, {
+        ...this.fieldLabels,
+        empty: this.literals.emptyAnswer,
+      }),
+    );
   });
 
   constructor() {
@@ -107,6 +91,33 @@ export class PortalFormFillComponent {
 
   onFormChange(value: BonaFormValue): void {
     this.formValue.set(value);
+  }
+
+  onSaveDraft(value: BonaFormValue): void {
+    const assignment = this.assignment();
+    if (!assignment || assignment.status === 'completed' || this.saving()) {
+      return;
+    }
+    const answers = mapToAnswers(assignment.questions, value);
+    this.saving.set(true);
+    this.error.set('');
+    this.feedback.set('');
+    this.formsApi
+      .saveAssignmentDraft(assignment.id, { answers })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updated) => {
+          this.assignment.set(updated);
+          this.formValue.set(answersToMap(updated.answers));
+          this.saving.set(false);
+          this.toast.success(this.literals.draftSaved);
+        },
+        error: () => {
+          this.saving.set(false);
+          this.error.set(this.literals.draftError);
+          this.toast.error(this.literals.draftError);
+        },
+      });
   }
 
   onSubmit(value: BonaFormValue): void {
@@ -130,6 +141,7 @@ export class PortalFormFillComponent {
           this.formValue.set(answersToMap(updated.answers));
           this.saving.set(false);
           this.feedback.set(this.literals.submitted);
+          this.toast.success(this.literals.submitted);
         },
         error: () => {
           this.saving.set(false);

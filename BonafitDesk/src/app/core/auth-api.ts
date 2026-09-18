@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import {
+  AuthMePatchDto,
   AuthSessionDto,
   ChangePasswordRequestDto,
   LoginRequestDto,
@@ -10,4 +11,5 @@ export interface AuthApi {
   logout(): Observable<void>;
   getSession(): Observable<AuthSessionDto | null>;
   changePassword(payload: ChangePasswordRequestDto): Observable<void>;
+  updateMe(payload: AuthMePatchDto): Observable<AuthSessionDto>;
 }

@@ -18,6 +18,7 @@ def api(**overrides: object) -> Iterator[TestClient]:
         "catalog": app.container.catalog_service,
         "calendar": app.container.calendar_service,
         "forms": app.container.form_service,
+        "branding": app.container.branding_service,
     }
     if "auth" not in overrides:
         overrides = {"auth": mock.Mock(spec=AuthService), **overrides}

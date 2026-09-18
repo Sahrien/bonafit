@@ -1,10 +1,15 @@
 <div class="bona-shell-app">
   <mat-toolbar class="bona-shell-app__bar">
     <a class="bona-shell-app__brand" routerLink="/">
-      <span class="bona-shell-app__brand-name">{{ brand() }}</span>
-      @if (brandSubtitle()) {
-        <span class="bona-shell-app__brand-role">{{ brandSubtitle() }}</span>
+      @if (brandLogoUrl()) {
+        <img class="bona-shell-app__brand-logo" [src]="brandLogoUrl()" [alt]="brand()" />
       }
+      <span class="bona-shell-app__brand-text">
+        <span class="bona-shell-app__brand-name">{{ brand() }}</span>
+        @if (brandSubtitle()) {
+          <span class="bona-shell-app__brand-role">{{ brandSubtitle() }}</span>
+        }
+      </span>
     </a>
 
     <nav class="bona-shell-app__nav" [attr.aria-label]="menuLabel()">
@@ -20,6 +25,14 @@
     </nav>
 
     <div class="bona-shell-app__profile">
+      <button
+        mat-icon-button
+        type="button"
+        class="bona-shell-app__scheme"
+        [attr.aria-label]="colorSchemeLabel()"
+        (click)="colorSchemeToggle.emit()">
+        <mat-icon>{{ colorSchemeIcon() }}</mat-icon>
+      </button>
       <button
         mat-button
         type="button"

@@ -1,5 +1,11 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { BonaButtonComponent } from '../bona-button/bona-button.component';
+import { BonaButtonComponent, BonaButtonVariant } from '../bona-button/bona-button.component';
+
+export interface BonaSummaryCardAction {
+  name: string;
+  label: string;
+  variant?: BonaButtonVariant;
+}
 
 @Component({
   selector: 'app-bona-summary-card',
@@ -15,7 +21,9 @@ export class BonaSummaryCardComponent {
   @Input() meta = '';
   @Input() hint = '';
   @Input() actionLabel = '';
-  @Input() actionVariant: 'primary' | 'secondary' = 'primary';
+  @Input() actionVariant: BonaButtonVariant = 'primary';
+  @Input() actions: BonaSummaryCardAction[] = [];
 
   @Output() action = new EventEmitter<void>();
+  @Output() cardAction = new EventEmitter<string>();
 }

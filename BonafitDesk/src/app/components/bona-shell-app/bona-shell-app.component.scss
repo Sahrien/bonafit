@@ -25,17 +25,31 @@
 
 .bona-shell-app__brand {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--bona-space-2);
   line-height: 1.15;
   color: inherit;
   text-decoration: none;
   margin-right: var(--bona-space-2);
 }
 
+.bona-shell-app__brand-logo {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+.bona-shell-app__brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .bona-shell-app__brand-name {
   font-size: 1.125rem;
   font-weight: 700;
+  color: var(--bona-color-primary);
 }
 
 .bona-shell-app__brand-role {
@@ -55,10 +69,15 @@
 
 .bona-shell-app__nav-link--active {
   font-weight: 700;
+  background: var(--bona-color-tint);
+  color: var(--bona-color-primary);
 }
 
 .bona-shell-app__profile {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--bona-space-1);
 }
 
 .bona-shell-app__profile-trigger {
@@ -136,5 +155,7 @@
 
   .bona-shell-app__bottom-link--active {
     color: var(--bona-color-primary);
+    background: var(--bona-color-tint);
+    border-radius: var(--bona-radius-sm);
   }
 }

@@ -2,25 +2,69 @@
   margin-bottom: var(--bona-space-4);
   padding: var(--bona-space-4);
   background: var(--bona-color-surface);
-  border: 1px solid var(--bona-color-border);
+  border: 1px solid var(--bona-color-tint-border);
+  border-left: 4px solid var(--bona-color-rail);
   border-radius: var(--bona-radius-lg);
   box-shadow: var(--bona-shadow-card);
 }
 
 .calendar-today__header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: var(--bona-space-2);
   margin-bottom: var(--bona-space-3);
+}
+
+.calendar-today__heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
 
   h2 {
     margin: 0;
     font-size: 1.125rem;
   }
+}
 
-  span {
-    font-weight: 700;
+.calendar-today__total {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--bona-color-primary);
+}
+
+.calendar-today__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bona-space-1);
+  padding: var(--bona-space-1);
+  background: var(--bona-color-nested);
+  border-radius: var(--bona-radius-md);
+}
+
+.calendar-today__chip {
+  appearance: none;
+  min-height: 1.75rem;
+  padding: 0.125rem 0.625rem;
+  border: 0;
+  border-radius: var(--bona-radius-sm);
+  background: transparent;
+  color: var(--bona-color-text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  cursor: pointer;
+
+  &.is-active {
+    background: var(--bona-color-surface);
     color: var(--bona-color-primary);
+    font-weight: 600;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--bona-focus-ring);
   }
 }
 
@@ -35,11 +79,20 @@
   padding: 0;
   display: flex;
   flex-direction: column;
+  gap: var(--bona-space-4);
+}
+
+.calendar-today__group {
+  display: flex;
+  flex-direction: column;
   gap: var(--bona-space-2);
+  width: 100%;
+  min-width: 0;
 }
 
 .calendar-today__item {
   display: flex;
+  align-items: flex-start;
   width: 100%;
   gap: var(--bona-space-3);
   min-height: 2.75rem;
@@ -84,48 +137,29 @@
   }
 }
 
-.calendar-today__hour {
-  margin: 0 0 var(--bona-space-2);
+.calendar-today__trainer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  margin: 0;
+  font-size: 1rem;
   font-weight: 700;
 }
 
-.calendar-today__trainer {
-  margin: 0 0 var(--bona-space-1);
-  font-size: 0.875rem;
+.calendar-today__trainer-count {
+  font-size: 0.8125rem;
+  font-weight: 600;
   color: var(--bona-color-text-muted);
 }
 
-.calendar-today__group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--bona-space-2);
+.calendar-today__group + .calendar-today__group {
+  padding-top: var(--bona-space-3);
+  border-top: 1px solid var(--bona-color-border);
 }
 
 .calendar-view-tabs {
   grid-column: 1 / -1;
-}
-
-.calendar-trainer-filters {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--bona-space-2);
-}
-
-.calendar-trainer-filters__chip {
-  min-height: 2.5rem;
-  padding: 0 var(--bona-space-3);
-  border: 1px solid var(--bona-color-border);
-  border-radius: var(--bona-radius-md);
-  background: var(--bona-color-surface);
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-
-  &.is-active {
-    border-color: var(--bona-color-primary);
-    background: color-mix(in srgb, var(--bona-color-primary) 16%, var(--bona-color-surface));
-  }
 }
 
 .calendar-day-nav {
@@ -141,15 +175,15 @@
   }
 }
 
-.calendar-day-columns {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: var(--bona-space-3);
-  overflow-x: auto;
+.calendar-day-trainers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bona-space-4);
 }
 
-.calendar-day-column {
-  min-width: 16rem;
+.calendar-day-trainer {
+  width: 100%;
+  min-width: 0;
 
   h3 {
     margin: 0 0 var(--bona-space-2);
@@ -211,7 +245,6 @@
   }
 
   .calendar-layout--panel .calendar-view-tabs,
-  .calendar-layout--panel .calendar-trainer-filters,
   .calendar-layout--panel .calendar-layout__main {
     display: none;
   }

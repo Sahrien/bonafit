@@ -1,8 +1,12 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
+  ElementRef,
+  inject,
   input,
   output,
   viewChild,
@@ -35,19 +39,14 @@ export interface BonaCalendarSlotSelect {
 }
 
 export function toFullCalendarEvent(event: BonaCalendarEvent): EventInput {
-  const titleParts = [event.title];
-  if (event.location) {
-    titleParts.push(event.location);
-  }
-  return {
+  const mapped: EventInput = {
     id: event.id,
-    title: titleParts.join(' · '),
+    title: event.title,
     start: event.start,
     end: event.end,
     backgroundColor: event.color,
     borderColor: event.color,
     classNames: event.classNames,
-    interactive: event.interactive,
     extendedProps: {
       trainer: event.trainer,
       client: event.client,
@@ -56,6 +55,10 @@ export function toFullCalendarEvent(event: BonaCalendarEvent): EventInput {
       source: event,
     },
   };
+  if (typeof event.interactive === 'boolean') {
+    mapped.interactive = event.interactive;
+  }
+  return mapped;
 }
 
 export function fromFullCalendarEvent(event: {
@@ -98,6 +101,8 @@ function viewName(view: BonaCalendarView): 'timeGridWeek' | 'timeGridDay' {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BonaCalendarComponent {
+  private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly calendar = viewChild<FullCalendarComponent>('calendar');
 
   readonly view = input<BonaCalendarView>('week');
@@ -126,6 +131,7 @@ export class BonaCalendarComponent {
     selectMirror: true,
     selectOverlap: true,
     eventOverlap: true,
+    slotEventOverlap: false,
     allDaySlot: false,
     slotMinTime: '07:00:00',
     slotMaxTime: '22:00:00',
@@ -148,6 +154,12 @@ export class BonaCalendarComponent {
   }));
 
   constructor() {
+    afterNextRender(() => {
+      this.syncSize();
+      const observer = new ResizeObserver(() => this.syncSize());
+      observer.observe(this.host.nativeElement);
+      this.destroyRef.onDestroy(() => observer.disconnect());
+    });
     effect(() => {
       const nextView = viewName(this.view());
       const api = this.calendar()?.getApi();
@@ -166,5 +178,12 @@ export class BonaCalendarComponent {
         api.gotoDate(date);
       }
     });
+  }
+
+  private syncSize(): void {
+    if (this.host.nativeElement.clientWidth <= 0) {
+      return;
+    }
+    this.calendar()?.getApi()?.updateSize();
   }
 }

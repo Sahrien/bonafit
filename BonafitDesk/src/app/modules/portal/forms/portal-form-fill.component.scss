@@ -7,12 +7,34 @@
   color: var(--bona-color-danger);
 }
 
+.answers-block {
+  margin: var(--bona-space-4) 0 0;
+  padding: var(--bona-space-4);
+  background: var(--bona-color-tint);
+  border: 1px solid var(--bona-color-tint-border);
+  border-left: 4px solid var(--bona-color-rail);
+  border-radius: var(--bona-radius-md);
+}
+
+.answers-block--plain {
+  background: var(--bona-color-surface);
+  border-left-color: var(--bona-color-border);
+}
+
+.answers-block__title {
+  margin: 0 0 var(--bona-space-3);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--bona-color-primary);
+}
+
 .answers {
   margin: 0;
   display: grid;
   gap: var(--bona-space-3);
 
   dt {
+    margin: 0;
     font-weight: 600;
   }
 
@@ -20,4 +42,12 @@
     margin: 0;
     color: var(--bona-color-text-muted);
   }
+}
+
+.answers__static {
+  margin: 0 0 var(--bona-space-3);
+  white-space: pre-wrap;
+  color: var(--bona-color-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
 }

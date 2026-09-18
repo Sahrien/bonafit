@@ -4,13 +4,17 @@ import {
   earliestBookableLocalDate,
   isBonoExpired,
   isClientStartAllowed,
-  isGiftCredit,
-  listAvailabilitySlots,
-  pickPreferredBono,
-  remainingSessionsDelta,
-  canAdminCancelAppointment,
-  canCancelAppointment,
-  slotTakenForTrainer,
+    isGiftCredit,
+    listAvailabilitySlots,
+    pickPreferredBono,
+    remainingSessionsDelta,
+    canAdminCancelAppointment,
+    canCancelAppointment,
+    canClientConfirmAppointment,
+    hasActiveClientAppointmentForService,
+    pickNextClientAppointment,
+    slotTakenForClient,
+    slotTakenForTrainer,
 } from './booking';
 
 describe('booking rules', () => {
@@ -107,8 +111,55 @@ describe('booking rules', () => {
     expect(canCancelAppointment('confirmed', tomorrow, afterCutoff, '18:00')).toBeFalse();
     expect(canCancelAppointment('confirmed', today, beforeCutoff, '18:00')).toBeFalse();
     expect(canCancelAppointment('completed', tomorrow, beforeCutoff, '18:00')).toBeFalse();
+    expect(canClientConfirmAppointment('pending')).toBeTrue();
+    expect(canClientConfirmAppointment('confirmed')).toBeFalse();
     expect(isClientStartAllowed(tomorrow, beforeCutoff, '18:00')).toBeTrue();
     expect(isClientStartAllowed(tomorrow, afterCutoff, '18:00')).toBeFalse();
+  });
+
+  it('picks the soonest active appointment that has not ended', () => {
+    const now = new Date('2026-09-18T14:00:00.000Z');
+    const picked = pickNextClientAppointment(
+      [
+        {
+          status: 'completed' as AppointmentStatus,
+          startsAt: '2026-09-18T12:00:00.000Z',
+          endsAt: '2026-09-18T13:00:00.000Z',
+        },
+        {
+          status: 'confirmed' as AppointmentStatus,
+          startsAt: '2026-09-18T13:30:00.000Z',
+          endsAt: '2026-09-18T14:30:00.000Z',
+        },
+        {
+          status: 'pending' as AppointmentStatus,
+          startsAt: '2026-09-18T16:00:00.000Z',
+          endsAt: '2026-09-18T17:00:00.000Z',
+        },
+      ],
+      now,
+    );
+    expect(picked?.startsAt).toBe('2026-09-18T13:30:00.000Z');
+  });
+
+  it('falls back to the latest still-active appointment when all have ended', () => {
+    const now = new Date('2026-09-18T18:00:00.000Z');
+    const picked = pickNextClientAppointment(
+      [
+        {
+          status: 'confirmed' as AppointmentStatus,
+          startsAt: '2026-09-18T08:30:00.000Z',
+          endsAt: '2026-09-18T09:15:00.000Z',
+        },
+        {
+          status: 'pending' as AppointmentStatus,
+          startsAt: '2026-09-18T12:30:00.000Z',
+          endsAt: '2026-09-18T13:15:00.000Z',
+        },
+      ],
+      now,
+    );
+    expect(picked?.startsAt).toBe('2026-09-18T12:30:00.000Z');
   });
 
   it('lets an admin cancel pending and confirmed appointments', () => {
@@ -198,5 +249,58 @@ describe('booking rules', () => {
       trainers: [{ id: 'trainer-1', concurrentCapacity: 1 }],
     });
     expect(full.some((slot) => slot.startsAt === '2026-09-09T08:00:00.000Z')).toBeFalse();
+    const hiddenForClient = listAvailabilitySlots({
+      ...input,
+      trainers: [{ id: 'trainer-1', concurrentCapacity: 2 }],
+      clientId: 'client-1',
+    });
+    expect(hiddenForClient.some((slot) => slot.startsAt === '2026-09-09T08:00:00.000Z')).toBeFalse();
+  });
+
+  it('blocks a second overlapping booking for the same client', () => {
+    const start = new Date('2026-09-09T08:00:00.000Z');
+    const end = new Date('2026-09-09T09:00:00.000Z');
+    const busy = [
+      {
+        clientId: 'client-1',
+        status: 'confirmed' as AppointmentStatus,
+        startsAt: '2026-09-09T08:00:00.000Z',
+        endsAt: '2026-09-09T09:00:00.000Z',
+      },
+    ];
+    expect(slotTakenForClient(busy, 'client-1', start, end)).toBeTrue();
+    expect(slotTakenForClient(busy, 'client-2', start, end)).toBeFalse();
+    expect(
+      slotTakenForClient(
+        [{ ...busy[0], status: 'completed' }],
+        'client-1',
+        start,
+        end,
+      ),
+    ).toBeFalse();
+  });
+
+  it('treats one active client appointment as per service', () => {
+    const rows = [
+      {
+        id: 'ep',
+        serviceId: 'svc-ep',
+        status: 'confirmed' as AppointmentStatus,
+      },
+      {
+        id: 'hipo',
+        serviceId: 'svc-hipo',
+        status: 'pending' as AppointmentStatus,
+      },
+      {
+        id: 'done',
+        serviceId: 'svc-ep',
+        status: 'completed' as AppointmentStatus,
+      },
+    ];
+    expect(hasActiveClientAppointmentForService(rows, 'svc-ep')).toBeTrue();
+    expect(hasActiveClientAppointmentForService(rows, 'svc-hipo')).toBeTrue();
+    expect(hasActiveClientAppointmentForService(rows, 'svc-ep', 'ep')).toBeFalse();
+    expect(hasActiveClientAppointmentForService(rows, 'svc-masaje')).toBeFalse();
   });
 });

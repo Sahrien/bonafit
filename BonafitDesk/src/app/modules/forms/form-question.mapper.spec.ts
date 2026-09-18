@@ -8,9 +8,12 @@ import {
 } from '../../core/form-answers';
 import { FormQuestionDto } from '../../models/form.dto';
 import {
+  answerDisplayItems,
   formatQuestionAnswer,
   FormAnswerLabels,
+  groupQuestionsByHeading,
   questionToField,
+  questionsToFields,
 } from './form-question.mapper';
 
 const LABELS: FormAnswerLabels = {
@@ -114,5 +117,74 @@ describe('form-question.mapper', () => {
     };
     expect(questionToField({ ...shared, type: 'singleChoice' }, LABELS).type).toBe('radio');
     expect(questionToField({ ...shared, type: 'dropdown' }, LABELS).type).toBe('select');
+  });
+
+  it('skips headings in fill fields and groups them in answer display', () => {
+    const heading: FormQuestionDto = {
+      id: 'h-1',
+      prompt: 'Salud',
+      type: 'heading',
+      required: false,
+      sortOrder: 0,
+    };
+    const question: FormQuestionDto = {
+      id: 'q-1',
+      prompt: 'Lesión',
+      type: 'text',
+      required: true,
+      sortOrder: 1,
+    };
+    expect(questionsToFields([heading, question], LABELS).map((field) => field.key)).toEqual(['q-1']);
+    const items = answerDisplayItems(
+      [heading, question],
+      [{ questionId: 'q-1', value: 'Molestia de rodilla' }],
+      LABELS,
+    );
+    expect(items[0]).toEqual(
+      jasmine.objectContaining({ id: 'h-1', kind: 'heading', prompt: 'Salud', answer: '' }),
+    );
+    expect(items[1]).toEqual(
+      jasmine.objectContaining({
+        id: 'q-1',
+        kind: 'answer',
+        prompt: 'Lesión',
+        answer: 'Molestia de rodilla',
+      }),
+    );
+  });
+
+  it('groups questions under headings and can treat long headings as static copy', () => {
+    const heading: FormQuestionDto = {
+      id: 'h-1',
+      prompt: 'Salud',
+      type: 'heading',
+      required: false,
+      sortOrder: 0,
+    };
+    const legal: FormQuestionDto = {
+      id: 'h-legal',
+      prompt: 'A'.repeat(90),
+      type: 'heading',
+      required: false,
+      sortOrder: 1,
+    };
+    const question: FormQuestionDto = {
+      id: 'q-1',
+      prompt: 'Lesión',
+      type: 'text',
+      required: true,
+      sortOrder: 2,
+    };
+    const fill = groupQuestionsByHeading([heading, legal, question], {
+      longHeadingsAsStatic: true,
+    });
+    expect(fill.length).toBe(1);
+    expect(fill[0].heading?.id).toBe('h-1');
+    expect(fill[0].statics.map((item) => item.id)).toEqual(['h-legal']);
+    expect(fill[0].questions.map((item) => item.id)).toEqual(['q-1']);
+
+    const template = groupQuestionsByHeading([heading, legal, question]);
+    expect(template.length).toBe(2);
+    expect(template[1].heading?.id).toBe('h-legal');
   });
 });

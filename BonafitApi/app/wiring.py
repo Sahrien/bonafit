@@ -5,6 +5,7 @@ from dependency_injector.wiring import Provide
 
 from app.containers import Container
 from app.services.auth import AuthService
+from app.services.branding import BrandingService
 from app.services.calendar import CalendarService
 from app.services.catalog import CatalogService
 from app.services.clients import ClientService
@@ -15,4 +16,5 @@ ClientSvc = Annotated[ClientService, Depends(Provide[Container.client_service])]
 CatalogSvc = Annotated[CatalogService, Depends(Provide[Container.catalog_service])]
 CalendarSvc = Annotated[CalendarService, Depends(Provide[Container.calendar_service])]
 FormSvc = Annotated[FormService, Depends(Provide[Container.form_service])]
+BrandingSvc = Annotated[BrandingService, Depends(Provide[Container.branding_service])]
 AuthorizationHeader = Annotated[str | None, Header()]

@@ -64,20 +64,57 @@ describe('SchedulesComponent', () => {
     expect(harness.routeNativeElement?.querySelector('app-bona-grid')).toBeTruthy();
   });
 
-  it('saves concurrent capacity for a trainer', async () => {
+  it('keeps concurrent capacity collapsed until asked', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/admin/horarios', SchedulesComponent);
+
+    const text = harness.routeNativeElement?.textContent ?? '';
+    expect(text).toContain(SCHEDULES_LITERALS.capacitySettings);
+    expect(text).not.toContain(SCHEDULES_LITERALS.capacityHint);
+    expect(text).not.toContain(SCHEDULES_LITERALS.concurrentCapacity);
+    expect(harness.routeNativeElement?.querySelector('.schedules-capacity')).toBeFalsy();
+
+    const toolbar = harness.routeNativeElement?.querySelector('.page-toolbar') as HTMLElement;
+    const grid = harness.routeNativeElement?.querySelector('app-bona-grid') as HTMLElement;
+    expect(toolbar.nextElementSibling).toBe(grid);
+  });
+
+  it('saves concurrent capacity for dirty trainers with one action', async () => {
+    calendarApi.updateTrainer.and.callFake((id, payload) =>
+      of({ id, name: payload.name, concurrentCapacity: payload.concurrentCapacity }),
+    );
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl('/admin/horarios', SchedulesComponent);
-    const text = harness.routeNativeElement?.textContent ?? '';
-    expect(text).toContain(SCHEDULES_LITERALS.capacityTitle);
-    expect(text).toContain(SCHEDULES_LITERALS.concurrentCapacity);
 
-    component.onSaveCapacity(MOCK_TRAINERS[0], { concurrentCapacity: '2' });
+    component.onToggleCapacity();
+    harness.fixture.detectChanges();
+    expect(harness.routeNativeElement?.querySelector('.schedules-capacity')).toBeTruthy();
+    expect(harness.routeNativeElement?.textContent).toContain(SCHEDULES_LITERALS.capacityHint);
+    expect(harness.routeNativeElement?.querySelector('.schedules-capacity app-bona-field')).toBeFalsy();
+
+    const toolbar = harness.routeNativeElement?.querySelector('.page-toolbar') as HTMLElement;
+    const grid = harness.routeNativeElement?.querySelector('app-bona-grid') as HTMLElement;
+    expect(toolbar.nextElementSibling).toBe(grid);
+
+    component.onToggleTrainer('trainer-1');
+    harness.fixture.detectChanges();
+    expect(harness.routeNativeElement?.querySelector('.schedules-capacity app-bona-field')).toBeTruthy();
+    expect(harness.routeNativeElement?.textContent).toContain(SCHEDULES_LITERALS.concurrentCapacity);
+
+    component.onCapacityDraftChange('trainer-1', '2');
+    component.onCapacityDraftChange('trainer-2', '3');
+    component.onSaveCapacities();
     harness.fixture.detectChanges();
     await harness.fixture.whenStable();
 
+    expect(calendarApi.updateTrainer).toHaveBeenCalledTimes(2);
     expect(calendarApi.updateTrainer).toHaveBeenCalledWith('trainer-1', {
       name: 'Alex Martin',
       concurrentCapacity: 2,
+    });
+    expect(calendarApi.updateTrainer).toHaveBeenCalledWith('trainer-2', {
+      name: 'Sam Ortega',
+      concurrentCapacity: 3,
     });
   });
 

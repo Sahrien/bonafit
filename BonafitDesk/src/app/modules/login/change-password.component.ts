@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { AUTH_PATHS, homeForRole } from '../../core/auth/auth.paths';
-import { CHANGE_PASSWORD_LITERALS } from '../../i18n/es';
+import { injectI18n } from '../../core/i18n/inject-i18n';
 import { AuthApiService } from '../../services/auth-api.service';
 
 @Component({
@@ -18,19 +18,22 @@ export class ChangePasswordComponent {
   private readonly auth = inject(AuthApiService);
   private readonly router = inject(Router);
 
-  readonly literals = CHANGE_PASSWORD_LITERALS;
+  private readonly i18n = injectI18n<Record<string, string>>('changePassword');
+  get literals() {
+    return this.i18n();
+  }
   readonly submitting = signal(false);
   readonly error = signal('');
   readonly formValue = signal<BonaFormValue>({ newPassword: '' });
 
-  readonly fields: BonaFieldDefinition[] = [
+  readonly fields = computed<BonaFieldDefinition[]>(() => [
     {
       key: 'newPassword',
-      label: CHANGE_PASSWORD_LITERALS.newPassword,
+      label: this.literals.newPassword,
       type: 'password',
       required: true,
     },
-  ];
+  ]);
 
   onFormChange(value: BonaFormValue): void {
     this.formValue.set(value);

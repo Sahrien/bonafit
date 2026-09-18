@@ -76,6 +76,19 @@ def test_submit_assignment() -> None:
     forms.submit_assignment.assert_called_once()
 
 
+def test_save_assignment_draft() -> None:
+    forms = mock.Mock(spec=FormService)
+    forms.save_assignment_draft.return_value = ASSIGNMENT
+    with api(forms=forms) as http:
+        response = http.put(
+            "/form-assignments/asg-1/draft",
+            json={"answers": [{"questionId": "q-1", "value": "Marina"}]},
+            headers=AUTH,
+        )
+    assert response.status_code == 200
+    forms.save_assignment_draft.assert_called_once()
+
+
 def test_delete_form() -> None:
     forms = mock.Mock(spec=FormService)
     with api(forms=forms) as http:

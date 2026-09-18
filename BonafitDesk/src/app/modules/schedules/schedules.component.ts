@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatIcon } from '@angular/material/icon';
 import { filter, forkJoin, switchMap } from 'rxjs';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
 import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
+import { BonaFieldComponent } from '../../components/bona-field/bona-field.component';
 import { BonaFieldDefinition, BonaFieldOption } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import {
@@ -17,7 +19,7 @@ import { ApiBusinessError } from '../../core/api-business.error';
 import { TrainerScheduleDto, TrainerScheduleWriteDto } from '../../models/trainer-schedule.dto';
 import { TrainerDto, TrainerWriteDto } from '../../models/trainer.dto';
 import { CalendarApiService } from '../../services/calendar-api.service';
-import { SCHEDULES_LITERALS } from './schedules.literals';
+import { injectI18n } from '../../core/i18n/inject-i18n';
 
 const NEW_ID = 'new';
 const EMPTY_FORM: BonaFormValue = {
@@ -30,7 +32,14 @@ const EMPTY_FORM: BonaFormValue = {
 @Component({
   selector: 'app-schedules',
   standalone: true,
-  imports: [BonaPageComponent, BonaGridComponent, BonaButtonComponent, BonaFormComponent],
+  imports: [
+    BonaPageComponent,
+    BonaGridComponent,
+    BonaButtonComponent,
+    BonaFormComponent,
+    BonaFieldComponent,
+    MatIcon,
+  ],
   templateUrl: './schedules.component.html',
   styleUrl: './schedules.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,34 +50,42 @@ export class SchedulesComponent {
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly literals = SCHEDULES_LITERALS;
+  private readonly i18n = injectI18n<Record<string, string>>('schedules');
+  get literals() {
+    return this.i18n();
+  }
   readonly loading = signal(true);
   readonly error = signal('');
   readonly formOpen = signal(false);
+  readonly capacityOpen = signal(false);
   readonly filterValue = signal<BonaFormValue>({ trainerId: '' });
   readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
   private readonly editingId = signal<string | null>(null);
   private readonly trainers = signal<TrainerDto[]>([]);
   private readonly schedules = signal<TrainerScheduleDto[]>([]);
+  private readonly openTrainerIds = signal<ReadonlySet<string>>(new Set());
+  private readonly capacityDrafts = signal<Record<string, string>>({});
 
   readonly catalogTrainers = computed(() => this.trainers());
 
-  readonly weekdayOptions: BonaFieldOption[] = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
-    value: String(weekday),
-    label: this.weekdayLabel(weekday),
-  }));
+  readonly weekdayOptions = computed<BonaFieldOption[]>(() =>
+    [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
+      value: String(weekday),
+      label: this.weekdayLabel(weekday),
+    })),
+  );
 
-  readonly columns: BonaGridColumn[] = [
-    { field: 'trainerLabel', header: SCHEDULES_LITERALS.trainer },
-    { field: 'weekdayLabel', header: SCHEDULES_LITERALS.weekday },
-    { field: 'startTime', header: SCHEDULES_LITERALS.startTime },
-    { field: 'endTime', header: SCHEDULES_LITERALS.endTime },
-  ];
+  readonly columns = computed<BonaGridColumn[]>(() => [
+    { field: 'trainerLabel', header: this.literals.trainer },
+    { field: 'weekdayLabel', header: this.literals.weekday },
+    { field: 'startTime', header: this.literals.startTime },
+    { field: 'endTime', header: this.literals.endTime },
+  ]);
 
-  readonly actions: BonaGridAction[] = [
-    { label: SCHEDULES_LITERALS.edit, action: 'edit' },
-    { label: SCHEDULES_LITERALS.delete, action: 'delete' },
-  ];
+  readonly actions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.edit, action: 'edit' },
+    { label: this.literals.delete, action: 'delete' },
+  ]);
 
   readonly filterFields = computed((): BonaFieldDefinition[] => [
     {
@@ -95,21 +112,18 @@ export class SchedulesComponent {
       label: this.literals.weekday,
       type: 'select',
       required: true,
-      options: this.weekdayOptions,
+      options: this.weekdayOptions(),
     },
     { key: 'startTime', label: this.literals.startTime, type: 'time', required: true },
     { key: 'endTime', label: this.literals.endTime, type: 'time', required: true },
   ]);
 
-  readonly capacityFields: BonaFieldDefinition[] = [
-    { key: 'name', label: SCHEDULES_LITERALS.trainer, type: 'text', disabled: true },
-    {
-      key: 'concurrentCapacity',
-      label: SCHEDULES_LITERALS.concurrentCapacity,
-      type: 'number',
-      required: true,
-    },
-  ];
+  readonly capacityField = computed<BonaFieldDefinition>(() => ({
+    key: 'concurrentCapacity',
+    label: this.literals.concurrentCapacity,
+    type: 'number',
+    required: true,
+  }));
 
   readonly rows = computed(() => {
     const trainerId = this.filterValue()['trainerId'] ?? '';
@@ -171,21 +185,58 @@ export class SchedulesComponent {
     this.error.set('');
   }
 
-  capacityFormValue(trainer: TrainerDto): BonaFormValue {
-    return { name: trainer.name, concurrentCapacity: `${trainer.concurrentCapacity}` };
+  onToggleCapacity(): void {
+    this.capacityOpen.update((open) => !open);
   }
 
-  onSaveCapacity(trainer: TrainerDto, value: BonaFormValue): void {
-    const payload = this.toTrainerWrite(trainer, value);
-    if (!payload) {
+  isTrainerOpen(trainerId: string): boolean {
+    return this.openTrainerIds().has(trainerId);
+  }
+
+  onToggleTrainer(trainerId: string): void {
+    this.openTrainerIds.update((ids) => {
+      const next = new Set(ids);
+      if (next.has(trainerId)) {
+        next.delete(trainerId);
+      } else {
+        next.add(trainerId);
+      }
+      return next;
+    });
+  }
+
+  capacityDraft(trainer: TrainerDto): string {
+    return this.capacityDrafts()[trainer.id] ?? `${trainer.concurrentCapacity}`;
+  }
+
+  onCapacityDraftChange(trainerId: string, value: string): void {
+    this.capacityDrafts.update((drafts) => ({ ...drafts, [trainerId]: value }));
+  }
+
+  onSaveCapacities(): void {
+    const dirty: { id: string; payload: TrainerWriteDto }[] = [];
+    for (const trainer of this.trainers()) {
+      const payload = this.toTrainerWrite(trainer, this.capacityDraft(trainer));
+      if (!payload) {
+        return;
+      }
+      if (payload.concurrentCapacity !== trainer.concurrentCapacity) {
+        dirty.push({ id: trainer.id, payload });
+      }
+    }
+    this.error.set('');
+    if (dirty.length === 0) {
+      this.toast.success(this.literals.capacitySaved);
       return;
     }
-    this.calendarApi
-      .updateTrainer(trainer.id, payload)
+    forkJoin(dirty.map((item) => this.calendarApi.updateTrainer(item.id, item.payload)))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (updated) => {
-          this.trainers.set(this.trainers().map((row) => (row.id === updated.id ? updated : row)));
+          const byId = new Map(updated.map((row) => [row.id, row]));
+          const trainers = this.trainers().map((row) => byId.get(row.id) ?? row);
+          this.trainers.set(trainers);
+          this.capacityDrafts.set(this.draftsFromTrainers(trainers));
           this.toast.success(this.literals.capacitySaved);
         },
         error: () => this.error.set(this.literals.errorSave),
@@ -249,6 +300,7 @@ export class SchedulesComponent {
       .subscribe({
         next: ({ trainers, schedules }) => {
           this.trainers.set(trainers);
+          this.capacityDrafts.set(this.draftsFromTrainers(trainers));
           this.schedules.set(schedules);
           this.loading.set(false);
         },
@@ -282,13 +334,17 @@ export class SchedulesComponent {
     return { trainerId, weekday, startTime, endTime };
   }
 
-  private toTrainerWrite(trainer: TrainerDto, value: BonaFormValue): TrainerWriteDto | null {
-    const parsed = Number(value['concurrentCapacity'] ?? '');
+  private toTrainerWrite(trainer: TrainerDto, value: string): TrainerWriteDto | null {
+    const parsed = Number(value);
     if (!Number.isInteger(parsed) || parsed < 1) {
       this.error.set(this.literals.errorCapacity);
       return null;
     }
     return { name: trainer.name, concurrentCapacity: parsed };
+  }
+
+  private draftsFromTrainers(trainers: TrainerDto[]): Record<string, string> {
+    return Object.fromEntries(trainers.map((trainer) => [trainer.id, `${trainer.concurrentCapacity}`]));
   }
 
   private weekdayLabel(weekday: number): string {

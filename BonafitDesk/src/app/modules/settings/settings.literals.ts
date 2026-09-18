@@ -1,18 +1,3 @@
-export const SETTINGS_LITERALS = {
-  title: 'Ajustes',
-  subtitleAdmin: 'Reserva y cuenta del estudio',
-  subtitleClient: 'Contraseña de tu cuenta',
-  accountTitle: 'Cuenta',
-  name: 'Nombre',
-  email: 'Email',
-  bookingTitle: 'Reserva',
-  cutoffTime: 'Hora límite del día anterior para reservar y anular',
-  defaultLocation: 'Lugar por defecto',
-  save: 'Guardar',
-  passwordTitle: 'Cambiar contraseña',
-  saved: 'Cambios guardados.',
-  passwordSaved: 'Contraseña actualizada.',
-  errorRequired: 'Completa los campos obligatorios.',
-  errorSave: 'No se han podido guardar los ajustes.',
-  loading: 'Cargando ajustes…',
-} as const;
+import es from '../../../assets/i18n/es.json';
+
+export const SETTINGS_LITERALS = es.settings;

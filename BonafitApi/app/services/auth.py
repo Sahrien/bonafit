@@ -8,7 +8,7 @@ from app.errors import BOOKING_ERROR_CODES, BusinessError, ForbiddenError, Unaut
 from app.identity import CurrentUser
 from app.models import User
 from app.roles import UserRole
-from app.schemas import AuthSessionOut, ChangePasswordRequest, LoginRequest
+from app.schemas import AuthMePatch, AuthSessionOut, ChangePasswordRequest, LoginRequest
 from app.security import Security
 from app.serializers import user_out
 
@@ -30,6 +30,15 @@ class AuthService:
             user = self._load_user(db, authorization)
             if user is None:
                 return None
+            return AuthSessionOut(user=user_out(user), token="")
+
+    def update_me(self, authorization: str | None, payload: AuthMePatch) -> AuthSessionOut:
+        with self._session_factory() as db:
+            user = self._load_user(db, authorization)
+            if user is None:
+                raise UnauthorizedError()
+            user.language = payload.language
+            db.add(user)
             return AuthSessionOut(user=user_out(user), token="")
 
     def change_password(self, authorization: str | None, payload: ChangePasswordRequest) -> dict:
