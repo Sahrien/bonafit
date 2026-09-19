@@ -3,29 +3,6 @@
   color: var(--bona-color-danger);
 }
 
-.schedules-panel {
-  margin: 0 0 var(--bona-space-4);
-  padding: var(--bona-space-3) var(--bona-space-4);
-  border: 1px solid var(--bona-color-border);
-  border-radius: var(--bona-radius-lg);
-  background: var(--bona-color-surface);
-
-  h2 {
-    margin: 0 0 var(--bona-space-2);
-    font-size: 1rem;
-  }
-
-  ::ng-deep .bona-form__actions {
-    justify-content: flex-start;
-  }
-}
-
-.schedules-panel__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--bona-space-2);
-}
-
 .schedules-capacity {
   width: max-content;
   max-width: min(36rem, 100%);

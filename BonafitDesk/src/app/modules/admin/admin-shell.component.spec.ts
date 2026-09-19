@@ -55,6 +55,8 @@ describe('AdminShellComponent', () => {
     expect(text).toContain(ADMIN_LITERALS.calendar);
     expect(text).toContain(ADMIN_LITERALS.schedules);
     expect(text).toContain(ADMIN_LITERALS.clients);
+    expect(text).toContain(ADMIN_LITERALS.forms);
+    expect(text).toContain(ADMIN_LITERALS.stats);
     expect(router.url).toBe('/admin/calendar');
   });
 
@@ -74,5 +76,17 @@ describe('AdminShellComponent', () => {
     );
     expect(labels).toContain(ADMIN_LITERALS.settings);
     expect(labels).not.toContain(ADMIN_LITERALS.schedules);
+    expect(labels).not.toContain(ADMIN_LITERALS.stats);
+  });
+
+  it('places statistics after forms in the main nav', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/admin/calendar');
+
+    const nav = document.querySelector('.bona-shell-app__nav') as HTMLElement;
+    const labels = Array.from(nav.querySelectorAll('a')).map((item) => item.textContent?.trim());
+    const forms = labels.indexOf(ADMIN_LITERALS.forms);
+    expect(forms).toBeGreaterThan(-1);
+    expect(labels[forms + 1]).toBe(ADMIN_LITERALS.stats);
   });
 });

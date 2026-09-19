@@ -1,0 +1,229 @@
+<app-bona-page
+  [title]="literals.title"
+  [subtitle]="literals.subtitle"
+  [loading]="loading()"
+  [loadingLabel]="literals.loading">
+  <div bonaPageActions class="stats-presets" role="group" [attr.aria-label]="literals.period">
+    @for (option of presets; track option) {
+      <app-bona-button
+        [text]="presetLabel(option)"
+        [variant]="preset() === option ? 'primary' : 'secondary'"
+        (action)="onPreset(option)" />
+    }
+  </div>
+
+  @if (economy(); as economyData) {
+    <section class="page-section">
+      <h2>{{ literals.economyTitle }}</h2>
+      @if (economyEmpty()) {
+        <p class="stats-muted">{{ literals.economyEmpty }}</p>
+      } @else {
+        <div class="stats-kpis">
+          <article class="stats-kpi">
+            <p class="stats-kpi__value">{{ money(economyData.paidRevenue) }}</p>
+            <p class="stats-kpi__label">{{ literals.paidRevenue }}</p>
+            <p class="stats-kpi__hint">{{ literals.paidRevenueHint }}</p>
+          </article>
+          <article class="stats-kpi">
+            <p class="stats-kpi__value">{{ signedMoney(economyData.revenueDelta) }}</p>
+            <p class="stats-kpi__label">{{ literals.revenueDelta }}</p>
+            <p class="stats-kpi__hint">{{ literals.revenueDeltaHint }}</p>
+          </article>
+          <article class="stats-kpi">
+            <p class="stats-kpi__value">{{ money(economyData.averageTicket) }}</p>
+            <p class="stats-kpi__label">{{ literals.averageTicket }}</p>
+            <p class="stats-kpi__hint">{{ literals.averageTicketHint }}</p>
+          </article>
+          <article class="stats-kpi">
+            <p class="stats-kpi__value">{{ percent(economyData.discountRate) }}</p>
+            <p class="stats-kpi__label">{{ literals.discountRate }}</p>
+            <p class="stats-kpi__hint">{{ literals.discountRateHint }}</p>
+          </article>
+        </div>
+
+        <h3>{{ literals.seriesTitle }}</h3>
+        <div class="stats-series" role="img" [attr.aria-label]="literals.seriesTitle">
+          @for (point of economyData.series; track point.bucket) {
+            <div class="stats-series__col">
+              <div
+                class="stats-series__bar"
+                [style.height]="barPercent(point.paidRevenue, seriesMax())"
+                [attr.title]="point.bucket + ' · ' + money(point.paidRevenue)"></div>
+              <span class="stats-series__label">{{ point.bucket.slice(8) || point.bucket }}</span>
+            </div>
+          }
+        </div>
+
+        <h3>{{ literals.rankingTitle }}</h3>
+        @if (economyData.ranking.length === 0) {
+          <p class="stats-muted">{{ literals.rankingEmpty }}</p>
+        } @else {
+          <ul class="stats-rank">
+            @for (item of economyData.ranking; track item.kind + item.id) {
+              <li class="stats-rank__row">
+                <div class="stats-rank__meta">
+                  <span class="stats-rank__name">{{ item.name }}</span>
+                  <span class="stats-rank__kind">{{ rankKind(item) }} · {{ item.units }}</span>
+                </div>
+                <span class="stats-rank__value">{{ money(item.paidRevenue) }}</span>
+                <div class="stats-rank__track">
+                  <span class="stats-rank__fill" [style.width]="barPercent(item.paidRevenue, rankingMax())"></span>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+
+        <h3>{{ literals.mixTitle }}</h3>
+        <div class="stats-mix">
+          <article class="stats-mix__card">
+            <p class="stats-kpi__value">{{ economyData.mix.packs.units }}</p>
+            <p class="stats-kpi__label">{{ literals.mixPacks }}</p>
+            <p class="stats-kpi__hint">{{ money(economyData.mix.packs.paidRevenue) }}</p>
+          </article>
+          <article class="stats-mix__card">
+            <p class="stats-kpi__value">{{ economyData.mix.singles.units }}</p>
+            <p class="stats-kpi__label">{{ literals.mixSingles }}</p>
+            <p class="stats-kpi__hint">{{ money(economyData.mix.singles.paidRevenue) }}</p>
+          </article>
+          <article class="stats-mix__card">
+            <p class="stats-kpi__value">{{ economyData.mix.gifts.units }}</p>
+            <p class="stats-kpi__label">{{ literals.mixGifts }}</p>
+            <p class="stats-kpi__hint">{{ literals.mixGiftsHint }}</p>
+          </article>
+        </div>
+      }
+    </section>
+  }
+
+  @if (agenda(); as agendaData) {
+    <section class="page-section">
+      <h2>{{ literals.agendaTitle }}</h2>
+      <div class="stats-kpis">
+        <article class="stats-kpi">
+          <p class="stats-kpi__value">{{ agendaData.appointmentCount }}</p>
+          <p class="stats-kpi__label">{{ literals.appointments }}</p>
+          <p class="stats-kpi__hint">{{ literals.appointmentsHint }}</p>
+        </article>
+        <article class="stats-kpi">
+          <p class="stats-kpi__value">{{ percent(agendaData.occupancyRate) }}</p>
+          <p class="stats-kpi__label">{{ literals.occupancy }}</p>
+          <p class="stats-kpi__hint">{{ literals.occupancyHint }}</p>
+        </article>
+      </div>
+      @if (agendaEmpty()) {
+        <p class="stats-muted">{{ literals.agendaEmpty }}</p>
+      } @else {
+        <h3>{{ literals.demandTitle }}</h3>
+        <div
+          class="stats-heat"
+          role="img"
+          [attr.aria-label]="literals.demandTitle"
+          [style.grid-template-columns]="heatGrid()">
+          <div class="stats-heat__corner"></div>
+          @for (hour of agendaData.heatmapHours; track hour) {
+            <div class="stats-heat__hour">{{ hour }}</div>
+          }
+          @for (weekday of [1, 2, 3, 4, 5, 6, 7]; track weekday) {
+            <div class="stats-heat__day">{{ weekdayLabel(weekday) }}</div>
+            @for (hour of agendaData.heatmapHours; track hour) {
+              <div
+                class="stats-heat__cell"
+                [style.background]="heatStyle(heatCell(weekday, hour)?.count ?? 0)"
+                [attr.title]="weekdayLabel(weekday) + ' ' + hour + 'h · ' + (heatCell(weekday, hour)?.count ?? 0)"></div>
+            }
+          }
+        </div>
+
+        <h3>{{ literals.occupancyTitle }}</h3>
+        <ul class="stats-rank">
+          @for (trainer of agendaData.trainers; track trainer.trainerId) {
+            <li class="stats-rank__row">
+              <div class="stats-rank__meta">
+                <span class="stats-rank__name">{{ trainer.name }}</span>
+                <span class="stats-rank__kind">{{ trainer.bookedMinutes }} / {{ trainer.scheduleMinutes }} min</span>
+              </div>
+              <span class="stats-rank__value">{{ percent(trainer.occupancyRate) }}</span>
+              <div class="stats-rank__track">
+                <span
+                  class="stats-rank__fill"
+                  [style.width]="barPercent(trainer.bookedMinutes, trainer.scheduleMinutes)"></span>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <h3>{{ literals.statusTitle }}</h3>
+        <ul class="stats-rank">
+          @for (item of agendaData.statuses; track item.status) {
+            <li class="stats-rank__row">
+              <div class="stats-rank__meta">
+                <span class="stats-rank__name">{{ statusLabel(item.status) }}</span>
+              </div>
+              <span class="stats-rank__value">{{ item.count }}</span>
+              <div class="stats-rank__track">
+                <span class="stats-rank__fill" [style.width]="barPercent(item.count, statusMax())"></span>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <h3>{{ literals.emptySlotsTitle }}</h3>
+        @if (agendaData.emptySlots.length === 0) {
+          <p class="stats-muted">{{ literals.emptySlotsEmpty }}</p>
+        } @else {
+          <ul class="stats-risk">
+            @for (slot of agendaData.emptySlots; track slot.weekday + slot.startTime) {
+              <li>
+                <strong>{{ weekdayLabel(slot.weekday) }} {{ slot.startTime }}–{{ slot.endTime }}</strong>
+                <span>{{ slot.emptyDays }}/{{ slot.scheduledDays }} {{ literals.emptySlotDays }}</span>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </section>
+  }
+
+  @if (clients(); as clientsData) {
+    <section class="page-section">
+      <h2>{{ literals.clientsTitle }}</h2>
+      <div class="stats-kpis">
+        <article class="stats-kpi">
+          <p class="stats-kpi__value">{{ clientsData.activeCount }}</p>
+          <p class="stats-kpi__label">{{ literals.activeClients }}</p>
+          <p class="stats-kpi__hint">{{ literals.activeClientsHint }}</p>
+        </article>
+        <article class="stats-kpi">
+          <p class="stats-kpi__value">{{ clientsData.newCount }}</p>
+          <p class="stats-kpi__label">{{ literals.newClients }}</p>
+          <p class="stats-kpi__hint">{{ literals.newClientsHint }}</p>
+        </article>
+        <article class="stats-kpi">
+          <p class="stats-kpi__value">{{ clientsData.recurringCount }}</p>
+          <p class="stats-kpi__label">{{ literals.recurringClients }}</p>
+          <p class="stats-kpi__hint">{{ literals.recurringClientsHint }}</p>
+        </article>
+        <article class="stats-kpi">
+          <p class="stats-kpi__value">{{ clientsData.formsPending }} / {{ clientsData.formsCompleted }}</p>
+          <p class="stats-kpi__label">{{ literals.formsPending }}</p>
+          <p class="stats-kpi__hint">{{ literals.formsCompleted }}</p>
+        </article>
+      </div>
+
+      <h3>{{ literals.atRiskTitle }}</h3>
+      @if (clientsData.atRisk.length === 0) {
+        <p class="stats-muted">{{ literals.atRiskEmpty }}</p>
+      } @else {
+        <ul class="stats-risk">
+          @for (item of clientsData.atRisk; track item.clientId + item.reason) {
+            <li>
+              <a [routerLink]="clientHref(item.clientId)">{{ item.name }}</a>
+              <span>{{ riskLabel(item) }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</app-bona-page>

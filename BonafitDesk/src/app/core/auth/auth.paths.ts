@@ -6,6 +6,8 @@ export const AUTH_PATHS = {
   admin: '/admin',
   adminHome: '/admin/calendar',
   adminSchedules: '/admin/horarios',
+  adminStats: '/admin/stats',
+  adminClients: '/admin/clients',
   adminSettings: '/admin/ajustes',
   client: '/app',
   clientHome: '/app/agenda',

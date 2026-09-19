@@ -10,6 +10,7 @@ from app.services.calendar import CalendarService
 from app.services.catalog import CatalogService
 from app.services.clients import ClientService
 from app.services.forms import FormService
+from app.services.stats import StatsService
 
 
 class Container(containers.DeclarativeContainer):
@@ -21,6 +22,7 @@ class Container(containers.DeclarativeContainer):
             "app.routers.calendar",
             "app.routers.forms",
             "app.routers.branding",
+            "app.routers.stats",
         ],
         auto_wire=False,
     )
@@ -69,4 +71,9 @@ class Container(containers.DeclarativeContainer):
         BrandingService,
         session_factory=db.provided.session,
         uploads_dir=settings.provided.uploads_dir,
+    )
+
+    stats_service = providers.Factory(
+        StatsService,
+        session_factory=db.provided.session,
     )

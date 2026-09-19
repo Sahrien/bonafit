@@ -17,16 +17,6 @@
           [disabled]="questions().length === 0"
           (action)="onPreview()" />
       }
-      <app-bona-button
-        [text]="literals.close"
-        variant="secondary"
-        (action)="onBack()" />
-      @if (isNew() || tab() === 'template') {
-        <app-bona-button
-          [text]="literals.save"
-          [disabled]="saving()"
-          (action)="onSave()" />
-      }
     </ng-container>
   }
 
@@ -55,7 +45,7 @@
     }
 
     @if (isNew() || tab() === 'template') {
-      <section class="page-section">
+      <section class="page-section page-section--save">
         <h2>{{ literals.templateSection }}</h2>
         <div class="template-meta">
           <div class="template-meta__item">
@@ -244,19 +234,27 @@
             (action)="onAddQuestion()" />
         </div>
 
-        @if (!isNew()) {
-          <div class="page-actions">
+        <div class="page-section__save">
+          <app-bona-button
+            [text]="literals.close"
+            variant="secondary"
+            (action)="onBack()" />
+          @if (!isNew()) {
             <app-bona-button
               [text]="literals.delete"
               variant="secondary"
               (action)="onDelete()" />
-          </div>
-        }
+          }
+          <app-bona-button
+            [text]="literals.save"
+            [disabled]="saving()"
+            (action)="onSave()" />
+        </div>
       </section>
     }
 
     @if (!isNew() && tab() === 'assign') {
-      <section class="page-section">
+      <section class="page-section page-section--save">
         <h2>{{ literals.assignSection }}</h2>
         <div class="page-toolbar">
           <app-bona-input-text-field
@@ -284,7 +282,11 @@
             <li class="page-hint">{{ literals.emptyClients }}</li>
           }
         </ul>
-        <div class="page-actions">
+        <div class="page-section__save">
+          <app-bona-button
+            [text]="literals.close"
+            variant="secondary"
+            (action)="onBack()" />
           <app-bona-button
             [text]="literals.assignAction"
             [disabled]="assigning() || selectedClientIds().size === 0"
@@ -294,7 +296,7 @@
     }
 
     @if (!isNew() && tab() === 'responses') {
-      <section class="page-section">
+      <section class="page-section page-section--save">
         <h2>{{ literals.responsesSection }}</h2>
         <app-bona-grid
           [data]="assignmentRows()"
@@ -334,6 +336,12 @@
             }
           </div>
         }
+        <div class="page-section__save">
+          <app-bona-button
+            [text]="literals.close"
+            variant="secondary"
+            (action)="onBack()" />
+        </div>
       </section>
     }
   }

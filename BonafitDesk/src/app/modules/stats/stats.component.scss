@@ -1,0 +1,210 @@
+.stats-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bona-space-2);
+}
+
+.stats-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--bona-space-2);
+  padding: var(--bona-space-6) var(--bona-space-4);
+  text-align: center;
+  background: var(--bona-color-surface);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-lg);
+  box-shadow: var(--bona-shadow-card);
+}
+
+.stats-empty__title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.stats-empty__message {
+  margin: 0;
+  max-width: 28rem;
+  color: var(--bona-color-text-muted);
+}
+
+.stats-kpis,
+.stats-mix {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: var(--bona-space-3);
+  margin-bottom: var(--bona-space-5);
+}
+
+.stats-kpi,
+.stats-mix__card {
+  padding: var(--bona-space-3);
+  background: var(--bona-color-nested);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-md);
+  box-shadow: var(--bona-shadow-card);
+}
+
+.stats-kpi__value {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.stats-kpi__label {
+  margin: var(--bona-space-2) 0 0;
+  font-weight: 600;
+}
+
+.stats-kpi__hint,
+.stats-muted {
+  margin: var(--bona-space-1) 0 0;
+  font-size: 0.8125rem;
+  color: var(--bona-color-text-muted);
+}
+
+.stats-series {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.2rem;
+  height: 8rem;
+  margin: 0 0 var(--bona-space-5);
+  padding: var(--bona-space-2) var(--bona-space-2) 0;
+  overflow-x: auto;
+  background: var(--bona-color-nested);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-md);
+}
+
+.stats-series__col {
+  display: flex;
+  flex: 1 0 0.55rem;
+  min-width: 0.45rem;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.stats-series__bar {
+  width: 100%;
+  min-height: 0.15rem;
+  background: var(--bona-color-primary);
+  border-radius: var(--bona-radius-sm) var(--bona-radius-sm) 0 0;
+}
+
+.stats-series__label {
+  font-size: 0.55rem;
+  color: var(--bona-color-text-muted);
+  line-height: 1;
+}
+
+.stats-rank {
+  list-style: none;
+  margin: 0 0 var(--bona-space-5);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bona-space-3);
+}
+
+.stats-rank__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 0.15rem var(--bona-space-3);
+}
+
+.stats-rank__meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-rank__name {
+  font-weight: 600;
+}
+
+.stats-rank__kind {
+  font-size: 0.75rem;
+  color: var(--bona-color-text-muted);
+}
+
+.stats-rank__value {
+  font-weight: 700;
+}
+
+.stats-rank__track {
+  grid-column: 1 / -1;
+  height: 0.45rem;
+  background: var(--bona-color-nested);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.stats-rank__fill {
+  display: block;
+  height: 100%;
+  background: var(--bona-color-accent);
+  border-radius: 999px;
+}
+
+h3 {
+  margin: 0 0 var(--bona-space-3);
+  font-size: 1rem;
+}
+
+.stats-heat {
+  display: grid;
+  grid-template-columns: 1.4rem repeat(15, minmax(0.7rem, 1fr));
+  gap: 0.15rem;
+  margin: 0 0 var(--bona-space-5);
+  overflow-x: auto;
+}
+
+.stats-heat__corner,
+.stats-heat__hour,
+.stats-heat__day {
+  font-size: 0.65rem;
+  color: var(--bona-color-text-muted);
+  text-align: center;
+}
+
+.stats-heat__day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.stats-heat__cell {
+  min-height: 0.7rem;
+  border-radius: 2px;
+  background: var(--bona-color-nested);
+}
+
+.stats-risk {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bona-space-2);
+}
+
+.stats-risk li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bona-space-3);
+  padding: var(--bona-space-2) 0;
+  border-bottom: 1px solid var(--bona-color-border);
+  font-size: 0.9rem;
+}
+
+.stats-risk a {
+  font-weight: 600;
+  color: var(--bona-color-primary);
+  text-decoration: none;
+}

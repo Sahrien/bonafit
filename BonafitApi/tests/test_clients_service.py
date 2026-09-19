@@ -51,6 +51,11 @@ def test_create_client(client_service: ClientService) -> None:
     assert created.temporaryPassword == "temp-pass-12"
 
 
+def test_create_client_allows_empty_phone(client_service: ClientService) -> None:
+    created = client_service.create_client(_write(phone=""))
+    assert created.phone == ""
+
+
 def test_create_client_rejects_taken_email(client_service: ClientService, db: Database) -> None:
     add_client(db, email="ana@example.com")
     with pytest.raises(BusinessError) as exc:

@@ -73,7 +73,7 @@ class ClientWrite(BaseModel):
     firstName: str = Field(min_length=1)
     lastName: str = Field(min_length=1)
     email: EmailStr
-    phone: str = Field(min_length=1)
+    phone: str = ""
     notes: str = ""
     instantConfirm: bool = False
 
@@ -443,3 +443,130 @@ class AssignFormIn(BaseModel):
 class SubmitFormIn(BaseModel):
     model_config = camel_config()
     answers: list[FormAnswerIn]
+
+
+StatsPreset = Literal["7d", "30d", "month", "90d"]
+StatsRankKind = Literal["service", "pack"]
+
+
+class StatsSeriesPointOut(BaseModel):
+    model_config = camel_config()
+    bucket: str
+    paidRevenue: float
+
+
+class StatsRankItemOut(BaseModel):
+    model_config = camel_config()
+    kind: StatsRankKind
+    id: str
+    name: str
+    paidRevenue: float
+    units: int
+
+
+class StatsMixSliceOut(BaseModel):
+    model_config = camel_config()
+    units: int
+    paidRevenue: float
+
+
+class StatsMixOut(BaseModel):
+    model_config = camel_config()
+    packs: StatsMixSliceOut
+    singles: StatsMixSliceOut
+    gifts: StatsMixSliceOut
+
+
+class StatsEconomyOut(BaseModel):
+    model_config = camel_config()
+    paidRevenue: float
+    previousPaidRevenue: float
+    revenueDelta: float
+    averageTicket: float
+    discountRate: float | None
+    paidCount: int
+    previousPaidCount: int
+    series: list[StatsSeriesPointOut]
+    ranking: list[StatsRankItemOut]
+    mix: StatsMixOut
+
+
+class StatsHeatCellOut(BaseModel):
+    model_config = camel_config()
+    weekday: int
+    hour: int
+    count: int
+
+
+class StatsStatusCountOut(BaseModel):
+    model_config = camel_config()
+    status: AppointmentStatus
+    count: int
+    previousCount: int
+
+
+class StatsTrainerOccupancyOut(BaseModel):
+    model_config = camel_config()
+    trainerId: str
+    name: str
+    bookedMinutes: int
+    scheduleMinutes: int
+    occupancyRate: float | None
+
+
+class StatsEmptySlotOut(BaseModel):
+    model_config = camel_config()
+    weekday: int
+    startTime: str
+    endTime: str
+    emptyDays: int
+    scheduledDays: int
+
+
+class StatsAgendaOut(BaseModel):
+    model_config = camel_config()
+    appointmentCount: int
+    previousAppointmentCount: int
+    occupancyRate: float | None
+    previousOccupancyRate: float | None
+    heatmap: list[StatsHeatCellOut]
+    heatmapHours: list[int]
+    statuses: list[StatsStatusCountOut]
+    trainers: list[StatsTrainerOccupancyOut]
+    emptySlots: list[StatsEmptySlotOut]
+
+
+class StatsAtRiskOut(BaseModel):
+    model_config = camel_config()
+    clientId: str
+    name: str
+    reason: Literal["expiring", "noSessions"]
+    remainingSessions: int
+    expiresAt: IsoDateTime | None = None
+
+
+class StatsClientsOut(BaseModel):
+    model_config = camel_config()
+    activeCount: int
+    previousActiveCount: int
+    newCount: int
+    previousNewCount: int
+    recurringCount: int
+    previousRecurringCount: int
+    formsPending: int
+    formsCompleted: int
+    previousFormsCompleted: int
+    atRisk: list[StatsAtRiskOut]
+
+
+class StatsOut(BaseModel):
+    model_config = camel_config()
+    timezone: str
+    preset: StatsPreset
+    from_: IsoDateTime = Field(alias="from", serialization_alias="from")
+    to: IsoDateTime
+    previousFrom: IsoDateTime
+    previousTo: IsoDateTime
+    economy: StatsEconomyOut
+    agenda: StatsAgendaOut
+    clients: StatsClientsOut

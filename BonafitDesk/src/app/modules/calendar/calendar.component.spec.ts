@@ -394,9 +394,9 @@ describe('CalendarComponent', () => {
     fixture.componentInstance.onEventClick(event);
     fixture.detectChanges();
 
-    const header = fixture.nativeElement.querySelector('.calendar-panel__header') as HTMLElement;
-    expect(header.textContent).toContain(CALENDAR_LITERALS.closeEditor);
-    expect(header.textContent).toContain(CALENDAR_LITERALS.save);
+    const saveBar = fixture.nativeElement.querySelector('.calendar-panel .page-section__save') as HTMLElement;
+    expect(saveBar.textContent).toContain(CALENDAR_LITERALS.closeEditor);
+    expect(saveBar.textContent).toContain(CALENDAR_LITERALS.save);
 
     const actions = fixture.nativeElement.querySelector('.bona-form__actions') as HTMLElement;
     expect(actions.textContent).toContain(CALENDAR_LITERALS.viewClient);

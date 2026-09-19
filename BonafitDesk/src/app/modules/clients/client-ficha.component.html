@@ -1,21 +1,4 @@
 <app-bona-page [title]="title()" [subtitle]="literals.subtitle" [loading]="loading()">
-  <ng-container bonaPageActions>
-    <app-bona-button
-      [text]="literals.close"
-      variant="secondary"
-      (action)="onBack()" />
-    @if (!isNew()) {
-      <app-bona-button
-        [text]="literals.deleteClient"
-        variant="secondary"
-        (action)="onDelete()" />
-    }
-    <app-bona-button
-      [text]="literals.save"
-      [disabled]="saving()"
-      (action)="onSubmit(formValue())" />
-  </ng-container>
-
   @if (temporaryPassword()) {
     <p class="page-success" role="status">
       {{ literals.temporaryPassword }}: {{ temporaryPassword() }}.
@@ -23,17 +6,36 @@
     </p>
   }
 
-  <app-bona-form
-    [fields]="fields()"
-    [value]="formValue()"
-    [showSubmit]="false"
-    [disabled]="saving()"
-    (valueChange)="onFormChange($event)"
-    (submitted)="onSubmit($event)" />
+  <section class="page-section page-section--save">
+    <h2>{{ literals.detailsTitle }}</h2>
+    <app-bona-form
+      [fields]="fields()"
+      [value]="formValue()"
+      [showSubmit]="false"
+      [disabled]="saving()"
+      (valueChange)="onFormChange($event)"
+      (submitted)="onSubmit($event)" />
+    <div class="page-section__save">
+      <app-bona-button
+        [text]="literals.close"
+        variant="secondary"
+        (action)="onBack()" />
+      @if (!isNew()) {
+        <app-bona-button
+          [text]="literals.deleteClient"
+          variant="secondary"
+          (action)="onDelete()" />
+      }
+      <app-bona-button
+        [text]="literals.save"
+        [disabled]="saving()"
+        (action)="onSubmit(formValue())" />
+    </div>
+  </section>
 
   @if (!isNew()) {
-    <section class="page-nested">
-      <header class="page-nested__header">
+    <section class="page-section" [class.page-section--save]="bonoFormOpen() || giftFormOpen()">
+      <header class="page-section__header">
         <h2>{{ literals.assignedTitle }}</h2>
         <app-bona-button [text]="literals.gift" (action)="onOpenGift()" />
       </header>
@@ -44,40 +46,44 @@
         [emptyMessage]="literals.emptyAssigned"
         (action)="onBonoAction($event)" />
       @if (bonoFormOpen()) {
-        <div class="page-nested__form">
+        <div class="page-section__form">
           <app-bona-form
             [fields]="bonoFields()"
             [value]="bonoForm()"
-            [submitText]="literals.save"
+            [showSubmit]="false"
+            actionsAlign="start"
             (valueChange)="onBonoFormChange($event)"
-            (submitted)="onSaveBono($event)">
-            <app-bona-button
-              bonaFormActions
-              [text]="literals.close"
-              variant="secondary"
-              (action)="onCancelBono()" />
-          </app-bona-form>
+            (submitted)="onSaveBono($event)" />
+        </div>
+        <div class="page-section__save">
+          <app-bona-button
+            [text]="literals.close"
+            variant="secondary"
+            (action)="onCancelBono()" />
+          <app-bona-button [text]="literals.save" (action)="onSaveBono(bonoForm())" />
         </div>
       }
       @if (giftFormOpen()) {
-        <div class="page-nested__form">
+        <div class="page-section__form">
           <app-bona-form
             [fields]="giftFields()"
             [value]="giftForm()"
-            [submitText]="literals.gift"
+            [showSubmit]="false"
+            actionsAlign="start"
             (valueChange)="onGiftFormChange($event)"
-            (submitted)="onGiftSubmit($event)">
-            <app-bona-button
-              bonaFormActions
-              [text]="literals.close"
-              variant="secondary"
-              (action)="onCancelGift()" />
-          </app-bona-form>
+            (submitted)="onGiftSubmit($event)" />
+        </div>
+        <div class="page-section__save">
+          <app-bona-button
+            [text]="literals.close"
+            variant="secondary"
+            (action)="onCancelGift()" />
+          <app-bona-button [text]="literals.gift" (action)="onGiftSubmit(giftForm())" />
         </div>
       }
     </section>
-    <section class="page-nested">
-      <header class="page-nested__header">
+    <section class="page-section" [class.page-section--save]="couponFormOpen()">
+      <header class="page-section__header">
         <h2>{{ literals.couponsTitle }}</h2>
         <app-bona-button [text]="literals.giftCoupon" (action)="onOpenCouponGift()" />
       </header>
@@ -88,24 +94,28 @@
         [emptyMessage]="literals.emptyCoupons"
         (action)="onCouponAction($event)" />
       @if (couponFormOpen()) {
-        <div class="page-nested__form">
+        <div class="page-section__form">
           <app-bona-form
             [fields]="couponFields()"
             [value]="couponForm()"
-            [submitText]="literals.giftCoupon"
+            [showSubmit]="false"
+            actionsAlign="start"
             (valueChange)="onCouponFormChange($event)"
-            (submitted)="onCouponSubmit($event)">
-            <app-bona-button
-              bonaFormActions
-              [text]="literals.close"
-              variant="secondary"
-              (action)="onCancelCouponGift()" />
-          </app-bona-form>
+            (submitted)="onCouponSubmit($event)" />
+        </div>
+        <div class="page-section__save">
+          <app-bona-button
+            [text]="literals.close"
+            variant="secondary"
+            (action)="onCancelCouponGift()" />
+          <app-bona-button [text]="literals.giftCoupon" (action)="onCouponSubmit(couponForm())" />
         </div>
       }
     </section>
-    <section class="page-nested page-nested--history" [class.page-nested--history-open]="historyOpen()">
-      <header class="page-nested__header">
+    <section
+      class="page-section"
+      [class.page-section--save]="historyOpen() && sessionNoteFormOpen()">
+      <header class="page-section__header">
         <button
           type="button"
           class="history-toggle"
@@ -128,19 +138,21 @@
           [emptyFilteredMessage]="literals.emptyHistoryFilter"
           (action)="onHistoryAction($event)" />
         @if (sessionNoteFormOpen()) {
-          <div class="page-nested__form">
+          <div class="page-section__form">
             <app-bona-form
               [fields]="sessionNoteFields()"
               [value]="sessionNoteForm()"
-              [submitText]="literals.save"
+              [showSubmit]="false"
+              actionsAlign="start"
               (valueChange)="onSessionNoteFormChange($event)"
-              (submitted)="onSaveSessionNote($event)">
-              <app-bona-button
-                bonaFormActions
-                [text]="literals.close"
-                variant="secondary"
-                (action)="onCancelSessionNote()" />
-            </app-bona-form>
+              (submitted)="onSaveSessionNote($event)" />
+          </div>
+          <div class="page-section__save">
+            <app-bona-button
+              [text]="literals.close"
+              variant="secondary"
+              (action)="onCancelSessionNote()" />
+            <app-bona-button [text]="literals.save" (action)="onSaveSessionNote(sessionNoteForm())" />
           </div>
         }
       }

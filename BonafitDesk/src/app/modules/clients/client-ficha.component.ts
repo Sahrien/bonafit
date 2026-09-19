@@ -135,7 +135,7 @@ export class ClientFichaComponent {
   readonly fields = computed<BonaFieldDefinition[]>(() => [
     { key: 'firstName', label: this.literals.firstName, type: 'text', required: true },
     { key: 'lastName', label: this.literals.lastName, type: 'text', required: true },
-    { key: 'email', label: this.literals.email, type: 'email', required: true },
+    { key: 'email', label: this.literals.email, type: 'email', required: true, hint: this.literals.emailHint },
     { key: 'phone', label: this.literals.phone, type: 'tel' },
     { key: 'notes', label: this.literals.notes, type: 'textarea' },
     {
@@ -865,6 +865,10 @@ export class ClientFichaComponent {
     const email = (value['email'] ?? '').trim();
     if (!firstName || !lastName || !email) {
       this.toast.error(this.literals.errorRequired);
+      return null;
+    }
+    if (!email.includes('@')) {
+      this.toast.error(this.literals.errorEmail);
       return null;
     }
     return {

@@ -157,13 +157,13 @@ describe('SchedulesComponent', () => {
 
     component.onCreate();
     harness.fixture.detectChanges();
-    const nested = harness.routeNativeElement?.querySelector('.page-nested') as HTMLElement;
+    const nested = harness.routeNativeElement?.querySelector('.page-section:has(app-bona-form)') as HTMLElement;
     const list = harness.routeNativeElement?.querySelector('.schedules-list') as HTMLElement;
     expect(nested).toBeTruthy();
     expect(list).toBeTruthy();
     expect(nested.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(nested.textContent).toContain(SCHEDULES_LITERALS.newSchedule);
-    expect(nested.querySelector('app-bona-form app-bona-button')?.textContent).toContain(
+    expect(nested.querySelector('.page-section__save')?.textContent).toContain(
       SCHEDULES_LITERALS.cancel,
     );
     expect(nested.textContent).toContain(SCHEDULES_LITERALS.save);
@@ -171,7 +171,7 @@ describe('SchedulesComponent', () => {
     component.onEdit('sch-1-1');
     harness.fixture.detectChanges();
     expect(
-      (harness.routeNativeElement?.querySelector('.page-nested') as HTMLElement).textContent,
+      (harness.routeNativeElement?.querySelector('.page-section:has(app-bona-form)') as HTMLElement).textContent,
     ).toContain(SCHEDULES_LITERALS.editSchedule);
 
     component.onCreate();
@@ -218,7 +218,7 @@ describe('SchedulesComponent', () => {
     await harness.fixture.whenStable();
 
     expect(toast.error).toHaveBeenCalledWith(SCHEDULES_LITERALS.errorTaken);
-    expect(harness.routeNativeElement?.querySelector('.page-nested')).toBeTruthy();
+    expect(harness.routeNativeElement?.querySelector('.page-section:has(app-bona-form)')).toBeTruthy();
 
     component.onSave({
       trainerId: 'trainer-1',
@@ -230,7 +230,7 @@ describe('SchedulesComponent', () => {
     await harness.fixture.whenStable();
     harness.fixture.detectChanges();
 
-    expect(harness.routeNativeElement?.querySelector('.page-nested')).toBeFalsy();
+    expect(harness.routeNativeElement?.querySelector('.page-section:has(app-bona-form)')).toBeFalsy();
     expect(harness.routeNativeElement?.textContent).not.toContain(SCHEDULES_LITERALS.errorTaken);
   });
 

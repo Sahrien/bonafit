@@ -11,6 +11,7 @@ from app.services.calendar import CalendarService
 from app.services.catalog import CatalogService
 from app.services.clients import ClientService
 from app.services.forms import FormService
+from app.services.stats import StatsService
 
 _PASSWORD = "secret"
 
@@ -68,3 +69,8 @@ def form_service(db: Database) -> FormService:
 @pytest.fixture
 def branding_service(db: Database, tmp_path) -> BrandingService:
     return BrandingService(session_factory=db.session, uploads_dir=str(tmp_path))
+
+
+@pytest.fixture
+def stats_service(db: Database) -> StatsService:
+    return StatsService(session_factory=db.session)

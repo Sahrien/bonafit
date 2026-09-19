@@ -8,7 +8,6 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { of } from 'rxjs';
 import { MOCK_CLIENTS } from '../../testing/fixtures';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
-import { clickGridMenuAction } from '../../testing/grid-menu';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ClientsComponent } from './clients.component';
 import { CLIENTS_LITERALS } from './clients.literals';
@@ -25,12 +24,8 @@ describe('ClientsComponent', () => {
   let router: Router;
 
   beforeEach(async () => {
-    clientsApi = jasmine.createSpyObj('ClientsApiService', [
-      'getClients',
-      'deleteClient',
-    ]);
+    clientsApi = jasmine.createSpyObj('ClientsApiService', ['getClients']);
     clientsApi.getClients.and.returnValue(of(MOCK_CLIENTS));
-    clientsApi.deleteClient.and.returnValue(of(void 0));
 
     await TestBed.configureTestingModule({
       imports: [ClientsComponent],
@@ -62,13 +57,15 @@ describe('ClientsComponent', () => {
     expect(text).toContain(CLIENTS_LITERALS.phone);
     expect(text).toContain('Marina');
     expect(harness.routeNativeElement?.querySelector('app-bona-grid')).toBeTruthy();
+    expect(harness.routeNativeElement?.querySelector('button[mat-icon-button]')).toBeFalsy();
   });
 
-  it('opens the ficha from the edit action', async () => {
+  it('opens the ficha when a client row is clicked', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/admin/clients', ClientsComponent);
 
-    clickGridMenuAction(harness.routeNativeElement, CLIENTS_LITERALS.edit);
+    const row = harness.routeNativeElement?.querySelector('tr[mat-row]') as HTMLTableRowElement;
+    row.click();
     await harness.fixture.whenStable();
 
     expect(router.url).toBe('/admin/clients/client-1');

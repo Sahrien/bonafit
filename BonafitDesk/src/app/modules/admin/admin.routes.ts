@@ -39,6 +39,10 @@ export const ADMIN_ROUTES: Routes = [
       import('../forms/form-ficha.component').then((m) => m.FormFichaComponent),
   },
   {
+    path: 'stats',
+    loadComponent: () => import('../stats/stats.component').then((m) => m.StatsComponent),
+  },
+  {
     path: 'ajustes',
     loadComponent: () =>
       import('../settings/admin-settings.component').then((m) => m.AdminSettingsComponent),

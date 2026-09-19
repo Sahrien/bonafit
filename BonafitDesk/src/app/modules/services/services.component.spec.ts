@@ -100,7 +100,7 @@ describe('ServicesComponent', () => {
 
     const catalog = fixture.nativeElement.querySelector('.services-catalog') as HTMLElement;
     const list = fixture.nativeElement.querySelector('.services-catalog__list') as HTMLElement;
-    const editor = fixture.nativeElement.querySelector('.services-catalog__editor') as HTMLElement;
+    const editor = fixture.nativeElement.querySelector('.services-catalog .page-section') as HTMLElement;
     expect(catalog.classList.contains('services-catalog--detail')).toBeTrue();
     expect(getComputedStyle(list).display).toBe('none');
     expect(editor).toBeTruthy();
@@ -117,7 +117,7 @@ describe('ServicesComponent', () => {
     expect(text).toContain(SERVICES_LITERALS.price);
     expect(text).toContain('sesion-suelta');
     expect(text).toContain('45');
-    expect(fixture.nativeElement.querySelectorAll('.services-catalog__editor app-bona-grid').length).toBe(1);
+    expect(fixture.nativeElement.querySelectorAll('.services-catalog .page-section app-bona-grid').length).toBe(1);
   });
 
   it('saves a new service with only the Spanish name and duration', () => {
@@ -141,18 +141,21 @@ describe('ServicesComponent', () => {
     expect(payload.i18n?.['name']?.['en']).toBe('Pilates');
     expect(payload.durationMinutes).toBe(60);
     expect(payload.sharesSessionPool).toBeTrue();
-    expect(fixture.nativeElement.querySelector('.services-catalog__editor')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.services-catalog .page-section')).toBeNull();
     expect(fixture.nativeElement.querySelector('.services-catalog--detail')).toBeNull();
   });
 
-  it('puts close next to the editor title', () => {
+  it('puts close in the editor save bar', () => {
     fixture.componentInstance.onCreateService();
     fixture.detectChanges();
 
     const pageActions = fixture.nativeElement.querySelector('.bona-page__actions') as HTMLElement;
     expect(pageActions.textContent).not.toContain(SERVICES_LITERALS.close);
-    expect(fixture.nativeElement.querySelector('.services-catalog__editor-header')?.textContent).toContain(
+    expect(fixture.nativeElement.querySelector('.page-section__save')?.textContent).toContain(
       SERVICES_LITERALS.close,
+    );
+    expect(fixture.nativeElement.querySelector('.page-section__save')?.textContent).toContain(
+      SERVICES_LITERALS.save,
     );
   });
 

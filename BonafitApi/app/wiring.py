@@ -10,6 +10,7 @@ from app.services.calendar import CalendarService
 from app.services.catalog import CatalogService
 from app.services.clients import ClientService
 from app.services.forms import FormService
+from app.services.stats import StatsService
 
 AuthSvc = Annotated[AuthService, Depends(Provide[Container.auth_service])]
 ClientSvc = Annotated[ClientService, Depends(Provide[Container.client_service])]
@@ -17,4 +18,5 @@ CatalogSvc = Annotated[CatalogService, Depends(Provide[Container.catalog_service
 CalendarSvc = Annotated[CalendarService, Depends(Provide[Container.calendar_service])]
 FormSvc = Annotated[FormService, Depends(Provide[Container.form_service])]
 BrandingSvc = Annotated[BrandingService, Depends(Provide[Container.branding_service])]
+StatsSvc = Annotated[StatsService, Depends(Provide[Container.stats_service])]
 AuthorizationHeader = Annotated[str | None, Header()]

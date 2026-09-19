@@ -104,21 +104,13 @@
     </div>
 
         @if (formOpen()) {
-      <aside class="calendar-panel" [attr.aria-label]="editorTitle()">
-        <header class="calendar-panel__header">
-          <h2>{{ editorTitle() }}</h2>
-          <div class="calendar-panel__header-actions">
-            <app-bona-button
-              [text]="literals.closeEditor"
-              variant="secondary"
-              (action)="onCancel()" />
-            <app-bona-button [text]="literals.save" (action)="onSubmit(formValue())" />
-          </div>
-        </header>
+      <aside class="page-section page-section--save calendar-panel" [attr.aria-label]="editorTitle()">
+        <h2>{{ editorTitle() }}</h2>
         <app-bona-form
           [fields]="appointmentFields()"
           [value]="formValue()"
           [showSubmit]="false"
+          actionsAlign="start"
           (valueChange)="onFormChange($event)"
           (submitted)="onSubmit($event)">
           <div bonaFormActions class="calendar-panel__actions">
@@ -155,6 +147,13 @@
             }
           </div>
         </app-bona-form>
+        <div class="page-section__save">
+          <app-bona-button
+            [text]="literals.closeEditor"
+            variant="secondary"
+            (action)="onCancel()" />
+          <app-bona-button [text]="literals.save" (action)="onSubmit(formValue())" />
+        </div>
       </aside>
     }
   </div>

@@ -132,20 +132,23 @@ describe('ClientFichaComponent', () => {
     expect(inputs.some((input) => input.value === 'Marina')).toBeTrue();
     expect(harness.routeNativeElement?.querySelector('app-bona-form')).toBeTruthy();
 
-    const pageActions = harness.routeNativeElement?.querySelector('.bona-page__actions');
-    expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.close);
-    expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.save);
-    expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.deleteClient);
+    const saveBar = harness.routeNativeElement?.querySelector('.page-section__save');
+    expect(saveBar?.textContent).toContain(CLIENTS_LITERALS.close);
+    expect(saveBar?.textContent).toContain(CLIENTS_LITERALS.save);
+    expect(saveBar?.textContent).toContain(CLIENTS_LITERALS.deleteClient);
+    expect(harness.routeNativeElement?.querySelector('.bona-page__actions')?.textContent).not.toContain(
+      CLIENTS_LITERALS.save,
+    );
   });
 
   it('hides delete profile on a new ficha', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/admin/clients/new', ClientFichaComponent);
 
-    const pageActions = harness.routeNativeElement?.querySelector('.bona-page__actions');
-    expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.close);
-    expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.save);
-    expect(pageActions?.textContent).not.toContain(CLIENTS_LITERALS.deleteClient);
+    const saveBar = harness.routeNativeElement?.querySelector('.page-section__save');
+    expect(saveBar?.textContent).toContain(CLIENTS_LITERALS.close);
+    expect(saveBar?.textContent).toContain(CLIENTS_LITERALS.save);
+    expect(saveBar?.textContent).not.toContain(CLIENTS_LITERALS.deleteClient);
   });
 
   it('lists assigned bonos and the gift form', async () => {
@@ -159,7 +162,7 @@ describe('ClientFichaComponent', () => {
     expect(text).toContain('Entrenamiento personal');
     expect(text).toContain('pack-10');
     expect(text).toContain(CLIENTS_LITERALS.gift);
-    const assignedHeader = harness.routeNativeElement?.querySelector('.page-nested__header');
+    const assignedHeader = harness.routeNativeElement?.querySelectorAll('.page-section__header')[0];
     expect(assignedHeader?.textContent).toContain(CLIENTS_LITERALS.gift);
   });
 
@@ -187,7 +190,7 @@ describe('ClientFichaComponent', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
 
-    const assigned = harness.routeNativeElement?.querySelector('.page-nested app-bona-grid');
+    const assigned = harness.routeNativeElement?.querySelectorAll('.page-section app-bona-grid')[0];
     const text = assigned?.textContent ?? '';
     expect(text).toContain('pack-5');
     expect(text).not.toContain('pack-10');
@@ -263,6 +266,54 @@ describe('ClientFichaComponent', () => {
 
     expect(clientsApi.updateClient).toHaveBeenCalled();
     expect(toast.success).toHaveBeenCalledWith(CLIENTS_LITERALS.saved);
+  });
+
+  it('creates a client with an empty phone', async () => {
+    const toast = TestBed.inject(BonaToast) as jasmine.SpyObj<BonaToast>;
+    clientsApi.createClient.and.returnValue(of({ ...MOCK_CLIENTS[0], id: 'client-new', phone: '' }));
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/clients/new', ClientFichaComponent);
+
+    component.onSubmit({
+      firstName: 'Nia',
+      lastName: 'Costa',
+      email: 'nia.costa@example.com',
+      phone: '',
+      notes: '',
+      instantConfirm: 'false',
+    });
+    harness.fixture.detectChanges();
+    await harness.fixture.whenStable();
+
+    expect(clientsApi.createClient).toHaveBeenCalledWith({
+      firstName: 'Nia',
+      lastName: 'Costa',
+      email: 'nia.costa@example.com',
+      phone: '',
+      notes: '',
+      instantConfirm: false,
+    });
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it('does not create a client with an incomplete email', async () => {
+    const toast = TestBed.inject(BonaToast) as jasmine.SpyObj<BonaToast>;
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/clients/new', ClientFichaComponent);
+
+    component.onSubmit({
+      firstName: 'Nia',
+      lastName: 'Costa',
+      email: 'a',
+      phone: '',
+      notes: '',
+      instantConfirm: 'false',
+    });
+    harness.fixture.detectChanges();
+    await harness.fixture.whenStable();
+
+    expect(clientsApi.createClient).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith(CLIENTS_LITERALS.errorEmail);
   });
 
   it('keeps the session history collapsed until asked', async () => {

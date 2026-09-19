@@ -12,7 +12,7 @@
   }
 
   @if (capacityOpen()) {
-    <section class="schedules-panel schedules-capacity" [attr.aria-label]="literals.capacityTitle">
+    <section class="page-section page-section--save schedules-capacity" [attr.aria-label]="literals.capacityTitle">
       <h2>{{ literals.capacityTitle }}</h2>
       <p>{{ literals.capacityHint }}</p>
       @if (error()) {
@@ -45,7 +45,7 @@
           </li>
         }
       </ul>
-      <div class="schedules-panel__actions">
+      <div class="page-section__save">
         <app-bona-button
           [text]="literals.cancel"
           variant="secondary"
@@ -55,8 +55,8 @@
     </section>
   }
 
-  @if (formOpen()) {
-    <section class="schedules-panel page-nested" [attr.aria-label]="scheduleFormTitle()">
+    @if (formOpen()) {
+      <section class="page-section page-section--save" [attr.aria-label]="scheduleFormTitle()">
       <h2>{{ scheduleFormTitle() }}</h2>
       @if (error()) {
         <p class="page-error">{{ error() }}</p>
@@ -64,15 +64,17 @@
       <app-bona-form
         [fields]="formFields()"
         [value]="formValue()"
-        [submitText]="literals.save"
+        [showSubmit]="false"
+        actionsAlign="start"
         (valueChange)="onFormChange($event)"
-        (submitted)="onSave($event)">
+        (submitted)="onSave($event)" />
+      <div class="page-section__save">
         <app-bona-button
-          bonaFormActions
           [text]="literals.cancel"
           variant="secondary"
           (action)="onCancel()" />
-      </app-bona-form>
+        <app-bona-button [text]="literals.save" (action)="onSave(formValue())" />
+      </div>
     </section>
   }
 

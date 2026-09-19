@@ -14,6 +14,7 @@ export const API_PATHS = {
   brandingFavicon: 'branding/favicon',
   trainerSchedules: 'trainer-schedules',
   forms: 'forms',
+  stats: 'stats',
   formAssignments: 'form-assignments',
   clientCoupons: 'coupons',
   authLogin: 'auth/login',

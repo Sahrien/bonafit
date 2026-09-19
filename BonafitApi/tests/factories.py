@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from app.database import Database
 from app.identity import CurrentUser
-from app.models import Appointment, Bono, BookingSettings, Client, ClientBono, Service, Trainer, TrainerSchedule, User
+from app.models import Appointment, Bono, BookingSettings, Client, ClientBono, Form, FormAssignment, Service, Trainer, TrainerSchedule, User
 from app.roles import UserRole
 
 
@@ -151,3 +151,26 @@ def add_appointment(db: Database, **overrides: object) -> None:
     values.update(overrides)
     with db.session() as session:
         session.add(Appointment(**values))
+
+
+def add_form(db: Database, **overrides: object) -> None:
+    values: dict[str, object] = {"id": "form-1", "title": "Intake", "description": ""}
+    values.update(overrides)
+    with db.session() as session:
+        session.add(Form(**values))
+
+
+def add_form_assignment(db: Database, **overrides: object) -> None:
+    values: dict[str, object] = {
+        "id": "asg-1",
+        "form_id": "form-1",
+        "client_id": "client-1",
+        "title": "Intake",
+        "questions": [],
+        "status": "pending",
+        "assigned_at": datetime(2026, 9, 15, tzinfo=UTC),
+        "submitted_at": None,
+    }
+    values.update(overrides)
+    with db.session() as session:
+        session.add(FormAssignment(**values))

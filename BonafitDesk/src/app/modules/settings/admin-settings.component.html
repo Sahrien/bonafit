@@ -1,5 +1,5 @@
 <app-bona-page [title]="literals.title" [subtitle]="literals.subtitleAdmin" [loading]="loading()">
-  <section class="settings-section">
+  <section class="page-section">
     <h2>{{ literals.accountTitle }}</h2>
     <dl class="settings-account">
       <dt>{{ literals.name }}</dt>
@@ -15,7 +15,7 @@
     </div>
   </section>
 
-  <section class="settings-section settings-section--save">
+  <section class="page-section page-section--save">
     <h2>{{ literals.brandTitle }}</h2>
     <div
       class="settings-brand-preview"
@@ -142,18 +142,18 @@
         </label>
       </div>
     </div>
-    <div class="settings-save">
+    <div class="page-section__save">
       <app-bona-button
         [text]="literals.saveBrand"
         [disabled]="!brandDirty()"
         (action)="onSaveBrand(brandForm())" />
       @if (!brandDirty()) {
-        <span class="settings-save__hint">{{ literals.noBrandChanges }}</span>
+        <span class="page-section__save__hint">{{ literals.noBrandChanges }}</span>
       }
     </div>
   </section>
 
-  <section class="settings-section settings-section--save">
+  <section class="page-section page-section--save">
     <h2>{{ literals.bookingTitle }}</h2>
     <app-bona-form
       [fields]="bookingFields()"
@@ -162,12 +162,12 @@
       actionsAlign="start"
       (valueChange)="onBookingChange($event)"
       (submitted)="onSaveBooking($event)" />
-    <div class="settings-save">
+    <div class="page-section__save">
       <app-bona-button [text]="literals.save" (action)="onSaveBooking(bookingForm())" />
     </div>
   </section>
 
-  <section class="settings-section settings-section--save">
+  <section class="page-section page-section--save">
     <h2>{{ literals.passwordTitle }}</h2>
     <app-password-change-form (saved)="onPasswordSaved()" />
   </section>

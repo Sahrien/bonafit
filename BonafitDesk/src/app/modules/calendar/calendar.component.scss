@@ -203,33 +203,9 @@
 }
 
 .calendar-panel {
-  padding: var(--bona-space-4);
-  background: var(--bona-color-surface);
-  border: 1px solid var(--bona-color-border);
-  border-radius: var(--bona-radius-lg);
-  box-shadow: var(--bona-shadow-card);
+  margin-bottom: 0;
   position: sticky;
   top: calc(var(--bona-header-height) + var(--bona-space-4));
-}
-
-.calendar-panel__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--bona-space-3);
-  margin-bottom: var(--bona-space-4);
-
-  h2 {
-    margin: 0;
-    font-size: 1.125rem;
-  }
-}
-
-.calendar-panel__header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--bona-space-2);
 }
 
 .calendar-panel__actions {

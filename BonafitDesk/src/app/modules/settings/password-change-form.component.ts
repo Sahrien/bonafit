@@ -20,7 +20,7 @@ import { AuthApiService } from '../../services/auth-api.service';
       [disabled]="submitting()"
       (valueChange)="onFormChange($event)"
       (submitted)="onSubmit($event)" />
-    <div class="settings-save">
+    <div class="page-section__save">
       <app-bona-button
         [text]="literals.submit"
         [disabled]="submitting()"
@@ -30,18 +30,6 @@ import { AuthApiService } from '../../services/auth-api.service';
   styles: `
     :host {
       display: block;
-    }
-
-    .settings-save {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: var(--bona-space-2);
-      margin: var(--bona-space-4) calc(-1 * var(--bona-space-4)) 0;
-      padding: var(--bona-space-3) var(--bona-space-4) var(--bona-space-4);
-      background: var(--bona-color-surface);
-      border-top: 1px solid var(--bona-color-border);
-      border-radius: 0 0 var(--bona-radius-lg) var(--bona-radius-lg);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

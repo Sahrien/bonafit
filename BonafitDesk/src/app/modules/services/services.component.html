@@ -52,61 +52,58 @@
     </div>
 
     @if (showDetail()) {
-      <section class="services-catalog__editor" [attr.aria-label]="literals.serviceEditor">
-        <header class="services-catalog__editor-header">
-          <h2>{{ literals.serviceEditor }}</h2>
+      <section
+        class="page-section page-section--save"
+        [attr.aria-label]="literals.serviceEditor">
+        <h2>{{ literals.serviceEditor }}</h2>
+        <app-bona-form
+          [fields]="serviceFields()"
+          [value]="serviceForm()"
+          [showSubmit]="false"
+          actionsAlign="start"
+          (valueChange)="onServiceFormChange($event)"
+          (submitted)="onSaveService($event)" />
+        <div class="page-section__save">
           <app-bona-button
             [text]="literals.close"
             variant="secondary"
             (action)="onCancelService()" />
-        </header>
-        <app-bona-form
-          [fields]="serviceFields()"
-          [value]="serviceForm()"
-          [submitText]="literals.save"
-          (valueChange)="onServiceFormChange($event)"
-          (submitted)="onSaveService($event)">
-          <app-bona-button
-            bonaFormActions
-            [text]="literals.cancel"
-            variant="secondary"
-            (action)="onCancelService()" />
-        </app-bona-form>
-
-        @if (!isNewService()) {
-          <div class="page-nested">
-            <header class="page-nested__header">
-              <h3>{{ literals.bonosTitle }}</h3>
-              <app-bona-button [text]="literals.newBono" (action)="onCreateBono()" />
-            </header>
-
-            <app-bona-grid
-              [data]="selectedBonos()"
-              [columns]="bonoColumns()"
-              [actions]="bonoActions()"
-              [emptyMessage]="literals.emptyBonos"
-              (action)="onBonoAction($event)" />
-
-            @if (bonoFormOpen()) {
-              <div class="page-nested__form">
-                <h4>{{ literals.bonoEditor }}</h4>
-                <app-bona-form
-                  [fields]="bonoFields()"
-                  [value]="bonoForm()"
-                  [submitText]="literals.save"
-                  (valueChange)="onBonoFormChange($event)"
-                  (submitted)="onSaveBono($event)">
-                  <app-bona-button
-                    bonaFormActions
-                    [text]="literals.cancel"
-                    variant="secondary"
-                    (action)="onCancelBono()" />
-                </app-bona-form>
-              </div>
-            }
-          </div>
-        }
+          <app-bona-button [text]="literals.save" (action)="onSaveService(serviceForm())" />
+        </div>
       </section>
+
+      @if (!isNewService()) {
+        <section class="page-section" [class.page-section--save]="bonoFormOpen()">
+          <header class="page-section__header">
+            <h2>{{ literals.bonosTitle }}</h2>
+            <app-bona-button [text]="literals.newBono" (action)="onCreateBono()" />
+          </header>
+          <app-bona-grid
+            [data]="selectedBonos()"
+            [columns]="bonoColumns()"
+            [actions]="bonoActions()"
+            [emptyMessage]="literals.emptyBonos"
+            (action)="onBonoAction($event)" />
+          @if (bonoFormOpen()) {
+            <div class="page-section__form">
+              <app-bona-form
+                [fields]="bonoFields()"
+                [value]="bonoForm()"
+                [showSubmit]="false"
+                actionsAlign="start"
+                (valueChange)="onBonoFormChange($event)"
+                (submitted)="onSaveBono($event)" />
+            </div>
+            <div class="page-section__save">
+              <app-bona-button
+                [text]="literals.cancel"
+                variant="secondary"
+                (action)="onCancelBono()" />
+              <app-bona-button [text]="literals.save" (action)="onSaveBono(bonoForm())" />
+            </div>
+          }
+        </section>
+      }
     }
   </div>
 </app-bona-page>

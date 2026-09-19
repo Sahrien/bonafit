@@ -12,11 +12,9 @@
   <app-bona-grid
     [data]="rows()"
     [columns]="columns()"
-    [actions]="actions()"
     [emptyMessage]="literals.empty"
     [emptyTitle]="literals.emptyTitle"
     [emptyActionLabel]="literals.newClient"
     (emptyAction)="onCreate()"
-    (action)="onRowAction($event)"
     (rowClick)="onRowClick($event)" />
 </app-bona-page>
