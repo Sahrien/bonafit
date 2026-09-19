@@ -1,0 +1,331 @@
+<app-bona-page
+  [title]="literals.title"
+  [subtitle]="literals.subtitle"
+  [loading]="loading()"
+  [loadingLabel]="literals.loading">
+  <label bonaPageActions class="acc-period">
+    <span class="acc-period__label">{{ literals.period }}</span>
+    <select
+      class="acc-period__select"
+      [attr.aria-label]="literals.period"
+      [value]="preset()"
+      (change)="onPresetSelect($event)">
+      @for (option of presets; track option) {
+        <option [value]="option">{{ presetLabel(option) }}</option>
+      }
+    </select>
+  </label>
+
+  <nav class="acc-tabs" role="tablist" [attr.aria-label]="literals.tabs">
+    @for (item of tabs; track item) {
+      <button
+        type="button"
+        class="acc-tabs__item"
+        role="tab"
+        [class.acc-tabs__item--active]="tab() === item"
+        [attr.aria-selected]="tab() === item"
+        (click)="onTab(item)">
+        {{ tabLabel(item) }}
+      </button>
+    }
+  </nav>
+
+  <p class="acc-disclaimer">{{ literals.disclaimer }}</p>
+
+  @if (tab() === 'summary') {
+    @if (empty()) {
+      <div class="acc-empty">
+        <p class="acc-empty__title">{{ literals.emptyTitle }}</p>
+        <p class="acc-empty__message">{{ literals.empty }}</p>
+        <div class="acc-empty__actions">
+          <app-bona-button [text]="literals.syncSales" (action)="onSync()" />
+          <app-bona-button [text]="literals.newExpense" variant="secondary" (action)="openCreate('expense')" />
+        </div>
+      </div>
+    } @else {
+      @if (summary(); as data) {
+      <section class="page-section">
+        <h2>{{ literals.tabSummary }}</h2>
+        <div class="acc-kpis">
+          <article class="acc-kpi">
+            <p class="acc-kpi__value">{{ money(data.kpis.paidIncome) }}</p>
+            <p class="acc-kpi__label">{{ literals.paidIncome }}</p>
+            <p class="acc-kpi__hint">{{ literals.paidIncomeHint }}</p>
+          </article>
+          <article class="acc-kpi">
+            <p class="acc-kpi__value">{{ money(data.kpis.expense) }}</p>
+            <p class="acc-kpi__label">{{ literals.expense }}</p>
+            <p class="acc-kpi__hint">{{ literals.expenseHint }}</p>
+          </article>
+          <article class="acc-kpi">
+            <p class="acc-kpi__value">{{ signedMoney(data.kpis.result) }}</p>
+            <p class="acc-kpi__label">{{ literals.result }}</p>
+            <p class="acc-kpi__hint">{{ literals.resultHint }}</p>
+          </article>
+          <article class="acc-kpi">
+            <p class="acc-kpi__value">{{ money(data.kpis.pendingIncome) }}</p>
+            <p class="acc-kpi__label">{{ literals.pendingIncome }}</p>
+            <p class="acc-kpi__hint">{{ literals.pendingIncomeHint }}</p>
+          </article>
+          @if (showVat()) {
+            <article class="acc-kpi">
+              <p class="acc-kpi__value">{{ money(data.kpis.vatNet) }}</p>
+              <p class="acc-kpi__label">{{ literals.vatNet }}</p>
+              <p class="acc-kpi__hint">{{ literals.vatNetHint }}</p>
+            </article>
+          } @else {
+            <article class="acc-kpi">
+              <p class="acc-kpi__value">{{ money(0) }}</p>
+              <p class="acc-kpi__label">{{ literals.vatNet }}</p>
+              <p class="acc-kpi__hint">{{ literals.vatHint }}</p>
+            </article>
+          }
+        </div>
+        <h3>{{ literals.seriesTitle }}</h3>
+        <div class="acc-series" role="img" [attr.aria-label]="literals.seriesTitle">
+          @for (point of data.series; track point.bucket) {
+            <div class="acc-series__col">
+              <div class="acc-series__stack">
+                <div
+                  class="acc-series__bar acc-series__bar--income"
+                  [style.height]="barPercent(point.income, seriesMax())"></div>
+                <div
+                  class="acc-series__bar acc-series__bar--expense"
+                  [style.height]="barPercent(point.expense, seriesMax())"></div>
+              </div>
+              <span class="acc-series__label">{{ point.bucket.slice(-5) }}</span>
+            </div>
+          }
+        </div>
+        <h3>{{ literals.breakdownTitle }}</h3>
+        @if (data.breakdown.length === 0) {
+          <p class="acc-muted">{{ literals.breakdownEmpty }}</p>
+        } @else {
+          <ul class="acc-rank">
+            @for (item of data.breakdown; track item.categoryId) {
+              <li class="acc-rank__row">
+                <div class="acc-rank__meta">
+                  <span class="acc-rank__name">{{ item.name }}</span>
+                  <span class="acc-rank__kind">{{
+                    item.kind === 'income' ? literals.kindIncome : literals.kindExpense
+                  }}</span>
+                </div>
+                <span class="acc-rank__value">{{ money(item.amount) }}</span>
+                <div class="acc-rank__track">
+                  <span class="acc-rank__fill" [style.width]="barPercent(item.amount, breakdownMax())"></span>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+      }
+    }
+  }
+
+  @if (tab() === 'income' || tab() === 'expense') {
+    <section class="page-section">
+      <header class="page-section__header">
+        <h2>{{ tab() === 'income' ? literals.tabIncome : literals.tabExpense }}</h2>
+        <div class="acc-actions">
+          @if (tab() === 'income') {
+            <app-bona-button [text]="literals.syncSales" variant="secondary" (action)="onSync()" />
+            <app-bona-button [text]="literals.newIncome" (action)="openCreate('income')" />
+          } @else {
+            <app-bona-button [text]="literals.generateRecurring" variant="secondary" (action)="onRecurring()" />
+            <app-bona-button [text]="literals.newExpense" (action)="openCreate('expense')" />
+          }
+        </div>
+      </header>
+      <div class="acc-filters">
+        <label>
+          <span>{{ literals.filter }}</span>
+          <input type="search" [value]="query()" (input)="onQuery($event)" />
+        </label>
+        <label>
+          <span>{{ literals.filterCategory }}</span>
+          <select [value]="filterCategory()" (change)="onFilterCategory($event)">
+            <option value="">{{ literals.all }}</option>
+            @for (
+              category of tab() === 'income' ? incomeCategories() : expenseCategories();
+              track category.id
+            ) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>{{ literals.filterStatus }}</span>
+          <select [value]="filterStatus()" (change)="onFilterStatus($event)">
+            <option value="">{{ literals.all }}</option>
+            <option value="paid">{{ literals.statusPaid }}</option>
+            <option value="pending">{{ literals.statusPending }}</option>
+            <option value="partial">{{ literals.statusPartial }}</option>
+          </select>
+        </label>
+        <label>
+          <span>{{ literals.filterMethod }}</span>
+          <select [value]="filterMethod()" (change)="onFilterMethod($event)">
+            <option value="">{{ literals.all }}</option>
+            <option value="cash">{{ literals.methodCash }}</option>
+            <option value="transfer">{{ literals.methodTransfer }}</option>
+            <option value="bizum">{{ literals.methodBizum }}</option>
+            <option value="pos">{{ literals.methodPos }}</option>
+            <option value="other">{{ literals.methodOther }}</option>
+          </select>
+        </label>
+      </div>
+      @if (entries().length === 0) {
+        <p class="acc-muted">{{ literals.empty }}</p>
+      } @else {
+        <ul class="acc-list">
+          @for (entry of entries(); track entry.id) {
+            <li class="acc-row" (click)="openEdit(entry)">
+              <div class="acc-row__main">
+                <span class="acc-row__concept">{{ entry.concept }}</span>
+                <span class="acc-row__meta"
+                  >{{ entry.date.slice(0, 10) }} · {{ entry.categoryName }} ·
+                  {{ statusLabel(entry.paymentStatus) }} · {{ methodLabel(entry.paymentMethod) }}</span
+                >
+                @if (entry.originLabel) {
+                  <span class="acc-row__origin">{{ literals.origin }}: {{ entry.originLabel }}</span>
+                }
+              </div>
+              <span class="acc-row__amount">{{ money(entry.amount) }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+    @if (formOpen()) {
+      <section class="page-section page-section--save" [attr.aria-label]="literals.save">
+        @if (editingId() && formKind() === 'income') {
+          <p class="acc-muted">{{ literals.origin }}: {{ formValue()['counterpartyName'] }} · {{ formValue()['concept'] }}</p>
+        }
+        <app-bona-form
+          [fields]="entryFields()"
+          [value]="formValue()"
+          [showSubmit]="false"
+          (valueChange)="onFormChange($event)"
+          (submitted)="saveEntry($event)" />
+        <div class="page-section__save">
+          <app-bona-button [text]="literals.save" (action)="saveEntry(formValue())" />
+          <app-bona-button [text]="literals.cancel" variant="secondary" (action)="closeForm()" />
+          @if (editingId()) {
+            <app-bona-button [text]="literals.delete" variant="secondary" (action)="deleteCurrent()" />
+          }
+        </div>
+      </section>
+    }
+  }
+
+  @if (tab() === 'reports') {
+    <section class="page-section">
+      <h2>{{ literals.reportsTitle }}</h2>
+      <div class="acc-reports">
+        @for (
+          card of [
+            { kind: 'pyg', title: literals.reportPyg, hint: literals.reportPygHint },
+            { kind: 'vat', title: literals.reportVat, hint: literals.reportVatHint },
+            { kind: 'cash', title: literals.reportCash, hint: literals.reportCashHint },
+            { kind: 'income-book', title: literals.reportIncome, hint: literals.reportIncomeHint },
+            { kind: 'expense-book', title: literals.reportExpense, hint: literals.reportExpenseHint }
+          ];
+          track card.kind
+        ) {
+          <article class="acc-report">
+            <h3>{{ card.title }}</h3>
+            <p>{{ card.hint }}</p>
+            <div class="acc-actions">
+              <app-bona-button [text]="literals.view" variant="secondary" (action)="viewNamedReport(card.kind)" />
+              <app-bona-button [text]="literals.excel" variant="secondary" (action)="downloadNamed(card.kind, 'xlsx')" />
+              <app-bona-button [text]="literals.pdf" (action)="downloadNamed(card.kind, 'pdf')" />
+            </div>
+          </article>
+        }
+      </div>
+      @if (report(); as current) {
+        <h3>{{ current.title }}</h3>
+        <p class="acc-muted">{{ current.disclaimer }}</p>
+        <div class="acc-kpis">
+          <article class="acc-kpi">
+            <p class="acc-kpi__value">{{ money(current.kpis.income) }}</p>
+            <p class="acc-kpi__label">{{ literals.paidIncome }}</p>
+          </article>
+          <article class="acc-kpi">
+            <p class="acc-kpi__value">{{ money(current.kpis.expense) }}</p>
+            <p class="acc-kpi__label">{{ literals.expense }}</p>
+          </article>
+          <article class="acc-kpi">
+            <p class="acc-kpi__value">{{ money(current.kpis.result) }}</p>
+            <p class="acc-kpi__label">{{ literals.result }}</p>
+          </article>
+        </div>
+      }
+    </section>
+  }
+
+  @if (tab() === 'settings') {
+    <section class="page-section page-section--save">
+      <h2>{{ literals.settingsTitle }}</h2>
+      <app-bona-form
+        [fields]="settingsFields()"
+        [value]="settingsForm()"
+        [showSubmit]="false"
+        (valueChange)="onSettingsChange($event)"
+        (submitted)="saveSettings($event)" />
+      <div class="page-section__save">
+        <app-bona-button [text]="literals.save" (action)="saveSettings(settingsForm())" />
+      </div>
+    </section>
+    <section class="page-section">
+      <h2>{{ literals.categoriesTitle }}</h2>
+      @for (kind of ['income', 'expense']; track kind) {
+        <h3>{{ kind === 'income' ? literals.kindIncome : literals.kindExpense }}</h3>
+        <ul class="acc-cats">
+          @for (
+            category of kind === 'income' ? incomeCategories() : expenseCategories();
+            track category.id
+          ) {
+            <li>
+              <span>{{ category.name }}</span>
+              @if (!category.system) {
+                <button type="button" (click)="deactivateCategory(category.id)">{{ literals.deactivate }}</button>
+              }
+            </li>
+          }
+        </ul>
+      }
+      <label class="acc-new-cat">
+        <span>{{ literals.newCategory }}</span>
+        <input type="text" [value]="newCategoryName()" (input)="onCategoryName($event)" />
+      </label>
+      <div class="acc-actions">
+        <app-bona-button [text]="literals.kindIncome" variant="secondary" (action)="addCategory('income')" />
+        <app-bona-button [text]="literals.kindExpense" variant="secondary" (action)="addCategory('expense')" />
+      </div>
+    </section>
+    <section class="page-section">
+      <h2>{{ literals.periodsTitle }}</h2>
+      <div class="acc-actions">
+        @for (quarter of [1, 2, 3, 4]; track quarter) {
+          <app-bona-button
+            [text]="lockQuarterLabel(quarter)"
+            variant="secondary"
+            (action)="lockQuarter(quarter)" />
+        }
+      </div>
+      <ul class="acc-periods">
+        @for (item of periodMonths(); track item.label) {
+          <li>
+            <span>{{ item.label }}</span>
+            <app-bona-button
+              [text]="isLocked(item.year, item.month) ? literals.unlock : literals.lock"
+              variant="secondary"
+              (action)="toggleLock(item.year, item.month)" />
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</app-bona-page>

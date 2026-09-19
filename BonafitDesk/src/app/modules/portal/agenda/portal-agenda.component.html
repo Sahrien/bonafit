@@ -50,8 +50,8 @@
               <button
                 type="button"
                 class="portal-agenda__chip"
-                [class.is-active]="selectedDayGroup()?.key === group.key"
-                [attr.aria-pressed]="selectedDayGroup()?.key === group.key"
+                [class.is-active]="selectedDayKey() === group.key"
+                [attr.aria-pressed]="selectedDayKey() === group.key"
                 (click)="onSelectDay(group.key)">
                 {{ group.chipLabel }}
               </button>
@@ -65,8 +65,8 @@
                   <button
                     type="button"
                     class="portal-agenda__chip portal-agenda__chip--time"
-                    [class.is-active]="(selectedTimeKey() || dayTimes()[0]?.key) === time.key"
-                    [attr.aria-pressed]="(selectedTimeKey() || dayTimes()[0]?.key) === time.key"
+                    [class.is-active]="selectedTimeKey() === time.key"
+                    [attr.aria-pressed]="selectedTimeKey() === time.key"
                     (click)="onSelectTime(time.key)">
                     {{ time.label }}
                   </button>

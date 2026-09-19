@@ -445,6 +445,13 @@ class SubmitFormIn(BaseModel):
     answers: list[FormAnswerIn]
 
 
+AccountingPreset = Literal["7d", "30d", "month", "quarter", "90d", "year"]
+AccountingKind = Literal["income", "expense"]
+AccountingVatRegime = Literal["unknown", "taxable", "exempt"]
+AccountingPaymentStatus = Literal["paid", "pending", "partial"]
+AccountingPaymentMethod = Literal["cash", "transfer", "bizum", "pos", "other"]
+AccountingSource = Literal["manual", "client_bono"]
+AccountingReportKind = Literal["pyg", "vat", "cash", "income-book", "expense-book"]
 StatsPreset = Literal["7d", "30d", "month", "90d"]
 StatsRankKind = Literal["service", "pack"]
 
@@ -570,3 +577,202 @@ class StatsOut(BaseModel):
     economy: StatsEconomyOut
     agenda: StatsAgendaOut
     clients: StatsClientsOut
+
+
+class AccountingPeriodLockOut(BaseModel):
+    model_config = camel_config()
+    year: int
+    month: int
+
+
+class AccountingSettingsOut(BaseModel):
+    model_config = camel_config()
+    legalName: str
+    taxId: str | None = None
+    address: str | None = None
+    vatRegime: AccountingVatRegime
+    defaultVatRate: float
+    fiscalYearStartMonth: int
+    defaultRecurringDay: int
+    currency: str
+    notes: str | None = None
+    locks: list[AccountingPeriodLockOut]
+
+
+class AccountingSettingsWrite(BaseModel):
+    model_config = camel_config()
+    legalName: str
+    taxId: str | None = None
+    address: str | None = None
+    vatRegime: AccountingVatRegime = "unknown"
+    defaultVatRate: float = 0
+    fiscalYearStartMonth: int = 1
+    defaultRecurringDay: int = 1
+    notes: str | None = None
+
+
+class AccountingCategoryOut(BaseModel):
+    model_config = camel_config()
+    id: str
+    kind: AccountingKind
+    name: str
+    i18n: dict[str, dict[str, str]] = Field(default_factory=dict)
+    active: bool
+    sortOrder: int
+    system: bool
+
+
+class AccountingCategoryWrite(BaseModel):
+    model_config = camel_config()
+    kind: AccountingKind
+    name: str
+    i18n: dict[str, dict[str, str]] = Field(default_factory=dict)
+
+
+class AccountingCategoryPatch(BaseModel):
+    model_config = camel_config()
+    name: str | None = None
+    active: bool | None = None
+    i18n: dict[str, dict[str, str]] | None = None
+
+
+class AccountingEntryOut(BaseModel):
+    model_config = camel_config()
+    id: str
+    type: AccountingKind
+    date: IsoDateTime
+    concept: str
+    notes: str
+    categoryId: str
+    categoryName: str
+    counterpartyName: str
+    clientId: str | None = None
+    source: AccountingSource
+    sourceId: str | None = None
+    amount: float
+    vatRate: float
+    vatAmount: float
+    netAmount: float
+    paymentStatus: AccountingPaymentStatus
+    paidAmount: float
+    paymentMethod: AccountingPaymentMethod
+    recurring: bool
+    recurringDay: int | None = None
+    originLabel: str | None = None
+
+
+class AccountingEntryWrite(BaseModel):
+    model_config = camel_config()
+    type: AccountingKind
+    date: IsoDateTime
+    concept: str
+    notes: str = ""
+    categoryId: str
+    counterpartyName: str = ""
+    clientId: str | None = None
+    amount: float
+    vatRate: float | None = None
+    paymentStatus: AccountingPaymentStatus = "paid"
+    paidAmount: float | None = None
+    paymentMethod: AccountingPaymentMethod = "other"
+    recurring: bool = False
+    recurringDay: int | None = None
+
+
+class AccountingEntryPatch(BaseModel):
+    model_config = camel_config()
+    date: IsoDateTime | None = None
+    concept: str | None = None
+    notes: str | None = None
+    categoryId: str | None = None
+    counterpartyName: str | None = None
+    clientId: str | None = None
+    amount: float | None = None
+    vatRate: float | None = None
+    paymentStatus: AccountingPaymentStatus | None = None
+    paidAmount: float | None = None
+    paymentMethod: AccountingPaymentMethod | None = None
+    recurring: bool | None = None
+    recurringDay: int | None = None
+
+
+class AccountingSeriesPointOut(BaseModel):
+    model_config = camel_config()
+    bucket: str
+    income: float
+    expense: float
+    result: float
+
+
+class AccountingBreakdownOut(BaseModel):
+    model_config = camel_config()
+    categoryId: str
+    name: str
+    kind: AccountingKind
+    amount: float
+
+
+class AccountingKpisOut(BaseModel):
+    model_config = camel_config()
+    income: float
+    expense: float
+    result: float
+    paidIncome: float
+    pendingIncome: float
+    previousIncome: float
+    previousExpense: float
+    previousResult: float
+    incomeDelta: float
+    expenseDelta: float
+    resultDelta: float
+    vatCollected: float
+    vatDeductible: float
+    vatNet: float
+
+
+class AccountingSummaryOut(BaseModel):
+    model_config = camel_config()
+    timezone: str
+    preset: AccountingPreset
+    from_: IsoDateTime = Field(alias="from", serialization_alias="from")
+    to: IsoDateTime
+    previousFrom: IsoDateTime
+    previousTo: IsoDateTime
+    disclaimer: str
+    kpis: AccountingKpisOut
+    series: list[AccountingSeriesPointOut]
+    breakdown: list[AccountingBreakdownOut]
+
+
+class AccountingSyncOut(BaseModel):
+    model_config = camel_config()
+    created: int
+    skippedExisting: int
+    skippedLocked: int
+
+
+class AccountingRecurringOut(BaseModel):
+    model_config = camel_config()
+    created: int
+    skippedExisting: int
+
+
+class AccountingPeriodWrite(BaseModel):
+    model_config = camel_config()
+    year: int
+    month: int | None = None
+    quarter: int | None = None
+
+
+class AccountingReportOut(BaseModel):
+    model_config = camel_config()
+    kind: AccountingReportKind
+    preset: AccountingPreset
+    from_: IsoDateTime = Field(alias="from", serialization_alias="from")
+    to: IsoDateTime
+    title: str
+    disclaimer: str
+    legalName: str
+    kpis: AccountingKpisOut
+    breakdown: list[AccountingBreakdownOut]
+    entries: list[AccountingEntryOut]

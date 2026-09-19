@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminAccountingLeaveGuard } from '../accounting/accounting.leave-guard';
 import { adminSettingsLeaveGuard } from '../settings/admin-settings.leave-guard';
 
 export const ADMIN_ROUTES: Routes = [
@@ -41,6 +42,12 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'stats',
     loadComponent: () => import('../stats/stats.component').then((m) => m.StatsComponent),
+  },
+  {
+    path: 'contabilidad',
+    loadComponent: () =>
+      import('../accounting/accounting.component').then((m) => m.AccountingComponent),
+    canDeactivate: [adminAccountingLeaveGuard],
   },
   {
     path: 'ajustes',

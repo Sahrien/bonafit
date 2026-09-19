@@ -63,6 +63,12 @@ describe('app routes', () => {
       jasmine.objectContaining({ path: 'admin/forms/:id', name: 'FormFichaComponent' }),
     );
     expect(loaded).toContain(
+      jasmine.objectContaining({ path: 'admin/stats', name: 'StatsComponent' }),
+    );
+    expect(loaded).toContain(
+      jasmine.objectContaining({ path: 'admin/contabilidad', name: 'AccountingComponent' }),
+    );
+    expect(loaded).toContain(
       jasmine.objectContaining({ path: 'admin/ajustes', name: 'AdminSettingsComponent' }),
     );
   });

@@ -35,6 +35,7 @@ export class AdminShellComponent {
     { id: 'services', label: this.literals.services, link: '/admin/services', icon: 'spa' },
     { id: 'forms', label: this.literals.forms, link: '/admin/forms', icon: 'assignment' },
     { id: 'stats', label: this.literals.stats, link: AUTH_PATHS.adminStats, icon: 'insights' },
+    { id: 'accounting', label: this.literals.accounting, link: AUTH_PATHS.adminAccounting, icon: 'account_balance' },
   ]);
   readonly menuItems = computed<BonaShellNavItem[]>(() => [
     { id: 'settings', label: this.literals.settings, link: AUTH_PATHS.adminSettings },

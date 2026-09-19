@@ -4,6 +4,7 @@ from fastapi import Depends, Header
 from dependency_injector.wiring import Provide
 
 from app.containers import Container
+from app.services.accounting import AccountingService
 from app.services.auth import AuthService
 from app.services.branding import BrandingService
 from app.services.calendar import CalendarService
@@ -19,4 +20,5 @@ CalendarSvc = Annotated[CalendarService, Depends(Provide[Container.calendar_serv
 FormSvc = Annotated[FormService, Depends(Provide[Container.form_service])]
 BrandingSvc = Annotated[BrandingService, Depends(Provide[Container.branding_service])]
 StatsSvc = Annotated[StatsService, Depends(Provide[Container.stats_service])]
+AccountingSvc = Annotated[AccountingService, Depends(Provide[Container.accounting_service])]
 AuthorizationHeader = Annotated[str | None, Header()]

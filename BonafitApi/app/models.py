@@ -290,3 +290,71 @@ class FormAnswer(Base):
     value: Mapped[str] = mapped_column(Text, nullable=False)
 
     assignment: Mapped[FormAssignment] = relationship(back_populates="answers")
+
+
+class AccountingSettings(Base):
+    __tablename__ = "accounting_settings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    legal_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    tax_id: Mapped[str | None] = mapped_column(String(40))
+    address: Mapped[str | None] = mapped_column(String(400))
+    vat_regime: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    default_vat_rate: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    fiscal_year_start_month: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    default_recurring_day: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    currency: Mapped[str] = mapped_column(String(8), nullable=False, default="EUR")
+    notes: Mapped[str | None] = mapped_column(Text)
+
+
+class AccountingCategory(Base):
+    __tablename__ = "accounting_categories"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    i18n: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), default=dict, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    system: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    entries: Mapped[list["AccountingEntry"]] = relationship(back_populates="category")
+
+
+class AccountingEntry(Base):
+    __tablename__ = "accounting_entries"
+    __table_args__ = (UniqueConstraint("source_id", name="accounting_entry_source_id"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    type: Mapped[str] = mapped_column(String(20), nullable=False)
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    concept: Mapped[str] = mapped_column(String(300), nullable=False)
+    notes: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    category_id: Mapped[str] = mapped_column(ForeignKey("accounting_categories.id"), nullable=False)
+    counterparty_name: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    client_id: Mapped[str | None] = mapped_column(ForeignKey("clients.id"))
+    source: Mapped[str] = mapped_column(String(20), nullable=False, default="manual")
+    source_id: Mapped[str | None] = mapped_column(String(36))
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    vat_rate: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    vat_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    net_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    payment_status: Mapped[str] = mapped_column(String(20), nullable=False, default="paid")
+    paid_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    payment_method: Mapped[str] = mapped_column(String(20), nullable=False, default="other")
+    recurring: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    recurring_day: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    category: Mapped[AccountingCategory] = relationship(back_populates="entries")
+    client: Mapped[Client | None] = relationship()
+
+
+class AccountingPeriodLock(Base):
+    __tablename__ = "accounting_period_locks"
+    __table_args__ = (UniqueConstraint("year", "month", name="accounting_period_lock_year_month"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    month: Mapped[int] = mapped_column(Integer, nullable=False)

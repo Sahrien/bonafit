@@ -57,6 +57,7 @@ describe('AdminShellComponent', () => {
     expect(text).toContain(ADMIN_LITERALS.clients);
     expect(text).toContain(ADMIN_LITERALS.forms);
     expect(text).toContain(ADMIN_LITERALS.stats);
+    expect(text).toContain(ADMIN_LITERALS.accounting);
     expect(router.url).toBe('/admin/calendar');
   });
 
@@ -88,5 +89,6 @@ describe('AdminShellComponent', () => {
     const forms = labels.indexOf(ADMIN_LITERALS.forms);
     expect(forms).toBeGreaterThan(-1);
     expect(labels[forms + 1]).toBe(ADMIN_LITERALS.stats);
+    expect(labels[forms + 2]).toBe(ADMIN_LITERALS.accounting);
   });
 });

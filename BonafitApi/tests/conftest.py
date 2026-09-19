@@ -11,6 +11,7 @@ from app.services.calendar import CalendarService
 from app.services.catalog import CatalogService
 from app.services.clients import ClientService
 from app.services.forms import FormService
+from app.services.accounting import AccountingService
 from app.services.stats import StatsService
 
 _PASSWORD = "secret"
@@ -47,8 +48,20 @@ def auth_service(db: Database, security: Security) -> AuthService:
 
 
 @pytest.fixture
-def client_service(db: Database, security: Security, emailer: Emailer) -> ClientService:
-    return ClientService(session_factory=db.session, security=security, emailer=emailer)
+def accounting_service(db: Database) -> AccountingService:
+    return AccountingService(session_factory=db.session)
+
+
+@pytest.fixture
+def client_service(
+    db: Database, security: Security, emailer: Emailer, accounting_service: AccountingService
+) -> ClientService:
+    return ClientService(
+        session_factory=db.session,
+        security=security,
+        emailer=emailer,
+        accounting_service=accounting_service,
+    )
 
 
 @pytest.fixture

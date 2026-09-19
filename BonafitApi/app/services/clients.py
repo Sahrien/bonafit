@@ -8,6 +8,7 @@ from app.emailer import Emailer
 from app.errors import BusinessError, ForbiddenError, NotFoundError
 from app.identity import CurrentUser
 from app.models import Appointment, Bono, Client, ClientBono, ClientCoupon, FormAssignment, Service, User
+from app.services.accounting import AccountingService
 from app.pricing import best_coupon, coupon_applies, priced_offer
 from app.roles import UserRole
 from app.schemas import (
@@ -30,10 +31,12 @@ class ClientService:
         session_factory: SessionFactory,
         security: Security,
         emailer: Emailer,
+        accounting_service: AccountingService | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._security = security
         self._emailer = emailer
+        self._accounting = accounting_service
 
     def list_clients(self, user: CurrentUser) -> list[ClientOut]:
         with self._session_factory() as db:
@@ -218,6 +221,8 @@ class ClientService:
             )
             db.add(row)
             db.flush()
+            if self._accounting is not None:
+                self._accounting.record_sale(db, row)
             return client_bono_out(row)
 
     def list_coupons(self, client_id: str, user: CurrentUser) -> list[ClientCouponOut]:

@@ -17,7 +17,9 @@ import {
   createMockSession,
 } from '../../testing/fixtures';
 import { SCHEDULES_LITERALS } from '../schedules/schedules.literals';
+import { AccountingApiService } from '../../services/accounting-api.service';
 import { StatsApiService } from '../../services/stats-api.service';
+import { ACCOUNTING_LITERALS } from '../accounting/accounting.literals';
 import { STATS_LITERALS } from '../stats/stats.literals';
 
 describe('ADMIN_ROUTES horarios', () => {
@@ -31,6 +33,57 @@ describe('ADMIN_ROUTES horarios', () => {
     calendarApi.getTrainers.and.returnValue(of(MOCK_TRAINERS));
     calendarApi.getTrainerSchedules.and.returnValue(of(MOCK_TRAINER_SCHEDULES));
     const statsApi = jasmine.createSpyObj('StatsApiService', ['getStats']);
+    const accountingApi = jasmine.createSpyObj('AccountingApiService', [
+      'getSummary',
+      'listCategories',
+      'getSettings',
+      'listEntries',
+    ]);
+    accountingApi.getSummary.and.returnValue(
+      of({
+        timezone: 'Europe/Madrid',
+        preset: '30d',
+        from: '2026-08-21T00:00:00.000Z',
+        to: '2026-09-20T00:00:00.000Z',
+        previousFrom: '2026-07-22T00:00:00.000Z',
+        previousTo: '2026-08-21T00:00:00.000Z',
+        disclaimer: ACCOUNTING_LITERALS.disclaimer,
+        kpis: {
+          income: 0,
+          expense: 0,
+          result: 0,
+          paidIncome: 0,
+          pendingIncome: 0,
+          previousIncome: 0,
+          previousExpense: 0,
+          previousResult: 0,
+          incomeDelta: 0,
+          expenseDelta: 0,
+          resultDelta: 0,
+          vatCollected: 0,
+          vatDeductible: 0,
+          vatNet: 0,
+        },
+        series: [],
+        breakdown: [],
+      }),
+    );
+    accountingApi.listCategories.and.returnValue(of([]));
+    accountingApi.getSettings.and.returnValue(
+      of({
+        legalName: 'Bonafit',
+        taxId: null,
+        address: null,
+        vatRegime: 'unknown',
+        defaultVatRate: 0,
+        fiscalYearStartMonth: 1,
+        defaultRecurringDay: 1,
+        currency: 'EUR',
+        notes: null,
+        locks: [],
+      }),
+    );
+    accountingApi.listEntries.and.returnValue(of([]));
     statsApi.getStats.and.returnValue(
       of({
         timezone: 'Europe/Madrid',
@@ -90,6 +143,7 @@ describe('ADMIN_ROUTES horarios', () => {
         { provide: AuthApiService, useValue: auth },
         { provide: CalendarApiService, useValue: calendarApi },
         { provide: StatsApiService, useValue: statsApi },
+        { provide: AccountingApiService, useValue: accountingApi },
         ...provideBonaFeedbackTesting().providers,
       ],
     }).compileComponents();
@@ -110,5 +164,13 @@ describe('ADMIN_ROUTES horarios', () => {
     expect(harness.routeNativeElement?.textContent).toContain(STATS_LITERALS.title);
     expect(harness.routeNativeElement?.textContent).toContain(STATS_LITERALS.agendaTitle);
     expect(harness.routeNativeElement?.textContent).toContain(STATS_LITERALS.clientsTitle);
+  });
+
+  it('loads the accounting screen at /admin/contabilidad', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl(AUTH_PATHS.adminAccounting);
+    expect(TestBed.inject(Router).url).toBe(AUTH_PATHS.adminAccounting);
+    expect(harness.routeNativeElement?.textContent).toContain(ACCOUNTING_LITERALS.title);
+    expect(harness.routeNativeElement?.textContent).toContain(ACCOUNTING_LITERALS.disclaimer);
   });
 });

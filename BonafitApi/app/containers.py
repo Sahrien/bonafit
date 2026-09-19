@@ -4,6 +4,7 @@ from app.config import Settings
 from app.database import Database
 from app.emailer import Emailer
 from app.security import Security
+from app.services.accounting import AccountingService
 from app.services.auth import AuthService
 from app.services.branding import BrandingService
 from app.services.calendar import CalendarService
@@ -23,6 +24,7 @@ class Container(containers.DeclarativeContainer):
             "app.routers.forms",
             "app.routers.branding",
             "app.routers.stats",
+            "app.routers.accounting",
         ],
         auto_wire=False,
     )
@@ -45,11 +47,18 @@ class Container(containers.DeclarativeContainer):
         security=security,
     )
 
+    accounting_service = providers.Factory(
+        AccountingService,
+        session_factory=db.provided.session,
+        uploads_dir=settings.provided.uploads_dir,
+    )
+
     client_service = providers.Factory(
         ClientService,
         session_factory=db.provided.session,
         security=security,
         emailer=emailer,
+        accounting_service=accounting_service,
     )
 
     catalog_service = providers.Factory(

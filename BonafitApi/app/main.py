@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.containers import Container
 from app.errors import register_exception_handlers
-from app.routers import auth, branding, calendar, clients, forms, services, stats
+from app.routers import accounting, auth, branding, calendar, clients, forms, services, stats
 
 
 class BonafitAPI(FastAPI):
@@ -35,6 +35,7 @@ def create_app() -> BonafitAPI:
     app.include_router(forms.router)
     app.include_router(branding.router)
     app.include_router(stats.router)
+    app.include_router(accounting.router)
 
     uploads = Path(settings.uploads_dir)
     uploads.mkdir(parents=True, exist_ok=True)
