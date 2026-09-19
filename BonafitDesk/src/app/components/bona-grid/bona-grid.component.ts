@@ -25,6 +25,7 @@ export interface BonaGridColumn {
   header: string;
   type?: BonaGridColumnType;
   sortField?: string;
+  compareField?: string;
 }
 
 export interface BonaGridAction<T = Record<string, unknown>> {
@@ -307,6 +308,30 @@ export class BonaGridComponent<T extends Record<string, unknown> = Record<string
       fields.push('_actions');
     }
     return fields;
+  }
+
+  get displayedFilterColumns(): string[] {
+    return this.displayedColumns.map((field) => this.filterColumnId(field));
+  }
+
+  filterColumnId(field: string): string {
+    return `${field}__filter`;
+  }
+
+  hasCompare(item: T, column: BonaGridColumn): boolean {
+    if (!column.compareField) {
+      return false;
+    }
+    const listed = item[column.compareField];
+    const current = item[column.field];
+    return listed != null && listed !== '' && listed !== current;
+  }
+
+  formatCompare(item: T, column: BonaGridColumn): string {
+    if (!column.compareField) {
+      return '';
+    }
+    return this.formatCell(item, { ...column, field: column.compareField });
   }
 
   formatCell(item: T, column: BonaGridColumn): string {

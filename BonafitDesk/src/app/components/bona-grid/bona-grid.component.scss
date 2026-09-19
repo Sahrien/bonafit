@@ -28,7 +28,12 @@
     font-weight: 600;
     color: var(--bona-color-text);
     border-bottom: 1px solid var(--bona-color-border);
-    vertical-align: top;
+  }
+
+  .bona-grid__filter-row .mat-mdc-header-cell {
+    font-weight: 400;
+    padding-top: 0;
+    padding-bottom: var(--bona-space-2);
   }
 
   .mat-mdc-cell {
@@ -44,10 +49,8 @@
 
 .bona-grid__header {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--bona-space-2);
-  padding: var(--bona-space-1) 0;
+  align-items: center;
+  min-height: 2.25rem;
 }
 
 .bona-grid__sort {
@@ -269,6 +272,11 @@
 
 .bona-grid__card--nested {
   background: var(--bona-color-nested);
+}
+
+.bona-grid__strike {
+  margin-right: var(--bona-space-2);
+  color: var(--bona-color-text-muted);
 }
 
 @media (max-width: 48rem) {

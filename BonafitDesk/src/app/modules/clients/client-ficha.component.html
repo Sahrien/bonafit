@@ -63,6 +63,26 @@
           (submitted)="onGiftSubmit($event)" />
       </div>
     </section>
+    <section class="page-nested">
+      <header class="page-nested__header">
+        <h2>{{ literals.couponsTitle }}</h2>
+      </header>
+      <app-bona-grid
+        [data]="couponRows()"
+        [columns]="couponColumns()"
+        [actions]="couponActions()"
+        [emptyMessage]="literals.emptyCoupons"
+        (action)="onCouponAction($event)" />
+      <div class="page-nested__form">
+        <h3>{{ literals.giftCoupon }}</h3>
+        <app-bona-form
+          [fields]="couponFields()"
+          [value]="couponForm()"
+          [submitText]="literals.giftCoupon"
+          (valueChange)="onCouponFormChange($event)"
+          (submitted)="onCouponSubmit($event)" />
+      </div>
+    </section>
     <section class="page-nested page-nested--history" [class.page-nested--history-open]="historyOpen()">
       <header class="page-nested__header">
         <button

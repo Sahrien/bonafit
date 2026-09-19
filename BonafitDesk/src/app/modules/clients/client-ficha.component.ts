@@ -28,6 +28,7 @@ import { ApiBusinessError } from '../../core/api-business.error';
 import { AppointmentDto, AppointmentStatus, AppointmentWriteDto } from '../../models/appointment.dto';
 import { BonoDto } from '../../models/bono.dto';
 import { ClientBonoDto, ClientBonoPatchDto, ContractBonoDto } from '../../models/client-bono.dto';
+import { ClientCouponDto, ClientCouponWriteDto } from '../../models/client-coupon.dto';
 import { ClientDto, ClientWriteDto } from '../../models/client.dto';
 import { ServiceDto } from '../../models/service.dto';
 import { TrainerDto } from '../../models/trainer.dto';
@@ -43,6 +44,14 @@ const NEW_CLIENT_ID = 'new';
 const EMPTY_GIFT: BonaFormValue = {
   serviceId: '',
   kind: 'pack',
+  bonoId: '',
+};
+
+const EMPTY_COUPON: BonaFormValue = {
+  kind: 'percent',
+  value: '',
+  scope: 'any',
+  serviceId: '',
   bonoId: '',
 };
 
@@ -96,6 +105,7 @@ export class ClientFichaComponent {
   readonly bonoFormOpen = signal(false);
   readonly bonoForm = signal<BonaFormValue>({ remainingSessions: '', expiresAt: '' });
   readonly giftForm = signal<BonaFormValue>({ ...EMPTY_GIFT });
+  readonly couponForm = signal<BonaFormValue>({ ...EMPTY_COUPON });
   readonly sessionNoteFormOpen = signal(false);
   readonly sessionNoteForm = signal<BonaFormValue>({ notes: '' });
   readonly historyOpen = signal(false);
@@ -104,6 +114,7 @@ export class ClientFichaComponent {
   private readonly editingSessionId = signal<string | null>(null);
   private readonly historyLoadedFor = signal<string | null>(null);
   private readonly clientBonos = signal<ClientBonoDto[]>([]);
+  private readonly coupons = signal<ClientCouponDto[]>([]);
   private readonly bonos = signal<BonoDto[]>([]);
   private readonly services = signal<ServiceDto[]>([]);
   private readonly trainers = signal<TrainerDto[]>([]);
@@ -243,6 +254,79 @@ export class ClientFichaComponent {
     return fields;
   });
 
+  readonly couponColumns = computed<BonaGridColumn[]>(() => [
+    { field: 'kindLabel', header: this.literals.couponKind },
+    { field: 'valueLabel', header: this.literals.couponValue },
+    { field: 'scopeLabel', header: this.literals.couponScope },
+    { field: 'statusLabel', header: this.literals.couponStatus },
+  ]);
+
+  readonly couponActions = computed<BonaGridAction[]>(() => [
+    { label: this.literals.delete, action: 'delete', visible: (item) => !item['usedAt'] },
+  ]);
+
+  readonly couponRows = computed(() =>
+    this.coupons().map((row) => ({
+      ...row,
+      kindLabel: row.kind === 'percent' ? this.literals.couponPercent : this.literals.couponAmount,
+      valueLabel: row.kind === 'percent' ? `${row.value}%` : String(row.value),
+      scopeLabel: this.couponScopeLabel(row),
+      statusLabel: row.usedAt ? this.literals.couponUsed : this.literals.couponUnused,
+    })),
+  );
+
+  readonly couponFields = computed((): BonaFieldDefinition[] => {
+    const scope = this.couponForm()['scope'] ?? 'any';
+    const fields: BonaFieldDefinition[] = [
+      {
+        key: 'kind',
+        label: this.literals.couponKind,
+        type: 'select',
+        required: true,
+        options: [
+          { value: 'percent', label: this.literals.couponPercent },
+          { value: 'amount', label: this.literals.couponAmount },
+        ],
+      },
+      { key: 'value', label: this.literals.couponValue, type: 'number', required: true },
+      {
+        key: 'scope',
+        label: this.literals.couponScope,
+        type: 'select',
+        required: true,
+        options: [
+          { value: 'any', label: this.literals.couponAny },
+          { value: 'service', label: this.literals.couponService },
+          { value: 'bono', label: this.literals.couponBono },
+        ],
+      },
+    ];
+    if (scope === 'service' || scope === 'bono') {
+      fields.push({
+        key: 'serviceId',
+        label: this.literals.service,
+        type: 'select',
+        required: true,
+        options: this.services()
+          .filter((service) => service.active)
+          .map((service) => ({ value: service.id, label: service.name })),
+      });
+    }
+    if (scope === 'bono') {
+      const serviceId = this.couponForm()['serviceId'] ?? '';
+      fields.push({
+        key: 'bonoId',
+        label: this.literals.bono,
+        type: 'select',
+        required: true,
+        options: this.bonos()
+          .filter((bono) => bono.serviceId === serviceId)
+          .map((bono) => ({ value: bono.id, label: bono.name })),
+      });
+    }
+    return fields;
+  });
+
   constructor() {
     effect(() => {
       const id = this.clientId();
@@ -348,6 +432,67 @@ export class ClientFichaComponent {
           this.loadBonos(payload.clientId);
         },
         error: () => this.toast.error(this.literals.giftError),
+      });
+  }
+
+  onCouponFormChange(value: BonaFormValue): void {
+    const previousScope = this.couponForm()['scope'] ?? 'any';
+    const previousService = this.couponForm()['serviceId'] ?? '';
+    const nextScope = value['scope'] ?? 'any';
+    const nextService = value['serviceId'] ?? '';
+    if (nextScope !== previousScope) {
+      this.couponForm.set({ ...value, serviceId: '', bonoId: '' });
+      return;
+    }
+    if (nextService !== previousService) {
+      this.couponForm.set({ ...value, bonoId: '' });
+      return;
+    }
+    this.couponForm.set(value);
+  }
+
+  onCouponSubmit(value: BonaFormValue): void {
+    const clientId = this.clientId();
+    const payload = this.toCouponPayload(value);
+    if (!clientId || this.isNew() || !payload) {
+      return;
+    }
+    this.clientsApi
+      .createCoupon(clientId, payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.success(this.literals.couponGifted);
+          this.couponForm.set({ ...EMPTY_COUPON });
+          this.loadCoupons(clientId);
+        },
+        error: () => this.toast.error(this.literals.errorSave),
+      });
+  }
+
+  onCouponAction(event: BonaGridActionEvent<Record<string, unknown>>): void {
+    const id = String(event.item['id'] ?? '');
+    const clientId = this.clientId();
+    if (event.action !== 'delete' || !id || !clientId) {
+      return;
+    }
+    this.confirm
+      .open({
+        title: this.literals.confirmDeleteCouponTitle,
+        message: this.literals.confirmDeleteCouponMessage,
+        confirmLabel: this.literals.delete,
+      })
+      .pipe(
+        filter((ok) => ok),
+        switchMap(() => this.clientsApi.deleteCoupon(clientId, id)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.toast.success(this.literals.deleted);
+          this.loadCoupons(clientId);
+        },
+        error: () => this.toast.error(this.literals.errorSave),
       });
   }
 
@@ -497,9 +642,11 @@ export class ClientFichaComponent {
     this.historyLoadedFor.set(null);
     this.appointments.set([]);
     this.giftForm.set({ ...EMPTY_GIFT });
+    this.couponForm.set({ ...EMPTY_COUPON });
     if (!id || id === NEW_CLIENT_ID) {
       this.formValue.set({ ...EMPTY_FORM });
       this.clientBonos.set([]);
+      this.coupons.set([]);
       this.temporaryPassword.set('');
       this.loading.set(false);
       return;
@@ -512,14 +659,16 @@ export class ClientFichaComponent {
     forkJoin({
       client: this.clientsApi.getClient(id),
       clientBonos: this.clientsApi.getClientBonos(id),
+      coupons: this.clientsApi.getCoupons(id),
       bonos: this.servicesApi.getBonos(),
       services: this.servicesApi.getServices(),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ client, clientBonos, bonos, services }) => {
+        next: ({ client, clientBonos, coupons, bonos, services }) => {
           this.formValue.set(this.toFormValue(client));
           this.clientBonos.set(clientBonos);
+          this.coupons.set(coupons);
           this.bonos.set(bonos);
           this.services.set(services);
           this.loading.set(false);
@@ -559,6 +708,51 @@ export class ClientFichaComponent {
       .getClientBonos(clientId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((rows) => this.clientBonos.set(rows));
+  }
+
+  private loadCoupons(clientId: string): void {
+    this.clientsApi
+      .getCoupons(clientId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((rows) => this.coupons.set(rows));
+  }
+
+  private couponScopeLabel(row: ClientCouponDto): string {
+    if (row.bonoId) {
+      return this.bonos().find((bono) => bono.id === row.bonoId)?.name ?? this.literals.couponBono;
+    }
+    if (row.serviceId) {
+      return this.services().find((service) => service.id === row.serviceId)?.name ?? this.literals.couponService;
+    }
+    return this.literals.couponAny;
+  }
+
+  private toCouponPayload(value: BonaFormValue): ClientCouponWriteDto | null {
+    const kind = value['kind'] === 'amount' ? 'amount' : 'percent';
+    const amount = Number(value['value']);
+    if (Number.isNaN(amount) || amount <= 0) {
+      this.toast.error(this.literals.errorRequired);
+      return null;
+    }
+    const scope = value['scope'] ?? 'any';
+    const payload: ClientCouponWriteDto = { kind, value: amount };
+    if (scope === 'service' || scope === 'bono') {
+      const serviceId = value['serviceId'] ?? '';
+      if (!serviceId) {
+        this.toast.error(this.literals.errorRequired);
+        return null;
+      }
+      payload.serviceId = scope === 'service' ? serviceId : undefined;
+      if (scope === 'bono') {
+        const bonoId = value['bonoId'] ?? '';
+        if (!bonoId) {
+          this.toast.error(this.literals.errorRequired);
+          return null;
+        }
+        payload.bonoId = bonoId;
+      }
+    }
+    return payload;
   }
 
   private formatSessionWhen(iso: string): string {

@@ -8,6 +8,7 @@ from app.models import (
     Branding,
     Client,
     ClientBono,
+    ClientCoupon,
     Form,
     FormAssignment,
     FormQuestion,
@@ -24,6 +25,7 @@ from app.schemas import (
     BookingSettingsOut,
     BrandingOut,
     ClientBonoOut,
+    ClientCouponOut,
     ClientOut,
     FormAnswerOut,
     FormAssignmentOut,
@@ -87,6 +89,8 @@ def service_out(row: Service, language: str = DEFAULT_LANGUAGE) -> ServiceOut:
         durationMinutes=row.duration_minutes,
         bookableByClient=row.bookable_by_client,
         active=row.active,
+        saleKind=getattr(row, "sale_kind", None) or "none",  # type: ignore[arg-type]
+        saleValue=float(getattr(row, "sale_value", 0) or 0),
         i18n=i18n if isinstance(i18n, dict) else {},
     )
 
@@ -113,6 +117,21 @@ def client_bono_out(row: ClientBono) -> ClientBonoOut:
         isGift=row.is_gift,
         purchasedAt=row.purchased_at,
         expiresAt=row.expires_at,
+        listPrice=float(row.list_price) if row.list_price is not None else None,
+        paidPrice=float(row.paid_price) if row.paid_price is not None else None,
+        couponId=row.coupon_id,
+    )
+
+
+def client_coupon_out(row: ClientCoupon) -> ClientCouponOut:
+    return ClientCouponOut(
+        id=row.id,
+        clientId=row.client_id,
+        kind=row.kind,  # type: ignore[arg-type]
+        value=float(row.value),
+        serviceId=row.service_id,
+        bonoId=row.bono_id,
+        usedAt=row.used_at,
     )
 
 

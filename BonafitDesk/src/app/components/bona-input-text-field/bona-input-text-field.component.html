@@ -1,19 +1,30 @@
+@if (label && isCompact()) {
+  <label class="bona-input__prompt" [attr.for]="controlId">{{ label }}</label>
+}
 <mat-form-field appearance="outline" subscriptSizing="dynamic" class="bona-input">
-  @if (label) {
+  @if (label && !isCompact()) {
     <mat-label>{{ label }}</mat-label>
   }
   <input
     matInput
     class="bona-input__control"
+    [id]="controlId"
     [name]="inputName"
     [attr.data-field-key]="inputName || null"
     [attr.autocomplete]="autocomplete || null"
     [type]="inputType()"
     [value]="value"
     [placeholder]="placeholder"
+    [required]="required"
     [disabled]="disabled"
     (input)="onInput($event)"
     (blur)="onTouched()" />
+  @if (suffix) {
+    <span matSuffix class="bona-input__suffix">{{ suffix }}</span>
+  }
+  @if (hint) {
+    <mat-hint>{{ hint }}</mat-hint>
+  }
   @if (isPassword()) {
     <button
       mat-icon-button

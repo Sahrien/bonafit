@@ -210,13 +210,19 @@ describe('BonaGridComponent', () => {
     expect(cells[1]).toBe('tarde');
   });
 
-  it('filters rows from the column header field', () => {
+  it('filters rows from a row under the column headers using contains', () => {
     fixture.componentRef.setInput('columnFilters', true);
     fixture.componentRef.setInput('data', [
       { id: '1', nombre: 'Ana' },
       { id: '2', nombre: 'Luis' },
     ]);
     fixture.detectChanges();
+
+    const headerRows = fixture.nativeElement.querySelectorAll(
+      '.bona-grid__table tr[mat-header-row]',
+    ) as NodeListOf<HTMLTableRowElement>;
+    expect(headerRows.length).toBe(2);
+    expect(headerRows[1].classList.contains('bona-grid__filter-row')).toBeTrue();
 
     const filter = fixture.nativeElement.querySelector(
       '.bona-grid__table .bona-grid__filter',

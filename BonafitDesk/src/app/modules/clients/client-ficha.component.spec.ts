@@ -44,6 +44,9 @@ describe('ClientFichaComponent', () => {
       'updateClient',
       'deleteClient',
       'getClientBonos',
+      'getCoupons',
+      'createCoupon',
+      'deleteCoupon',
       'contractBono',
       'deleteClientBono',
     ]);
@@ -59,6 +62,17 @@ describe('ClientFichaComponent', () => {
     clientsApi.updateClient.and.returnValue(of(MOCK_CLIENTS[0]));
     clientsApi.getClientBonos.and.callFake((id: string) =>
       of(MOCK_CLIENT_BONOS.filter((row) => row.clientId === id)),
+    );
+    clientsApi.getCoupons.and.returnValue(of([]));
+    clientsApi.getCoupons.and.returnValue(of([]));
+    clientsApi.deleteCoupon.and.returnValue(of(void 0));
+    clientsApi.createCoupon.and.returnValue(
+      of({
+        id: 'coupon-new',
+        clientId: 'client-1',
+        kind: 'percent',
+        value: 10,
+      }),
     );
     clientsApi.contractBono.and.returnValue(
       of({
@@ -136,6 +150,42 @@ describe('ClientFichaComponent', () => {
     expect(text).toContain('pack-10');
     expect(text).toContain(CLIENTS_LITERALS.giftTitle);
     expect(text).toContain(CLIENTS_LITERALS.gift);
+  });
+
+  it('lists coupons and gifts a new coupon', async () => {
+    clientsApi.getCoupons.and.returnValue(
+      of([
+        {
+          id: 'coupon-1',
+          clientId: 'client-1',
+          kind: 'percent',
+          value: 15,
+        },
+      ]),
+    );
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
+
+    expect(clientsApi.getCoupons).toHaveBeenCalledWith('client-1');
+    const text = harness.routeNativeElement?.textContent ?? '';
+    expect(text).toContain(CLIENTS_LITERALS.couponsTitle);
+    expect(text).toContain('15%');
+    expect(text).toContain(CLIENTS_LITERALS.couponAny);
+
+    component.onCouponSubmit({
+      kind: 'amount',
+      value: '20',
+      scope: 'any',
+      serviceId: '',
+      bonoId: '',
+    });
+    harness.fixture.detectChanges();
+    await harness.fixture.whenStable();
+
+    expect(clientsApi.createCoupon).toHaveBeenCalledWith('client-1', {
+      kind: 'amount',
+      value: 20,
+    });
   });
 
   it('toasts when the client is saved', async () => {

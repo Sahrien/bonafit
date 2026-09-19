@@ -153,14 +153,11 @@ function writeSchemeOverride(scheme: ColorScheme): void {
 }
 
 function setFavicon(href: string | null): void {
-  if (!href) {
-    return;
-  }
   let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
   if (!link) {
     link = document.createElement('link');
     link.rel = 'icon';
     document.head.appendChild(link);
   }
-  link.href = href;
+  link.href = href ?? 'favicon.ico';
 }

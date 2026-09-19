@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  WritableSignal,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIcon } from '@angular/material/icon';
 import { filter, forkJoin, switchMap } from 'rxjs';
@@ -7,12 +15,6 @@ import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service'
 import { BonaFieldComponent } from '../../components/bona-field/bona-field.component';
 import { BonaFieldDefinition, BonaFieldOption } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
-import {
-  BonaGridAction,
-  BonaGridActionEvent,
-  BonaGridColumn,
-  BonaGridComponent,
-} from '../../components/bona-grid/bona-grid.component';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { ApiBusinessError } from '../../core/api-business.error';
@@ -29,17 +31,29 @@ const EMPTY_FORM: BonaFormValue = {
   endTime: '18:00',
 };
 
+interface ScheduleSlotView {
+  id: string;
+  startTime: string;
+  endTime: string;
+}
+
+interface ScheduleDayView {
+  weekday: number;
+  weekdayLabel: string;
+  slots: ScheduleSlotView[];
+}
+
+interface TrainerScheduleGroup {
+  trainerId: string;
+  trainerName: string;
+  slotCount: number;
+  days: ScheduleDayView[];
+}
+
 @Component({
   selector: 'app-schedules',
   standalone: true,
-  imports: [
-    BonaPageComponent,
-    BonaGridComponent,
-    BonaButtonComponent,
-    BonaFormComponent,
-    BonaFieldComponent,
-    MatIcon,
-  ],
+  imports: [BonaPageComponent, BonaButtonComponent, BonaFormComponent, BonaFieldComponent, MatIcon],
   templateUrl: './schedules.component.html',
   styleUrl: './schedules.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,15 +72,20 @@ export class SchedulesComponent {
   readonly error = signal('');
   readonly formOpen = signal(false);
   readonly capacityOpen = signal(false);
-  readonly filterValue = signal<BonaFormValue>({ trainerId: '' });
   readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
   private readonly editingId = signal<string | null>(null);
   private readonly trainers = signal<TrainerDto[]>([]);
   private readonly schedules = signal<TrainerScheduleDto[]>([]);
   private readonly openTrainerIds = signal<ReadonlySet<string>>(new Set());
+  private readonly openScheduleTrainerIds = signal<ReadonlySet<string>>(new Set());
   private readonly capacityDrafts = signal<Record<string, string>>({});
 
   readonly catalogTrainers = computed(() => this.trainers());
+
+  readonly scheduleFormTitle = computed(() => {
+    const id = this.editingId();
+    return !id || id === NEW_ID ? this.literals.newSchedule : this.literals.editSchedule;
+  });
 
   readonly weekdayOptions = computed<BonaFieldOption[]>(() =>
     [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
@@ -74,30 +93,6 @@ export class SchedulesComponent {
       label: this.weekdayLabel(weekday),
     })),
   );
-
-  readonly columns = computed<BonaGridColumn[]>(() => [
-    { field: 'trainerLabel', header: this.literals.trainer },
-    { field: 'weekdayLabel', header: this.literals.weekday },
-    { field: 'startTime', header: this.literals.startTime },
-    { field: 'endTime', header: this.literals.endTime },
-  ]);
-
-  readonly actions = computed<BonaGridAction[]>(() => [
-    { label: this.literals.edit, action: 'edit' },
-    { label: this.literals.delete, action: 'delete' },
-  ]);
-
-  readonly filterFields = computed((): BonaFieldDefinition[] => [
-    {
-      key: 'trainerId',
-      label: this.literals.trainer,
-      type: 'select',
-      options: [
-        { value: '', label: this.literals.allTrainers },
-        ...this.trainers().map((trainer) => ({ value: trainer.id, label: trainer.name })),
-      ],
-    },
-  ]);
 
   readonly formFields = computed((): BonaFieldDefinition[] => [
     {
@@ -125,30 +120,57 @@ export class SchedulesComponent {
     required: true,
   }));
 
-  readonly rows = computed(() => {
-    const trainerId = this.filterValue()['trainerId'] ?? '';
-    return this.schedules()
-      .filter((row) => !trainerId || row.trainerId === trainerId)
-      .map((row) => ({
-        ...row,
-        trainerLabel: this.trainers().find((trainer) => trainer.id === row.trainerId)?.name ?? row.trainerId,
-        weekdayLabel: this.weekdayLabel(row.weekday),
-      }));
+  readonly trainerGroups = computed<TrainerScheduleGroup[]>(() => {
+    const trainers = this.trainers();
+    const byTrainer = new Map<string, TrainerScheduleDto[]>();
+    for (const row of this.schedules()) {
+      const list = byTrainer.get(row.trainerId) ?? [];
+      list.push(row);
+      byTrainer.set(row.trainerId, list);
+    }
+
+    const orderedIds = [
+      ...trainers.map((trainer) => trainer.id).filter((id) => byTrainer.has(id)),
+      ...[...byTrainer.keys()].filter((id) => !trainers.some((trainer) => trainer.id === id)),
+    ];
+
+    return orderedIds.map((id) => {
+      const trainer = trainers.find((item) => item.id === id);
+      const slots = byTrainer.get(id) ?? [];
+      const daysMap = new Map<number, TrainerScheduleDto[]>();
+      for (const slot of slots) {
+        const list = daysMap.get(slot.weekday) ?? [];
+        list.push(slot);
+        daysMap.set(slot.weekday, list);
+      }
+      const days = [...daysMap.keys()]
+        .sort((a, b) => a - b)
+        .map((weekday) => ({
+          weekday,
+          weekdayLabel: this.weekdayLabel(weekday),
+          slots: (daysMap.get(weekday) ?? [])
+            .slice()
+            .sort((a, b) => a.startTime.localeCompare(b.startTime))
+            .map((slot) => ({ id: slot.id, startTime: slot.startTime, endTime: slot.endTime })),
+        }));
+      return {
+        trainerId: id,
+        trainerName: trainer?.name ?? id,
+        slotCount: slots.length,
+        days,
+      };
+    });
   });
 
   constructor() {
     this.load();
   }
 
-  onFilterChange(value: BonaFormValue): void {
-    this.filterValue.set(value);
-  }
-
   onCreate(): void {
     this.editingId.set(NEW_ID);
     this.formValue.set({
       ...EMPTY_FORM,
-      trainerId: this.filterValue()['trainerId'] || this.trainers()[0]?.id || '',
+      trainerId: this.trainers()[0]?.id || '',
     });
     this.error.set('');
     this.formOpen.set(true);
@@ -170,12 +192,13 @@ export class SchedulesComponent {
         : this.calendarApi.updateTrainerSchedule(id, payload);
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
+        this.error.set('');
         this.toast.success(this.literals.saved);
         this.formOpen.set(false);
         this.editingId.set(null);
         this.loadSchedules();
       },
-      error: (error) => this.error.set(this.messageFor(error)),
+      error: (error) => this.toast.error(this.messageFor(error)),
     });
   }
 
@@ -189,20 +212,30 @@ export class SchedulesComponent {
     this.capacityOpen.update((open) => !open);
   }
 
+  onCloseCapacity(): void {
+    this.capacityOpen.set(false);
+  }
+
   isTrainerOpen(trainerId: string): boolean {
     return this.openTrainerIds().has(trainerId);
   }
 
   onToggleTrainer(trainerId: string): void {
-    this.openTrainerIds.update((ids) => {
-      const next = new Set(ids);
-      if (next.has(trainerId)) {
-        next.delete(trainerId);
-      } else {
-        next.add(trainerId);
-      }
-      return next;
-    });
+    this.toggleId(this.openTrainerIds, trainerId);
+  }
+
+  isScheduleTrainerOpen(trainerId: string): boolean {
+    return this.openScheduleTrainerIds().has(trainerId);
+  }
+
+  onToggleScheduleTrainer(trainerId: string): void {
+    this.toggleId(this.openScheduleTrainerIds, trainerId);
+  }
+
+  slotCountLabel(count: number): string {
+    return count === 1
+      ? this.literals.slotCountOne
+      : this.literals.slotCountOther.replace('{{count}}', String(count));
   }
 
   capacityDraft(trainer: TrainerDto): string {
@@ -239,31 +272,40 @@ export class SchedulesComponent {
           this.capacityDrafts.set(this.draftsFromTrainers(trainers));
           this.toast.success(this.literals.capacitySaved);
         },
-        error: () => this.error.set(this.literals.errorSave),
+        error: () => this.toast.error(this.literals.errorSave),
       });
   }
 
-  onRowAction(event: BonaGridActionEvent<Record<string, unknown>>): void {
-    const id = String(event.item['id'] ?? '');
-    if (event.action === 'edit') {
-      const row = this.schedules().find((item) => item.id === id);
-      if (!row) {
-        return;
-      }
-      this.editingId.set(row.id);
-      this.formValue.set({
-        trainerId: row.trainerId,
-        weekday: String(row.weekday),
-        startTime: row.startTime,
-        endTime: row.endTime,
-      });
-      this.error.set('');
-      this.formOpen.set(true);
+  onEdit(id: string): void {
+    const row = this.schedules().find((item) => item.id === id);
+    if (!row) {
       return;
     }
-    if (event.action === 'delete' && id) {
-      this.deleteSchedule(id);
-    }
+    this.editingId.set(row.id);
+    this.formValue.set({
+      trainerId: row.trainerId,
+      weekday: String(row.weekday),
+      startTime: row.startTime,
+      endTime: row.endTime,
+    });
+    this.error.set('');
+    this.formOpen.set(true);
+  }
+
+  onDelete(id: string): void {
+    this.deleteSchedule(id);
+  }
+
+  private toggleId(store: WritableSignal<ReadonlySet<string>>, trainerId: string): void {
+    store.update((ids) => {
+      const next = new Set(ids);
+      if (next.has(trainerId)) {
+        next.delete(trainerId);
+      } else {
+        next.add(trainerId);
+      }
+      return next;
+    });
   }
 
   private deleteSchedule(id: string): void {

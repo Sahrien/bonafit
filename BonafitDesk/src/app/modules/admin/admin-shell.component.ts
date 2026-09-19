@@ -37,7 +37,6 @@ export class AdminShellComponent {
   ]);
   readonly menuItems = computed<BonaShellNavItem[]>(() => [
     { id: 'settings', label: this.literals.settings, link: AUTH_PATHS.adminSettings },
-    { id: 'schedules', label: this.literals.schedules, link: AUTH_PATHS.adminSchedules },
   ]);
 
   onLogout(): void {

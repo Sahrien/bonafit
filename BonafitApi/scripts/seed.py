@@ -156,7 +156,7 @@ def seed_if_empty(db: Session) -> None:
     masaje = Service(
         id="svc-masaje",
         name="Masaje",
-        shares_session_pool=False,
+        shares_session_pool=True,
         forces_single_session=True,
         allows_single_session=True,
         single_session_price=45,
@@ -474,7 +474,7 @@ def ensure_demo_service_names(db: Session) -> None:
     for service_id, name, shares_session_pool, forces_single_session in (
         ("svc-ep", "Entrenamiento personal", True, False),
         ("svc-hipo", "Hipopresivos", True, False),
-        ("svc-masaje", "Masaje", False, True),
+        ("svc-masaje", "Masaje", True, True),
     ):
         row = db.get(Service, service_id)
         if row is None:

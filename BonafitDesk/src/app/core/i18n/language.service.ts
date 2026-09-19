@@ -42,6 +42,15 @@ export class LanguageService {
     }
   }
 
+  keepCurrentOrApplyAccount(accountLanguage: string | undefined): void {
+    const chosen = this.language();
+    if (isUiLanguage(accountLanguage) && accountLanguage !== chosen) {
+      this.setLanguage(chosen, true);
+      return;
+    }
+    this.applyFromAccount(accountLanguage);
+  }
+
   private apply(language: UiLanguage): void {
     this.language.set(language);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language);

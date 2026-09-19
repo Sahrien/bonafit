@@ -1,28 +1,30 @@
 import { Injectable, inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { TranslateService } from '@ngx-translate/core';
 
 const TOAST_POSITION = {
-  verticalPosition: 'top' as const,
+  verticalPosition: 'bottom' as const,
   horizontalPosition: 'right' as const,
 };
 
 @Injectable({ providedIn: 'root' })
 export class BonaToast {
   private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
 
   success(message: string): void {
-    this.snackBar.open(message, undefined, {
-      ...TOAST_POSITION,
-      duration: 4000,
-      panelClass: 'bona-toast--success',
-    });
+    this.show(message, 4000, 'bona-toast--success');
   }
 
   error(message: string): void {
-    this.snackBar.open(message, undefined, {
+    this.show(message, 6000, 'bona-toast--error');
+  }
+
+  private show(message: string, duration: number, panelClass: string): void {
+    this.snackBar.open(message, this.translate.instant('toast.close'), {
       ...TOAST_POSITION,
-      duration: 6000,
-      panelClass: 'bona-toast--error',
+      duration,
+      panelClass,
     });
   }
 }

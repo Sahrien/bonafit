@@ -1,15 +1,20 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { Observable, concat, forkJoin, last } from 'rxjs';
+import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
+import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { BonaLanguageSwitcherComponent } from '../../components/bona-language-switcher/bona-language-switcher.component';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
-import { BrandThemeService } from '../../core/brand-theme.service';
+import { BrandThemeService, apiAssetUrl } from '../../core/brand-theme.service';
+import { contrastOn } from '../../core/brand-contrast';
 import { injectAuthSession } from '../../core/auth/inject-auth-session';
 import { injectI18n } from '../../core/i18n/inject-i18n';
-import { BrandingWriteDto, ColorScheme } from '../../models/branding.dto';
+import { BrandingDto, BrandingWriteDto, ColorScheme } from '../../models/branding.dto';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { BrandingApiService } from '../../services/branding-api.service';
 import { PasswordChangeFormComponent } from './password-change-form.component';
@@ -19,16 +24,28 @@ const HEX = /^#[0-9A-Fa-f]{6}$/;
 @Component({
   selector: 'app-admin-settings',
   standalone: true,
-  imports: [BonaPageComponent, BonaFormComponent, PasswordChangeFormComponent, BonaLanguageSwitcherComponent],
+  imports: [
+    BonaPageComponent,
+    BonaFormComponent,
+    BonaButtonComponent,
+    PasswordChangeFormComponent,
+    BonaLanguageSwitcherComponent,
+    MatIconButton,
+    MatIcon,
+  ],
   templateUrl: './admin-settings.component.html',
   styleUrl: './admin-settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:beforeunload)': 'onBeforeUnload($event)',
+  },
 })
 export class AdminSettingsComponent {
   private readonly calendarApi = inject(CalendarApiService);
   private readonly brandingApi = inject(BrandingApiService);
   readonly brandTheme = inject(BrandThemeService);
   private readonly toast = inject(BonaToast);
+  private readonly confirm = inject(BonaConfirm);
   private readonly destroyRef = inject(DestroyRef);
   private readonly authSession = injectAuthSession();
 
@@ -52,8 +69,43 @@ export class AdminSettingsComponent {
   readonly primaryHex = signal('#0f766e');
   readonly accentHex = signal('#c2410c');
   readonly surfaceHex = signal('#f5f3f0');
-  readonly logoHref = this.brandTheme.logoHref;
-  readonly faviconHref = this.brandTheme.faviconHref;
+  private readonly savedLogoHref = signal<string | null>(null);
+  private readonly savedFaviconHref = signal<string | null>(null);
+  private readonly pendingLogoFile = signal<File | null>(null);
+  private readonly pendingLogoUrl = signal<string | null>(null);
+  private readonly pendingLogoRemove = signal(false);
+  private readonly pendingFaviconFile = signal<File | null>(null);
+  private readonly pendingFaviconUrl = signal<string | null>(null);
+  private readonly pendingFaviconRemove = signal(false);
+  readonly logoHref = computed(() => {
+    const pending = this.pendingLogoUrl();
+    if (pending) {
+      return pending;
+    }
+    return this.pendingLogoRemove() ? null : this.savedLogoHref();
+  });
+  readonly faviconHref = computed(() => {
+    const pending = this.pendingFaviconUrl();
+    if (pending) {
+      return pending;
+    }
+    return this.pendingFaviconRemove() ? null : this.savedFaviconHref();
+  });
+  private readonly brandSnapshot = signal('');
+  readonly brandFingerprint = computed(() =>
+    JSON.stringify({
+      studioName: (this.brandForm()['studioName'] ?? '').trim(),
+      slogan: (this.brandForm()['slogan'] ?? '').trim(),
+      colorScheme: this.brandForm()['colorScheme'] ?? 'light',
+      primaryHex: this.primaryHex().trim().toLowerCase(),
+      accentHex: this.accentHex().trim().toLowerCase(),
+      surfaceHex: this.surfaceHex().trim().toLowerCase(),
+      logo: this.assetToken(this.pendingLogoFile(), this.pendingLogoRemove()),
+      favicon: this.assetToken(this.pendingFaviconFile(), this.pendingFaviconRemove()),
+    }),
+  );
+  readonly brandDirty = computed(() => this.brandFingerprint() !== this.brandSnapshot());
+  readonly previewDark = computed(() => this.brandTheme.resolvedScheme() === 'dark');
 
   readonly bookingFields = computed<BonaFieldDefinition[]>(() => [
     { key: 'nextDayCutoffTime', label: this.literals.cutoffTime, type: 'time', required: true },
@@ -76,6 +128,7 @@ export class AdminSettingsComponent {
   ]);
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.revokePendingUrls());
     forkJoin({
       booking: this.calendarApi.getBookingSettings(),
       branding: this.brandingApi.getBranding(),
@@ -87,15 +140,9 @@ export class AdminSettingsComponent {
             nextDayCutoffTime: booking.nextDayCutoffTime,
             defaultLocation: booking.defaultLocation,
           });
-          this.brandForm.set({
-            studioName: branding.studioName,
-            slogan: branding.slogan,
-            colorScheme: branding.colorScheme,
-          });
-          this.primaryHex.set(branding.primaryHex);
-          this.accentHex.set(branding.accentHex);
-          this.surfaceHex.set(branding.surfaceHex);
+          this.applyBrandFields(branding);
           this.brandTheme.apply(branding);
+          this.captureBrandSnapshot();
           this.loading.set(false);
         },
         error: () => {
@@ -123,6 +170,30 @@ export class AdminSettingsComponent {
 
   onSurfaceColor(event: Event): void {
     this.surfaceHex.set((event.target as HTMLInputElement).value);
+  }
+
+  onPrimaryHex(event: Event): void {
+    this.primaryHex.set((event.target as HTMLInputElement).value);
+  }
+
+  onAccentHex(event: Event): void {
+    this.accentHex.set((event.target as HTMLInputElement).value);
+  }
+
+  onSurfaceHex(event: Event): void {
+    this.surfaceHex.set((event.target as HTMLInputElement).value);
+  }
+
+  pickerHex(value: string): string {
+    return this.normalizeHex(value) ?? '#000000';
+  }
+
+  hexInvalid(value: string): boolean {
+    return value.trim().length > 0 && !this.normalizeHex(value);
+  }
+
+  accentOnColor(): string {
+    return contrastOn(this.pickerHex(this.accentHex()));
   }
 
   onSaveBooking(value: BonaFormValue): void {
@@ -154,12 +225,14 @@ export class AdminSettingsComponent {
       return;
     }
     this.error.set('');
-    this.brandingApi
-      .updateBranding(payload)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    concat(...this.brandSaveOps(payload))
+      .pipe(last(), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (branding) => {
+          this.applyBrandFields(branding);
+          this.clearPendingAssets();
           this.brandTheme.apply(branding);
+          this.captureBrandSnapshot();
           this.toast.success(this.literals.saved);
         },
         error: () => this.toast.error(this.literals.errorSave),
@@ -167,15 +240,59 @@ export class AdminSettingsComponent {
   }
 
   onLogoSelected(event: Event): void {
-    this.uploadAsset(event, (file) => this.brandingApi.uploadLogo(file));
+    this.stageAsset(event, 'logo');
+  }
+
+  onRemoveLogo(): void {
+    this.stageRemove('logo');
   }
 
   onFaviconSelected(event: Event): void {
-    this.uploadAsset(event, (file) => this.brandingApi.uploadFavicon(file));
+    this.stageAsset(event, 'favicon');
+  }
+
+  onRemoveFavicon(): void {
+    this.stageRemove('favicon');
   }
 
   onPasswordSaved(): void {
     this.toast.success(this.literals.passwordSaved);
+  }
+
+  confirmLeaveIfDirty(): boolean | Observable<boolean> {
+    if (!this.brandDirty()) {
+      return true;
+    }
+    return this.confirm.open({
+      title: this.literals.confirmLeaveTitle,
+      message: this.literals.confirmLeaveMessage,
+      confirmLabel: this.literals.confirmLeaveConfirm,
+    });
+  }
+
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (!this.brandDirty()) {
+      return;
+    }
+    event.preventDefault();
+    event.returnValue = true;
+  }
+
+  private brandSaveOps(payload: BrandingWriteDto): Array<Observable<BrandingDto>> {
+    const ops: Array<Observable<BrandingDto>> = [this.brandingApi.updateBranding(payload)];
+    const logoFile = this.pendingLogoFile();
+    if (logoFile) {
+      ops.push(this.brandingApi.uploadLogo(logoFile));
+    } else if (this.pendingLogoRemove()) {
+      ops.push(this.brandingApi.deleteLogo());
+    }
+    const faviconFile = this.pendingFaviconFile();
+    if (faviconFile) {
+      ops.push(this.brandingApi.uploadFavicon(faviconFile));
+    } else if (this.pendingFaviconRemove()) {
+      ops.push(this.brandingApi.deleteFavicon());
+    }
+    return ops;
   }
 
   private brandPayload(value: BonaFormValue): BrandingWriteDto | null {
@@ -192,26 +309,97 @@ export class AdminSettingsComponent {
     return { studioName, slogan, primaryHex, accentHex, surfaceHex, colorScheme };
   }
 
+  private applyBrandFields(branding: BrandingDto): void {
+    this.brandForm.set({
+      studioName: branding.studioName,
+      slogan: branding.slogan,
+      colorScheme: branding.colorScheme,
+    });
+    this.primaryHex.set(branding.primaryHex);
+    this.accentHex.set(branding.accentHex);
+    this.surfaceHex.set(branding.surfaceHex);
+    this.savedLogoHref.set(apiAssetUrl(branding.logoUrl));
+    this.savedFaviconHref.set(apiAssetUrl(branding.faviconUrl));
+  }
+
+  private captureBrandSnapshot(): void {
+    this.brandSnapshot.set(this.brandFingerprint());
+  }
+
   private normalizeHex(value: string): string | null {
     const hex = value.trim();
     return HEX.test(hex) ? hex.toLowerCase() : null;
   }
 
-  private uploadAsset(event: Event, send: (file: File) => ReturnType<BrandingApiService['uploadLogo']>): void {
+  private assetToken(file: File | null, remove: boolean): string {
+    if (file) {
+      return `file:${file.name}:${file.size}:${file.lastModified}`;
+    }
+    return remove ? 'remove' : 'keep';
+  }
+
+  private stageAsset(event: Event, kind: 'logo' | 'favicon'): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
     if (!file) {
       return;
     }
-    send(file)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (branding) => {
-          this.brandTheme.apply(branding);
-          this.toast.success(this.literals.saved);
-        },
-        error: () => this.toast.error(this.literals.errorSave),
-      });
+    if (kind === 'logo') {
+      this.revokeUrl(this.pendingLogoUrl());
+      this.pendingLogoFile.set(file);
+      this.pendingLogoUrl.set(URL.createObjectURL(file));
+      this.pendingLogoRemove.set(false);
+      return;
+    }
+    this.revokeUrl(this.pendingFaviconUrl());
+    this.pendingFaviconFile.set(file);
+    this.pendingFaviconUrl.set(URL.createObjectURL(file));
+    this.pendingFaviconRemove.set(false);
+  }
+
+  private stageRemove(kind: 'logo' | 'favicon'): void {
+    if (kind === 'logo') {
+      if (this.pendingLogoFile() || this.pendingLogoUrl()) {
+        this.revokeUrl(this.pendingLogoUrl());
+        this.pendingLogoFile.set(null);
+        this.pendingLogoUrl.set(null);
+        return;
+      }
+      if (this.savedLogoHref()) {
+        this.pendingLogoRemove.set(true);
+      }
+      return;
+    }
+    if (this.pendingFaviconFile() || this.pendingFaviconUrl()) {
+      this.revokeUrl(this.pendingFaviconUrl());
+      this.pendingFaviconFile.set(null);
+      this.pendingFaviconUrl.set(null);
+      return;
+    }
+    if (this.savedFaviconHref()) {
+      this.pendingFaviconRemove.set(true);
+    }
+  }
+
+  private clearPendingAssets(): void {
+    this.revokePendingUrls();
+    this.pendingLogoFile.set(null);
+    this.pendingLogoUrl.set(null);
+    this.pendingLogoRemove.set(false);
+    this.pendingFaviconFile.set(null);
+    this.pendingFaviconUrl.set(null);
+    this.pendingFaviconRemove.set(false);
+  }
+
+  private revokePendingUrls(): void {
+    this.revokeUrl(this.pendingLogoUrl());
+    this.revokeUrl(this.pendingFaviconUrl());
+  }
+
+  private revokeUrl(href: string | null): void {
+    if (href?.startsWith('blob:')) {
+      URL.revokeObjectURL(href);
+    }
   }
 }

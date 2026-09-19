@@ -1,25 +1,27 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session, selectinload
 
-from app.booking import shares_session_pool
 from app.database import SessionFactory
 from app.emailer import Emailer
 from app.errors import BusinessError, ForbiddenError, NotFoundError
 from app.identity import CurrentUser
-from app.models import Appointment, Bono, Client, ClientBono, FormAssignment, Service, User
+from app.models import Appointment, Bono, Client, ClientBono, ClientCoupon, FormAssignment, Service, User
+from app.pricing import best_coupon, coupon_applies, priced_offer
 from app.roles import UserRole
 from app.schemas import (
     ClientBonoOut,
     ClientBonoPatch,
+    ClientCouponOut,
+    ClientCouponWrite,
     ClientOut,
     ClientWrite,
     ContractBono,
     SessionBalanceOut,
 )
 from app.security import Security
-from app.serializers import client_bono_out, client_out
+from app.serializers import client_bono_out, client_coupon_out, client_out
 
 
 class ClientService:
@@ -66,8 +68,6 @@ class ClientService:
             now = datetime.now(UTC)
             for row in rows:
                 service = row.bono.service
-                if not shares_session_pool(service):
-                    continue
                 if row.is_gift:
                     continue
                 if row.remaining_sessions <= 0:
@@ -156,6 +156,7 @@ class ClientService:
             account = db.scalar(select(User).where(User.client_id == client_id))
             if account:
                 db.delete(account)
+            db.execute(delete(ClientCoupon).where(ClientCoupon.client_id == client_id))
             db.delete(client)
 
     def list_client_bonos(self, client_id: str, user: CurrentUser) -> list[ClientBonoOut]:
@@ -190,6 +191,20 @@ class ClientService:
             ):
                 remaining = payload.remainingSessions or 1
                 is_gift = True
+            list_price = float(bono.price)
+            coupon = None
+            paid_price = 0.0 if is_gift else list_price
+            if not is_gift:
+                coupon = _resolve_contract_coupon(db, payload, client.id, service.id, bono.id, list_price, service)
+                priced = priced_offer(
+                    list_price,
+                    getattr(service, "sale_kind", None),
+                    float(getattr(service, "sale_value", 0) or 0),
+                    coupon,
+                )
+                paid_price = priced.paid_price
+                if coupon is not None:
+                    coupon.used_at = datetime.now(UTC)
             row = ClientBono(
                 client_id=client.id,
                 bono_id=bono.id,
@@ -197,10 +212,52 @@ class ClientService:
                 is_gift=is_gift,
                 purchased_at=datetime.now(UTC),
                 expires_at=None,
+                list_price=list_price,
+                paid_price=paid_price,
+                coupon_id=None if is_gift or coupon is None else coupon.id,
             )
             db.add(row)
             db.flush()
             return client_bono_out(row)
+
+    def list_coupons(self, client_id: str, user: CurrentUser) -> list[ClientCouponOut]:
+        with self._session_factory() as db:
+            if user.role == UserRole.CLIENT and user.client_id != client_id:
+                raise ForbiddenError()
+            _client_or_404(db, client_id)
+            rows = db.scalars(
+                select(ClientCoupon)
+                .where(ClientCoupon.client_id == client_id)
+                .order_by(ClientCoupon.id)
+            ).all()
+            return [client_coupon_out(row) for row in rows]
+
+    def create_coupon(self, client_id: str, payload: ClientCouponWrite) -> ClientCouponOut:
+        with self._session_factory() as db:
+            _client_or_404(db, client_id)
+            if payload.serviceId and db.get(Service, payload.serviceId) is None:
+                raise NotFoundError("service", payload.serviceId)
+            if payload.bonoId and db.get(Bono, payload.bonoId) is None:
+                raise NotFoundError("bono", payload.bonoId)
+            row = ClientCoupon(
+                client_id=client_id,
+                kind=payload.kind,
+                value=payload.value,
+                service_id=payload.serviceId,
+                bono_id=payload.bonoId,
+            )
+            db.add(row)
+            db.flush()
+            return client_coupon_out(row)
+
+    def delete_coupon(self, coupon_id: str) -> None:
+        with self._session_factory() as db:
+            row = db.get(ClientCoupon, coupon_id)
+            if row is None:
+                raise NotFoundError("coupon", coupon_id)
+            if row.used_at is not None:
+                raise BusinessError("discount.couponUsed")
+            db.delete(row)
 
     def update_client_bono(self, bono_id: str, payload: ClientBonoPatch) -> ClientBonoOut:
         with self._session_factory() as db:
@@ -263,6 +320,39 @@ def catalog_bono_for_service(db: Session, service_id: str) -> Bono:
         raise BusinessError("booking.bonoRequired")
     single = next((item for item in bonos if item.session_count == 1), None)
     return single or bonos[0]
+
+
+def _resolve_contract_coupon(
+    db: Session,
+    payload: ContractBono,
+    client_id: str,
+    service_id: str,
+    bono_id: str,
+    list_price: float,
+    service: Service,
+) -> ClientCoupon | None:
+    unused = list(
+        db.scalars(
+            select(ClientCoupon).where(ClientCoupon.client_id == client_id, ClientCoupon.used_at.is_(None))
+        ).all()
+    )
+    if payload.couponId:
+        coupon = db.get(ClientCoupon, payload.couponId)
+        if (
+            coupon is None
+            or coupon.client_id != client_id
+            or not coupon_applies(coupon, service_id, bono_id)
+        ):
+            raise BusinessError("discount.couponInvalid")
+        return coupon
+    return best_coupon(
+        unused,
+        service_id,
+        bono_id,
+        list_price,
+        getattr(service, "sale_kind", None),
+        float(getattr(service, "sale_value", 0) or 0),
+    )
 
 
 def _hide_notes(user: CurrentUser) -> bool:

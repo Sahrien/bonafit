@@ -4,6 +4,8 @@ from fastapi import APIRouter, Response, status
 from app.schemas import (
     ClientBonoOut,
     ClientBonoPatch,
+    ClientCouponOut,
+    ClientCouponWrite,
     ClientOut,
     ClientWrite,
     ContractBono,
@@ -109,6 +111,45 @@ def contract_bono(
 ) -> ClientBonoOut:
     user = auth_service.require_not_must_change(authorization)
     return client_service.contract_bono(payload, user)
+
+
+@router.get("/clients/{client_id}/coupons", response_model=list[ClientCouponOut])
+@inject
+def list_coupons(
+    client_id: str,
+    client_service: ClientSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> list[ClientCouponOut]:
+    user = auth_service.require_not_must_change(authorization)
+    return client_service.list_coupons(client_id, user)
+
+
+@router.post("/clients/{client_id}/coupons", response_model=ClientCouponOut)
+@inject
+def create_coupon(
+    client_id: str,
+    payload: ClientCouponWrite,
+    client_service: ClientSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> ClientCouponOut:
+    auth_service.require_admin(authorization)
+    return client_service.create_coupon(client_id, payload)
+
+
+@router.delete("/clients/{client_id}/coupons/{coupon_id}", status_code=status.HTTP_204_NO_CONTENT)
+@inject
+def delete_coupon(
+    client_id: str,
+    coupon_id: str,
+    client_service: ClientSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> Response:
+    auth_service.require_admin(authorization)
+    client_service.delete_coupon(coupon_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.put("/client-bonos/{bono_id}", response_model=ClientBonoOut)

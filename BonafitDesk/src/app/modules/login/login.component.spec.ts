@@ -4,6 +4,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AUTH_PATHS } from '../../core/auth/auth.paths';
+import { LanguageService } from '../../core/i18n/language.service';
 import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { LOGIN_LITERALS } from '../../i18n/es';
 import { AuthApiService } from '../../services/auth-api.service';
@@ -68,6 +69,21 @@ describe('LoginComponent', () => {
       password: 'ChangeMe123!',
     });
     expect(router.navigateByUrl).toHaveBeenCalledWith(AUTH_PATHS.adminHome);
+  });
+
+  it('does not revert the language chosen on the login screen', () => {
+    const language = TestBed.inject(LanguageService);
+    language.setLanguage('en', false);
+    const session = createMockSession({ ...MOCK_ACCOUNTS[0], language: 'es' });
+    auth.login.and.returnValue(of(session));
+
+    fixture.componentInstance.onSubmit({
+      email: 'lucia@bonafit.com',
+      password: 'ChangeMe123!',
+    });
+    fixture.detectChanges();
+
+    expect(language.language()).toBe('en');
   });
 
   it('sends users who must change password to that screen', () => {

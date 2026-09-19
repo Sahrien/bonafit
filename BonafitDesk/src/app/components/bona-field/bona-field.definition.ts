@@ -25,6 +25,8 @@ export interface BonaFieldDefinition {
   label: string;
   type?: BonaFieldControlType;
   placeholder?: string;
+  hint?: string;
+  suffix?: string;
   required?: boolean;
   disabled?: boolean;
   options?: BonaFieldOption[];

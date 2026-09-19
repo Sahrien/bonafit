@@ -187,4 +187,50 @@ describe('form-question.mapper', () => {
     expect(template.length).toBe(2);
     expect(template[1].heading?.id).toBe('h-legal');
   });
+
+  it('inlines the name into a consent heading and hides the name field', () => {
+    const heading: FormQuestionDto = {
+      id: 'h-consent',
+      prompt: 'Consentimiento informado',
+      type: 'heading',
+      required: false,
+      sortOrder: 0,
+    };
+    const legal: FormQuestionDto = {
+      id: 'h-legal',
+      prompt: 'Yo, ______________________________, declaro que la información es veraz.'.padEnd(
+        90,
+        ' ',
+      ),
+      type: 'heading',
+      required: false,
+      sortOrder: 1,
+    };
+    const name: FormQuestionDto = {
+      id: 'q-name',
+      prompt: 'Nombre y apellidos',
+      type: 'shortText',
+      required: true,
+      sortOrder: 2,
+    };
+    const terms: FormQuestionDto = {
+      id: 'q-terms',
+      prompt: 'He leído y acepto el consentimiento informado',
+      type: 'terms',
+      required: true,
+      sortOrder: 3,
+    };
+    const items = answerDisplayItems(
+      [heading, legal, name, terms],
+      [
+        { questionId: 'q-name', value: 'Ana Pérez' },
+        { questionId: 'q-terms', value: FORM_YES_VALUE },
+      ],
+      LABELS,
+    );
+    expect(items.map((item) => item.id)).toEqual(['h-consent', 'h-legal', 'q-terms']);
+    expect(items[1].prompt).toContain('Yo, Ana Pérez, declaro');
+    expect(items[1].prompt).not.toContain('___');
+    expect(items.some((item) => item.prompt === 'Nombre y apellidos')).toBeFalse();
+  });
 });

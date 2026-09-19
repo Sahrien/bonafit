@@ -9,6 +9,32 @@
   border: 1px solid var(--bona-color-border);
   border-radius: var(--bona-radius-lg);
   font-family: var(--bona-font-family);
+  color: var(--bona-color-text);
+  --fc-page-bg-color: var(--bona-color-surface);
+  --fc-neutral-bg-color: var(--bona-color-nested);
+  --fc-neutral-text-color: var(--bona-color-text-muted);
+  --fc-border-color: var(--bona-color-border);
+  --fc-today-bg-color: var(--bona-color-tint);
+  --fc-highlight-color: color-mix(in srgb, var(--bona-color-primary) 22%, transparent);
+  --fc-now-indicator-color: var(--bona-color-danger);
+  --fc-non-business-color: color-mix(in srgb, var(--bona-color-text-muted) 18%, transparent);
+  --fc-button-text-color: var(--bona-color-primary-contrast);
+  --fc-button-bg-color: var(--bona-color-primary);
+  --fc-button-border-color: var(--bona-color-primary);
+  --fc-button-hover-bg-color: color-mix(in srgb, var(--bona-color-primary) 86%, var(--bona-color-text));
+  --fc-button-hover-border-color: color-mix(in srgb, var(--bona-color-primary) 86%, var(--bona-color-text));
+  --fc-button-active-bg-color: color-mix(in srgb, var(--bona-color-primary) 72%, var(--bona-color-text));
+  --fc-button-active-border-color: color-mix(in srgb, var(--bona-color-primary) 72%, var(--bona-color-text));
+  --fc-event-text-color: var(--bona-color-text);
+
+  ::ng-deep .fc,
+  ::ng-deep .fc-col-header-cell,
+  ::ng-deep .fc-col-header-cell-cushion,
+  ::ng-deep .fc-timegrid-slot-label,
+  ::ng-deep .fc-timegrid-slot-label-cushion,
+  ::ng-deep .fc-toolbar-title {
+    color: var(--bona-color-text);
+  }
 
   ::ng-deep .fc-event {
     cursor: pointer;
@@ -27,13 +53,25 @@
   ::ng-deep .fc-event.bona-cal-status-pending {
     background: var(--bona-color-warning) !important;
     border-color: var(--bona-color-warning) !important;
-    color: #fff !important;
+    color: var(--bona-color-warning-contrast) !important;
+
+    .fc-event-main,
+    .fc-event-title,
+    .fc-event-time {
+      color: inherit;
+    }
   }
 
   ::ng-deep .fc-event.bona-cal-status-confirmed {
     background: var(--bona-color-success) !important;
     border-color: var(--bona-color-success) !important;
-    color: #fff !important;
+    color: var(--bona-color-success-contrast) !important;
+
+    .fc-event-main,
+    .fc-event-title,
+    .fc-event-time {
+      color: inherit;
+    }
   }
 
   ::ng-deep .fc-event.bona-cal-status-completed {

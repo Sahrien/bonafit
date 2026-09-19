@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { API_PATHS, apiUrl } from '../core/api-url';
 import { AuthTokenStore } from '../core/auth/auth-token.store';
 import { configureHttpClientTesting } from '../core/http-testing';
+import { LanguageService } from '../core/i18n/language.service';
 import { MOCK_ACCOUNTS, createMockSession } from '../testing/fixtures';
 import { AuthApiService } from './auth-api.service';
 
@@ -36,6 +37,21 @@ describe('AuthApiService', () => {
     req.flush(session);
     expect(await pending).toEqual(session);
     expect(tokens.get()).toBe(session.token);
+  });
+
+  it('keeps the UI language chosen before login and saves it on the account', async () => {
+    const language = TestBed.inject(LanguageService);
+    language.setLanguage('en', false);
+    const session = createMockSession({ ...MOCK_ACCOUNTS[0], language: 'es' });
+    const pending = firstValueFrom(
+      api.login({ email: 'lucia@bonafit.com', password: 'secret' }),
+    );
+    http.expectOne({ method: 'POST', url: apiUrl(API_PATHS.authLogin) }).flush(session);
+    const patch = http.expectOne({ method: 'PATCH', url: apiUrl(API_PATHS.authMe) });
+    expect(patch.request.body).toEqual({ language: 'en' });
+    patch.flush(session);
+    await pending;
+    expect(language.language()).toBe('en');
   });
 
   it('POST /auth/logout clears the token', async () => {

@@ -1,30 +1,34 @@
-.page-toolbar {
-  margin-bottom: var(--bona-space-3);
-  max-width: 22rem;
-}
-
 .page-error {
   margin: 0 0 var(--bona-space-4);
   color: var(--bona-color-danger);
 }
 
-.page-nested {
-  margin-top: var(--bona-space-4);
-}
-
-.schedules-capacity {
-  width: fit-content;
-  max-width: min(22rem, 100%);
+.schedules-panel {
   margin: 0 0 var(--bona-space-4);
-  padding: var(--bona-space-2) var(--bona-space-3);
+  padding: var(--bona-space-3) var(--bona-space-4);
   border: 1px solid var(--bona-color-border);
   border-radius: var(--bona-radius-lg);
   background: var(--bona-color-surface);
 
   h2 {
-    margin: 0 0 var(--bona-space-1);
+    margin: 0 0 var(--bona-space-2);
     font-size: 1rem;
   }
+
+  ::ng-deep .bona-form__actions {
+    justify-content: flex-start;
+  }
+}
+
+.schedules-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bona-space-2);
+}
+
+.schedules-capacity {
+  width: max-content;
+  max-width: min(36rem, 100%);
 
   p {
     margin: 0 0 var(--bona-space-2);
@@ -72,6 +76,163 @@
 
 .schedules-capacity__field {
   display: block;
-  max-width: 6rem;
   margin: 0 0 var(--bona-space-2);
+
+  ::ng-deep .mat-mdc-form-field {
+    width: 6rem;
+    max-width: 6rem;
+  }
+
+  ::ng-deep .mdc-floating-label,
+  ::ng-deep .mat-mdc-floating-label {
+    white-space: nowrap;
+  }
+}
+
+.schedules-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--bona-color-surface);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-lg);
+  box-shadow: var(--bona-shadow-card);
+}
+
+.schedules-list__trainer + .schedules-list__trainer {
+  border-top: 1px solid var(--bona-color-border);
+}
+
+.schedules-list__trainer-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--bona-space-2);
+  width: 100%;
+  margin: 0;
+  padding: var(--bona-space-3) var(--bona-space-4);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.schedules-list__count {
+  margin-left: auto;
+  color: var(--bona-color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.schedules-list__icon {
+  transition: transform 0.15s ease;
+}
+
+.schedules-list__trainer--open > .schedules-list__trainer-toggle .schedules-list__icon {
+  transform: rotate(180deg);
+}
+
+.schedules-list__days {
+  display: grid;
+  gap: var(--bona-space-3);
+  padding: 0 var(--bona-space-4) var(--bona-space-4);
+}
+
+.schedules-list__day h3 {
+  margin: 0 0 var(--bona-space-1);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.schedules-list__slots {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bona-space-1);
+}
+
+.schedules-list__slot {
+  display: inline-flex;
+  width: auto;
+  max-width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--bona-space-2);
+  padding: 0.125rem 0.125rem 0.125rem 0.75rem;
+  background: var(--bona-color-nested);
+  border-radius: var(--bona-radius-md);
+}
+
+.schedules-list__time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.schedules-list__slot-actions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.schedules-list__action {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--bona-radius-sm);
+  background: transparent;
+  color: var(--bona-color-text-muted);
+  cursor: pointer;
+
+  mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--bona-color-primary) 12%, transparent);
+    color: var(--bona-color-primary);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--bona-focus-ring);
+  }
+}
+
+.schedules-list__action--danger:hover {
+  background: color-mix(in srgb, var(--bona-color-danger) 12%, transparent);
+  color: var(--bona-color-danger);
+}
+
+.schedules-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--bona-space-2);
+  padding: var(--bona-space-6) var(--bona-space-4);
+  text-align: center;
+  background: var(--bona-color-surface);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-lg);
+}
+
+.schedules-empty__title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.schedules-empty__message {
+  margin: 0;
+  color: var(--bona-color-text-muted);
 }

@@ -2,18 +2,22 @@
   <app-bona-button
     bonaPageActions
     variant="secondary"
+    [attr.aria-pressed]="capacityOpen()"
     [text]="literals.capacitySettings"
     (action)="onToggleCapacity()" />
   <app-bona-button bonaPageActions [text]="literals.newSchedule" (action)="onCreate()" />
 
-  @if (error() && !formOpen()) {
+  @if (error() && !formOpen() && !capacityOpen()) {
     <p class="page-error">{{ error() }}</p>
   }
 
   @if (capacityOpen()) {
-    <section class="schedules-capacity" [attr.aria-label]="literals.capacityTitle">
+    <section class="schedules-panel schedules-capacity" [attr.aria-label]="literals.capacityTitle">
       <h2>{{ literals.capacityTitle }}</h2>
       <p>{{ literals.capacityHint }}</p>
+      @if (error()) {
+        <p class="page-error">{{ error() }}</p>
+      }
       <ul class="schedules-capacity__trainers">
         @for (trainer of catalogTrainers(); track trainer.id) {
           <li
@@ -41,20 +45,19 @@
           </li>
         }
       </ul>
-      <app-bona-button [text]="literals.saveCapacity" (action)="onSaveCapacities()" />
+      <div class="schedules-panel__actions">
+        <app-bona-button
+          [text]="literals.cancel"
+          variant="secondary"
+          (action)="onCloseCapacity()" />
+        <app-bona-button [text]="literals.save" (action)="onSaveCapacities()" />
+      </div>
     </section>
   }
 
-  <div class="page-toolbar">
-    <app-bona-form
-      [fields]="filterFields()"
-      [value]="filterValue()"
-      [showSubmit]="false"
-      (valueChange)="onFilterChange($event)" />
-  </div>
-
   @if (formOpen()) {
-    <section class="page-nested">
+    <section class="schedules-panel page-nested" [attr.aria-label]="scheduleFormTitle()">
+      <h2>{{ scheduleFormTitle() }}</h2>
       @if (error()) {
         <p class="page-error">{{ error() }}</p>
       }
@@ -63,21 +66,76 @@
         [value]="formValue()"
         [submitText]="literals.save"
         (valueChange)="onFormChange($event)"
-        (submitted)="onSave($event)" />
-      <app-bona-button
-        [text]="literals.cancel"
-        variant="secondary"
-        (action)="onCancel()" />
+        (submitted)="onSave($event)">
+        <app-bona-button
+          bonaFormActions
+          [text]="literals.cancel"
+          variant="secondary"
+          (action)="onCancel()" />
+      </app-bona-form>
     </section>
   }
 
-  <app-bona-grid
-    [data]="rows()"
-    [columns]="columns()"
-    [actions]="actions()"
-    [emptyMessage]="literals.empty"
-    [emptyTitle]="literals.emptyTitle"
-    [emptyActionLabel]="literals.newSchedule"
-    (emptyAction)="onCreate()"
-    (action)="onRowAction($event)" />
+  @if (trainerGroups().length === 0) {
+    <div class="schedules-empty">
+      <p class="schedules-empty__title">{{ literals.emptyTitle }}</p>
+      <p class="schedules-empty__message">{{ literals.empty }}</p>
+      <app-bona-button [text]="literals.newSchedule" (action)="onCreate()" />
+    </div>
+  } @else {
+    <ul class="schedules-list">
+      @for (group of trainerGroups(); track group.trainerId) {
+        <li
+          class="schedules-list__trainer"
+          [class.schedules-list__trainer--open]="isScheduleTrainerOpen(group.trainerId)">
+          <button
+            type="button"
+            class="schedules-list__trainer-toggle"
+            [attr.aria-expanded]="isScheduleTrainerOpen(group.trainerId)"
+            [attr.aria-label]="
+              isScheduleTrainerOpen(group.trainerId)
+                ? literals.hideTrainerSchedule
+                : literals.showTrainerSchedule
+            "
+            (click)="onToggleScheduleTrainer(group.trainerId)">
+            <span>{{ group.trainerName }}</span>
+            <span class="schedules-list__count">{{ slotCountLabel(group.slotCount) }}</span>
+            <mat-icon class="schedules-list__icon" aria-hidden="true">expand_more</mat-icon>
+          </button>
+          @if (isScheduleTrainerOpen(group.trainerId)) {
+            <div class="schedules-list__days">
+              @for (day of group.days; track day.weekday) {
+                <section class="schedules-list__day">
+                  <h3>{{ day.weekdayLabel }}</h3>
+                  <ul class="schedules-list__slots">
+                    @for (slot of day.slots; track slot.id) {
+                      <li class="schedules-list__slot">
+                        <span class="schedules-list__time">{{ slot.startTime }} – {{ slot.endTime }}</span>
+                        <div class="schedules-list__slot-actions">
+                          <button
+                            type="button"
+                            class="schedules-list__action"
+                            [attr.aria-label]="literals.edit"
+                            (click)="onEdit(slot.id)">
+                            <mat-icon aria-hidden="true">edit</mat-icon>
+                          </button>
+                          <button
+                            type="button"
+                            class="schedules-list__action schedules-list__action--danger"
+                            [attr.aria-label]="literals.delete"
+                            (click)="onDelete(slot.id)">
+                            <mat-icon aria-hidden="true">delete</mat-icon>
+                          </button>
+                        </div>
+                      </li>
+                    }
+                  </ul>
+                </section>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
 </app-bona-page>

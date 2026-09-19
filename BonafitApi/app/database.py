@@ -75,6 +75,7 @@ def _flatten_legacy_categories(engine: Engine) -> None:
     foreign_keys = inspector.get_foreign_keys("services")
     dialect = engine.dialect.name
     false_sql = "FALSE" if dialect == "postgresql" else "0"
+    true_sql = "TRUE" if dialect == "postgresql" else "1"
 
     with engine.begin() as connection:
         if "shares_session_pool" not in columns:
@@ -124,6 +125,7 @@ def _flatten_legacy_categories(engine: Engine) -> None:
             connection.execute(text("ALTER TABLE services DROP COLUMN category"))
         if "service_categories" in tables:
             connection.execute(text("DROP TABLE IF EXISTS service_categories"))
+        connection.execute(text(f"UPDATE services SET shares_session_pool = {true_sql}"))
 
     if "client_bonos" not in tables:
         return

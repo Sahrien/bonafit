@@ -1,26 +1,24 @@
 <app-bona-page [title]="literals.title" [subtitle]="literals.subtitle" [loading]="loading()">
-  <app-bona-button bonaPageActions [text]="literals.newService" (action)="onCreateService()" />
+  @if (!showDetail()) {
+    <app-bona-button bonaPageActions [text]="literals.newService" (action)="onCreateService()" />
+  }
 
   @if (error()) {
     <p class="page-error">{{ error() }}</p>
   }
 
-  <div class="page-toolbar">
-    <app-bona-input-text-field
-      [label]="literals.search"
-      [placeholder]="literals.searchPlaceholder"
-      [value]="search()"
-      (valueChange)="onSearch($event)" />
-  </div>
-
-  <div class="services-split" [class.services-split--detail]="showDetail()">
-    <div class="services-split__list">
+  <div class="services-catalog" [class.services-catalog--detail]="showDetail()">
+    <div class="services-catalog__list">
       <app-bona-grid
         [data]="serviceRows()"
         [columns]="serviceColumns()"
         [actions]="serviceActions()"
+        [pageSize]="pageSize"
+        [columnFilters]="true"
+        [columnSort]="true"
         [emptyMessage]="literals.emptyServices"
         [emptyTitle]="literals.emptyServicesTitle"
+        [emptyFilteredMessage]="literals.emptyServicesFilter"
         [emptyActionLabel]="literals.newService"
         (emptyAction)="onCreateService()"
         (action)="onServiceAction($event)"
@@ -28,20 +26,20 @@
     </div>
 
     @if (showDetail()) {
-      <aside class="services-split__editor">
+      <section class="services-catalog__editor" [attr.aria-label]="literals.serviceEditor">
         <h2>{{ literals.serviceEditor }}</h2>
         <app-bona-form
           [fields]="serviceFields()"
           [value]="serviceForm()"
           [submitText]="literals.save"
           (valueChange)="onServiceFormChange($event)"
-          (submitted)="onSaveService($event)" />
-        <div class="page-editor__extra">
+          (submitted)="onSaveService($event)">
           <app-bona-button
+            bonaFormActions
             [text]="literals.cancel"
             variant="secondary"
             (action)="onCancelService()" />
-        </div>
+        </app-bona-form>
 
         @if (!isNewService()) {
           <div class="page-nested">
@@ -65,16 +63,18 @@
                   [value]="bonoForm()"
                   [submitText]="literals.save"
                   (valueChange)="onBonoFormChange($event)"
-                  (submitted)="onSaveBono($event)" />
-                <app-bona-button
-                  [text]="literals.cancel"
-                  variant="secondary"
-                  (action)="onCancelBono()" />
+                  (submitted)="onSaveBono($event)">
+                  <app-bona-button
+                    bonaFormActions
+                    [text]="literals.cancel"
+                    variant="secondary"
+                    (action)="onCancelBono()" />
+                </app-bona-form>
               </div>
             }
           </div>
         }
-      </aside>
+      </section>
     }
   </div>
 </app-bona-page>

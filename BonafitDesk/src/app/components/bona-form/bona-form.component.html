@@ -8,7 +8,9 @@
     }
   </div>
 
-  <div class="bona-form__actions">
+  <div
+    class="bona-form__actions"
+    [class.bona-form__actions--start]="actionsAlign() === 'start'">
     <ng-content select="[bonaFormActions]" />
     @if (showSubmit()) {
       <app-bona-button [text]="submitText()" type="submit" [disabled]="disabled()" />

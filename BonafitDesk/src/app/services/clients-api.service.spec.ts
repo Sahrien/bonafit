@@ -136,4 +136,34 @@ describe('ClientsApiService', () => {
     http.expectOne({ method: 'DELETE', url: apiUrl(API_PATHS.clientBonos, 'cb-1') }).flush(null);
     expect(await pending).toBeNull();
   });
+
+  it('GET /clients/:id/coupons', async () => {
+    const pending = firstValueFrom(api.getCoupons('client-1'));
+    http
+      .expectOne({ method: 'GET', url: apiUrl(API_PATHS.clients, 'client-1', API_PATHS.clientCoupons) })
+      .flush([]);
+    expect(await pending).toEqual([]);
+  });
+
+  it('POST /clients/:id/coupons', async () => {
+    const pending = firstValueFrom(api.createCoupon('client-1', { kind: 'percent', value: 10 }));
+    const req = http.expectOne({
+      method: 'POST',
+      url: apiUrl(API_PATHS.clients, 'client-1', API_PATHS.clientCoupons),
+    });
+    expect(req.request.body).toEqual({ kind: 'percent', value: 10 });
+    req.flush({ id: 'coupon-1', clientId: 'client-1', kind: 'percent', value: 10 });
+    expect((await pending).id).toBe('coupon-1');
+  });
+
+  it('DELETE /clients/:id/coupons/:couponId', async () => {
+    const pending = firstValueFrom(api.deleteCoupon('client-1', 'coupon-1'));
+    http
+      .expectOne({
+        method: 'DELETE',
+        url: apiUrl(API_PATHS.clients, 'client-1', API_PATHS.clientCoupons, 'coupon-1'),
+      })
+      .flush(null);
+    expect(await pending).toBeNull();
+  });
 });

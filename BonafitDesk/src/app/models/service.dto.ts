@@ -4,6 +4,7 @@ export type LocaleText = {
 };
 
 export type CatalogI18n = Record<string, LocaleText>;
+export type SaleKind = 'none' | 'percent' | 'amount';
 
 export function catalogText(
   i18n: CatalogI18n | undefined,
@@ -24,6 +25,8 @@ export interface ServiceDto {
   durationMinutes: number;
   bookableByClient: boolean;
   active: boolean;
+  saleKind?: SaleKind;
+  saleValue?: number;
   i18n?: CatalogI18n;
 }
 

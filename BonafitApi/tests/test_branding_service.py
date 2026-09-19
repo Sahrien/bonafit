@@ -39,6 +39,17 @@ def test_save_logo(branding_service: BrandingService) -> None:
     assert updated.logoUrl == "/uploads/branding/logo.png"
 
 
+def test_delete_logo(branding_service: BrandingService) -> None:
+    upload = UploadFile(filename="mark.png", file=BytesIO(b"\x89PNG"), headers={"content-type": "image/png"})
+    branding_service.save_asset("logo", upload)
+    logo = branding_service._uploads_dir / "branding" / "logo.png"
+    assert logo.is_file()
+    updated = branding_service.delete_asset("logo")
+    assert updated.logoUrl is None
+    assert not logo.exists()
+    assert branding_service.get_branding().logoUrl is None
+
+
 def test_rejects_large_and_unknown_files(branding_service: BrandingService) -> None:
     huge = UploadFile(
         filename="mark.png",

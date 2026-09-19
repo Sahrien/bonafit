@@ -1,7 +1,9 @@
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   width: 100%;
-  max-width: var(--bona-input-max, 100%);
+  max-width: 100%;
 }
 
 :host([data-input-type='time']) {
@@ -34,14 +36,44 @@
 
 :host-context(.login) {
   --bona-input-max: 100%;
-  max-width: 100%;
 }
 
 .bona-input {
   width: 100%;
+  max-width: var(--bona-input-max, 100%);
+  font-family: var(--bona-font-family);
+}
+
+.bona-input__prompt {
+  display: block;
+  width: 100%;
+  margin: 0 0 var(--bona-space-2);
+  padding: 0;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  font-weight: 600;
+  color: var(--bona-color-text);
   font-family: var(--bona-font-family);
 }
 
 .bona-input__reveal {
   color: var(--bona-color-text-muted);
+}
+
+.bona-input__suffix {
+  padding-inline: 0.5rem 0.75rem;
+  color: var(--bona-color-text-muted);
+}
+
+:host(.bona-input--has-suffix) {
+  input[type='number'] {
+    appearance: textfield;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+  }
 }

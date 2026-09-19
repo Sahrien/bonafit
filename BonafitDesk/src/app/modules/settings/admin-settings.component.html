@@ -13,69 +13,166 @@
         <dd>{{ userEmail() }}</dd>
       }
     </dl>
-    <h3>{{ literals.language }}</h3>
-    <app-bona-language-switcher />
+    <div class="settings-language">
+      <h3>{{ literals.language }}</h3>
+      <app-bona-language-switcher />
+    </div>
   </section>
 
-  <section class="settings-section">
+  <section class="settings-section settings-section--save">
     <h2>{{ literals.brandTitle }}</h2>
-    <div class="settings-brand-preview" [style.--preview-primary]="primaryHex()">
+    <div
+      class="settings-brand-preview"
+      [class.settings-brand-preview--dark]="previewDark()"
+      [style.--preview-primary]="pickerHex(primaryHex())"
+      [style.--preview-accent]="pickerHex(accentHex())"
+      [style.--preview-on-accent]="accentOnColor()">
       <p class="settings-brand-preview__kicker">{{ literals.preview }}</p>
       <p class="settings-brand-preview__name">{{ brandForm()['studioName'] || brandTheme.studioName() }}</p>
       <p class="settings-brand-preview__slogan">{{ brandForm()['slogan'] }}</p>
+      <span class="settings-brand-preview__chip">{{ literals.accentColor }}</span>
     </div>
     <app-bona-form
       [fields]="brandFields()"
       [value]="brandForm()"
-      [submitText]="literals.save"
+      [showSubmit]="false"
       (valueChange)="onBrandChange($event)"
       (submitted)="onSaveBrand($event)" />
     <div class="settings-colors">
       <label class="settings-color">
         <span>{{ literals.primaryColor }}</span>
-        <input type="color" [value]="primaryHex()" (input)="onPrimaryColor($event)" />
+        <span class="settings-color__row">
+          <span class="settings-color__swatch" [style.background]="pickerHex(primaryHex())">
+            <input
+              type="color"
+              [value]="pickerHex(primaryHex())"
+              (input)="onPrimaryColor($event)" />
+          </span>
+          <input
+            class="settings-color__hex"
+            [class.settings-color__hex--invalid]="hexInvalid(primaryHex())"
+            type="text"
+            maxlength="7"
+            spellcheck="false"
+            [attr.aria-label]="literals.primaryColor"
+            [value]="primaryHex()"
+            (input)="onPrimaryHex($event)" />
+        </span>
       </label>
       <label class="settings-color">
         <span>{{ literals.accentColor }}</span>
-        <input type="color" [value]="accentHex()" (input)="onAccentColor($event)" />
+        <span class="settings-color__row">
+          <span class="settings-color__swatch" [style.background]="pickerHex(accentHex())">
+            <input
+              type="color"
+              [value]="pickerHex(accentHex())"
+              (input)="onAccentColor($event)" />
+          </span>
+          <input
+            class="settings-color__hex"
+            [class.settings-color__hex--invalid]="hexInvalid(accentHex())"
+            type="text"
+            maxlength="7"
+            spellcheck="false"
+            [attr.aria-label]="literals.accentColor"
+            [value]="accentHex()"
+            (input)="onAccentHex($event)" />
+        </span>
       </label>
       <label class="settings-color">
         <span>{{ literals.surfaceColor }}</span>
-        <input type="color" [value]="surfaceHex()" (input)="onSurfaceColor($event)" />
+        <span class="settings-color__row">
+          <span class="settings-color__swatch" [style.background]="pickerHex(surfaceHex())">
+            <input
+              type="color"
+              [value]="pickerHex(surfaceHex())"
+              (input)="onSurfaceColor($event)" />
+          </span>
+          <input
+            class="settings-color__hex"
+            [class.settings-color__hex--invalid]="hexInvalid(surfaceHex())"
+            type="text"
+            maxlength="7"
+            spellcheck="false"
+            [attr.aria-label]="literals.surfaceColor"
+            [value]="surfaceHex()"
+            (input)="onSurfaceHex($event)" />
+        </span>
       </label>
     </div>
-    <div class="settings-uploads">
-      <label class="settings-upload">
-        <span>{{ literals.logo }}</span>
-        @if (logoHref()) {
-          <img [src]="logoHref()" [alt]="literals.logo" />
-        }
-        <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onLogoSelected($event)" />
-      </label>
-      <label class="settings-upload">
-        <span>{{ literals.favicon }}</span>
-        @if (faviconHref()) {
-          <img [src]="faviconHref()" [alt]="literals.favicon" />
-        }
-        <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onFaviconSelected($event)" />
-      </label>
+    <div class="settings-assets">
+      <div class="settings-asset">
+        <span class="settings-asset__label">{{ literals.logo }}</span>
+        <div class="settings-asset__tile settings-asset__tile--logo">
+          @if (logoHref()) {
+            <img [src]="logoHref()" [alt]="literals.logo" />
+            <button
+              type="button"
+              mat-icon-button
+              class="settings-asset__remove"
+              [attr.aria-label]="literals.removeLogo"
+              (click)="onRemoveLogo()">
+              <mat-icon>close</mat-icon>
+            </button>
+          } @else {
+            <span class="settings-asset__empty">{{ literals.noLogo }}</span>
+          }
+        </div>
+        <label class="settings-asset__pick">
+          {{ logoHref() ? literals.changeAsset : literals.chooseAsset }}
+          <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onLogoSelected($event)" />
+        </label>
+      </div>
+      <div class="settings-asset">
+        <span class="settings-asset__label">{{ literals.favicon }}</span>
+        <div class="settings-asset__tile settings-asset__tile--favicon">
+          @if (faviconHref()) {
+            <img [src]="faviconHref()" [alt]="literals.favicon" />
+            <button
+              type="button"
+              mat-icon-button
+              class="settings-asset__remove"
+              [attr.aria-label]="literals.removeFavicon"
+              (click)="onRemoveFavicon()">
+              <mat-icon>close</mat-icon>
+            </button>
+          } @else {
+            <span class="settings-asset__empty">{{ literals.noFavicon }}</span>
+          }
+        </div>
+        <label class="settings-asset__pick">
+          {{ faviconHref() ? literals.changeAsset : literals.chooseAsset }}
+          <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onFaviconSelected($event)" />
+        </label>
+      </div>
+    </div>
+    <div class="settings-save">
+      <app-bona-button
+        [text]="literals.saveBrand"
+        [disabled]="!brandDirty()"
+        (action)="onSaveBrand(brandForm())" />
+      @if (!brandDirty()) {
+        <span class="settings-save__hint">{{ literals.noBrandChanges }}</span>
+      }
     </div>
   </section>
 
-  <section class="settings-section">
+  <section class="settings-section settings-section--save">
     <h2>{{ literals.bookingTitle }}</h2>
     <app-bona-form
       [fields]="bookingFields()"
       [value]="bookingForm()"
-      [submitText]="literals.save"
+      [showSubmit]="false"
+      actionsAlign="start"
       (valueChange)="onBookingChange($event)"
       (submitted)="onSaveBooking($event)" />
+    <div class="settings-save">
+      <app-bona-button [text]="literals.save" (action)="onSaveBooking(bookingForm())" />
+    </div>
   </section>
 
-  <section class="settings-section">
+  <section class="settings-section settings-section--save">
     <h2>{{ literals.passwordTitle }}</h2>
-    <h3>{{ literals.language }}</h3>
-    <app-bona-language-switcher />
     <app-password-change-form (saved)="onPasswordSaved()" />
   </section>
 </app-bona-page>

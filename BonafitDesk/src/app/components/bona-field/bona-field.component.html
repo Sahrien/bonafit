@@ -2,10 +2,13 @@
       <app-bona-input-text-field
         [label]="definition().label"
         [placeholder]="definition().placeholder ?? ''"
+        [hint]="definition().hint ?? ''"
+        [suffix]="definition().suffix ?? ''"
         [type]="textInputType(definition().type)"
         [inputName]="definition().key"
         [autocomplete]="definition().autocomplete ?? ''"
         [value]="value()"
+        [required]="definition().required ?? false"
         [disabled]="definition().disabled ?? false"
         (valueChange)="onValueChange($event)" />
 } @else if (definition().type === 'textarea') {
@@ -21,6 +24,9 @@
       [disabled]="definition().disabled ?? false"
       [required]="definition().required ?? false"
       (input)="onTextareaInput($event)"></textarea>
+    @if (definition().hint) {
+      <mat-hint>{{ definition().hint }}</mat-hint>
+    }
   </mat-form-field>
 } @else if (definition().type === 'radio') {
   <fieldset class="bona-field__group">
@@ -110,5 +116,8 @@
         <mat-option [value]="option.value">{{ option.label }}</mat-option>
       }
     </mat-select>
+    @if (definition().hint) {
+      <mat-hint>{{ definition().hint }}</mat-hint>
+    }
   </mat-form-field>
 }

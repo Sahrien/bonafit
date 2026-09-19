@@ -23,7 +23,7 @@ export class AuthApiService implements AuthApi {
     return this.http.post<AuthSessionDto>(apiUrl(API_PATHS.authLogin), payload).pipe(
       tap((session) => {
         this.tokens.set(session.token);
-        this.language.applyFromAccount(session.user.language);
+        this.language.keepCurrentOrApplyAccount(session.user.language);
       }),
     );
   }

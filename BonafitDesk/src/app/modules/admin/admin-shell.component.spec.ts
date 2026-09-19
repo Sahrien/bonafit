@@ -57,4 +57,22 @@ describe('AdminShellComponent', () => {
     expect(text).toContain(ADMIN_LITERALS.clients);
     expect(router.url).toBe('/admin/calendar');
   });
+
+  it('keeps schedules in the nav and out of the profile menu', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/admin/calendar');
+
+    const nav = document.querySelector('.bona-shell-app__nav') as HTMLElement;
+    expect(nav.textContent).toContain(ADMIN_LITERALS.schedules);
+
+    const trigger = document.querySelector('.bona-shell-app__profile-trigger') as HTMLButtonElement;
+    trigger.click();
+    harness.fixture.detectChanges();
+
+    const labels = Array.from(document.querySelectorAll('a[mat-menu-item]')).map((item) =>
+      item.textContent?.trim(),
+    );
+    expect(labels).toContain(ADMIN_LITERALS.settings);
+    expect(labels).not.toContain(ADMIN_LITERALS.schedules);
+  });
 });

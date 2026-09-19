@@ -5,7 +5,6 @@ import { BonaLanguageSwitcherComponent } from '../../components/bona-language-sw
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { AUTH_PATHS, homeForRole } from '../../core/auth/auth.paths';
 import { injectI18n } from '../../core/i18n/inject-i18n';
-import { LanguageService } from '../../core/i18n/language.service';
 import { AuthApiService } from '../../services/auth-api.service';
 import { BrandThemeService } from '../../core/brand-theme.service';
 
@@ -20,7 +19,6 @@ import { BrandThemeService } from '../../core/brand-theme.service';
 export class LoginComponent {
   private readonly auth = inject(AuthApiService);
   private readonly router = inject(Router);
-  private readonly language = inject(LanguageService);
   readonly brandTheme = inject(BrandThemeService);
 
   private readonly i18n = injectI18n('login');
@@ -63,7 +61,6 @@ export class LoginComponent {
     this.error.set('');
     this.auth.login({ email, password }).subscribe({
       next: (session) => {
-        this.language.applyFromAccount(session.user.language);
         this.submitting.set(false);
         const path = session.user.mustChangePassword
           ? AUTH_PATHS.changePassword

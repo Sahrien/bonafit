@@ -37,6 +37,17 @@ def upload_logo(
     return branding_service.save_asset("logo", file)
 
 
+@router.delete("/branding/logo", response_model=BrandingOut)
+@inject
+def delete_logo(
+    branding_service: BrandingSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> BrandingOut:
+    auth_service.require_admin(authorization)
+    return branding_service.delete_asset("logo")
+
+
 @router.post("/branding/favicon", response_model=BrandingOut)
 @inject
 def upload_favicon(
@@ -47,3 +58,14 @@ def upload_favicon(
 ) -> BrandingOut:
     auth_service.require_admin(authorization)
     return branding_service.save_asset("favicon", file)
+
+
+@router.delete("/branding/favicon", response_model=BrandingOut)
+@inject
+def delete_favicon(
+    branding_service: BrandingSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> BrandingOut:
+    auth_service.require_admin(authorization)
+    return branding_service.delete_asset("favicon")

@@ -51,7 +51,9 @@ html {
   --bona-color-accent-contrast: var(--mat-sys-on-tertiary);
   --bona-color-danger: var(--mat-sys-error);
   --bona-color-success: light-dark(#0f766e, #5eead4);
+  --bona-color-success-contrast: light-dark(#ffffff, #1c1917);
   --bona-color-warning: light-dark(#d97706, #fbbf24);
+  --bona-color-warning-contrast: light-dark(#ffffff, #1c1917);
   --bona-radius-sm: var(--mat-sys-corner-extra-small, 4px);
   --bona-radius-md: var(--mat-sys-corner-small, 8px);
   --bona-radius-lg: var(--mat-sys-corner-large, 20px);
@@ -84,10 +86,19 @@ html {
 
 .bona-toast--success {
   --mat-snackbar-container-color: var(--bona-color-success);
-  --mat-snackbar-supporting-text-color: #ffffff;
+  --mat-snackbar-supporting-text-color: var(--bona-color-success-contrast);
+  --mat-snackbar-button-color: var(--bona-color-success-contrast);
 }
 
 .bona-toast--error {
   --mat-snackbar-container-color: var(--bona-color-danger);
   --mat-snackbar-supporting-text-color: #ffffff;
+  --mat-snackbar-button-color: #ffffff;
+}
+
+@media (max-width: 48rem) {
+  .bona-toast--success,
+  .bona-toast--error {
+    margin-bottom: calc(var(--bona-bottom-nav-height) + env(safe-area-inset-bottom));
+  }
 }

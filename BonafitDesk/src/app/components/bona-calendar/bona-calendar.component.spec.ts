@@ -148,5 +148,19 @@ describe('BonaCalendarComponent', () => {
         done();
       });
     });
+
+    it('maps FullCalendar chrome to Bona tokens so dark scheme keeps contrast', () => {
+      const wrap = fixture.nativeElement.querySelector('.bona-calendar') as HTMLElement;
+      const styles = getComputedStyle(wrap);
+      expect(styles.getPropertyValue('--fc-page-bg-color').trim()).toBe(
+        styles.getPropertyValue('--bona-color-surface').trim(),
+      );
+      expect(styles.getPropertyValue('--fc-border-color').trim()).toBe(
+        styles.getPropertyValue('--bona-color-border').trim(),
+      );
+      expect(styles.getPropertyValue('--fc-neutral-text-color').trim()).toBe(
+        styles.getPropertyValue('--bona-color-text-muted').trim(),
+      );
+    });
   });
 });

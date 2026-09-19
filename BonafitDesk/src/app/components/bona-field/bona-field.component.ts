@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, output, untracked } from '@angular/core';
 import { MatCheckbox, MatCheckboxChange } from '@angular/material/checkbox';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatRadioButton, MatRadioChange, MatRadioGroup } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
@@ -25,6 +25,7 @@ const YES_VALUE = 'yes';
     BonaInputTextFieldComponent,
     MatCheckbox,
     MatFormField,
+    MatHint,
     MatLabel,
     MatInput,
     MatRadioButton,
@@ -46,7 +47,11 @@ export class BonaFieldComponent {
   protected readonly isTextInput = isBonaTextInputType;
 
   readonly cappedWidth = computed(() => {
-    const type = this.definition().type ?? 'text';
+    const definition = this.definition();
+    if (definition.hint) {
+      return false;
+    }
+    const type = definition.type ?? 'text';
     return type === 'text' || type === 'select';
   });
 

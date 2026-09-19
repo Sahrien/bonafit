@@ -65,3 +65,23 @@ def test_upload_logo() -> None:
     assert response.json()["logoUrl"] == "/uploads/branding/logo.png"
     branding.save_asset.assert_called_once()
     assert branding.save_asset.call_args.args[0] == "logo"
+
+
+def test_delete_logo() -> None:
+    branding = mock.Mock(spec=BrandingService)
+    branding.delete_asset.return_value = BRANDING
+    with api(branding=branding) as http:
+        response = http.delete("/branding/logo", headers=AUTH)
+    assert response.status_code == 200
+    assert response.json()["logoUrl"] is None
+    branding.delete_asset.assert_called_once_with("logo")
+
+
+def test_delete_favicon() -> None:
+    branding = mock.Mock(spec=BrandingService)
+    branding.delete_asset.return_value = BRANDING
+    with api(branding=branding) as http:
+        response = http.delete("/branding/favicon", headers=AUTH)
+    assert response.status_code == 200
+    assert response.json()["faviconUrl"] is None
+    branding.delete_asset.assert_called_once_with("favicon")

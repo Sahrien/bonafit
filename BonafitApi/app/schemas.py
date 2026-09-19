@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, PlainSerializer, mo
 from app.booking import to_utc_iso
 from app.roles import UserRole
 
+SaleKind = Literal["none", "percent", "amount"]
+DiscountKind = Literal["percent", "amount"]
 AppointmentStatus = Literal["pending", "confirmed", "completed", "cancelled"]
 FormQuestionType = Literal[
     "text",
@@ -126,27 +128,40 @@ class ServiceOut(BaseModel):
     model_config = camel_config()
     id: str
     name: str
-    sharesSessionPool: bool = False
+    sharesSessionPool: bool = True
     forcesSingleSession: bool = False
     allowsSingleSession: bool
     singleSessionPrice: float | None = None
     durationMinutes: int
     bookableByClient: bool
     active: bool = True
+    saleKind: SaleKind = "none"
+    saleValue: float = 0
     i18n: dict[str, dict[str, str]] = Field(default_factory=dict)
 
 
 class ServiceWrite(BaseModel):
     model_config = camel_config()
     name: str
-    sharesSessionPool: bool = False
+    sharesSessionPool: bool = True
     forcesSingleSession: bool = False
     allowsSingleSession: bool = False
     singleSessionPrice: float | None = None
     durationMinutes: int = Field(gt=0)
     bookableByClient: bool = True
     active: bool = True
+    saleKind: SaleKind = "none"
+    saleValue: float = Field(ge=0, default=0)
     i18n: dict[str, dict[str, str]] | None = None
+
+    @model_validator(mode="after")
+    def valid_sale(self) -> Self:
+        if self.saleKind == "none":
+            self.saleValue = 0
+            return self
+        if self.saleKind == "percent" and self.saleValue > 100:
+            raise ValueError("sale percent cannot exceed 100")
+        return self
 
 
 class BonoOut(BaseModel):
@@ -179,6 +194,9 @@ class ClientBonoOut(BaseModel):
     isGift: bool = False
     purchasedAt: IsoDateTime
     expiresAt: IsoDateTime | None = None
+    listPrice: float | None = None
+    paidPrice: float | None = None
+    couponId: str | None = None
 
 
 class ContractBono(BaseModel):
@@ -188,12 +206,40 @@ class ContractBono(BaseModel):
     serviceId: str | None = None
     remainingSessions: int | None = Field(default=None, ge=1)
     isGift: bool = False
+    couponId: str | None = None
 
 
 class ClientBonoPatch(BaseModel):
     model_config = camel_config()
     remainingSessions: int = Field(ge=0)
     expiresAt: datetime | None = None
+
+
+class ClientCouponOut(BaseModel):
+    model_config = camel_config()
+    id: str
+    clientId: str
+    kind: DiscountKind
+    value: float
+    serviceId: str | None = None
+    bonoId: str | None = None
+    usedAt: IsoDateTime | None = None
+
+
+class ClientCouponWrite(BaseModel):
+    model_config = camel_config()
+    kind: DiscountKind
+    value: float = Field(gt=0)
+    serviceId: str | None = None
+    bonoId: str | None = None
+
+    @model_validator(mode="after")
+    def valid_coupon(self) -> Self:
+        if self.serviceId and self.bonoId:
+            raise ValueError("coupon cannot target both a service and a pack")
+        if self.kind == "percent" and self.value > 100:
+            raise ValueError("coupon percent cannot exceed 100")
+        return self
 
 
 class SessionBalanceOut(BaseModel):

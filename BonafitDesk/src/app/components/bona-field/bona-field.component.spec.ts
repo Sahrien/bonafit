@@ -56,6 +56,22 @@ describe('BonaFieldComponent', () => {
     expect(fixture.nativeElement.classList.contains('bona-field--capped')).toBeFalse();
   });
 
+  it('renders a hint and suffix on a number field', () => {
+    fixture = createField({
+      key: 'saleValue',
+      label: 'Valor de la oferta',
+      type: 'number',
+      hint: 'Descuento',
+      suffix: '%',
+    });
+
+    expect(fixture.nativeElement.textContent).toContain('Descuento');
+    expect(fixture.nativeElement.textContent).toContain('%');
+    const suffix = fixture.nativeElement.querySelector('.bona-input__suffix') as HTMLElement;
+    expect(suffix).toBeTruthy();
+    expect(getComputedStyle(suffix).paddingRight).not.toBe('0px');
+  });
+
   it('renders select options from the field definition', () => {
     fixture = createField({
       key: 'trainerId',

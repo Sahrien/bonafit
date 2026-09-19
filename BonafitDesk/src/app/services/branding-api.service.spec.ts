@@ -49,4 +49,16 @@ describe('BrandingApiService', () => {
     req.flush({ ...MOCK_BRANDING, logoUrl: '/uploads/branding/logo.png' });
     expect((await pending).logoUrl).toBe('/uploads/branding/logo.png');
   });
+
+  it('DELETE /branding/logo', async () => {
+    const pending = firstValueFrom(api.deleteLogo());
+    http.expectOne({ method: 'DELETE', url: apiUrl(API_PATHS.brandingLogo) }).flush(MOCK_BRANDING);
+    expect((await pending).logoUrl).toBeNull();
+  });
+
+  it('DELETE /branding/favicon', async () => {
+    const pending = firstValueFrom(api.deleteFavicon());
+    http.expectOne({ method: 'DELETE', url: apiUrl(API_PATHS.brandingFavicon) }).flush(MOCK_BRANDING);
+    expect((await pending).faviconUrl).toBeNull();
+  });
 });

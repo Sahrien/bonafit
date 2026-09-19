@@ -6,6 +6,9 @@ export interface ClientBonoDto {
   isGift?: boolean;
   purchasedAt: string;
   expiresAt: string | null;
+  listPrice?: number | null;
+  paidPrice?: number | null;
+  couponId?: string | null;
 }
 
 export interface ContractBonoDto {
@@ -14,6 +17,7 @@ export interface ContractBonoDto {
   serviceId?: string;
   remainingSessions?: number;
   isGift?: boolean;
+  couponId?: string;
 }
 
 export interface ClientBonoPatchDto {

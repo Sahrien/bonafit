@@ -11,7 +11,9 @@ import {
 import { BonaPageComponent } from '../../../components/bona-page/bona-page.component';
 import { BonaToast } from '../../../components/bona-toast/bona-toast.service';
 import { injectI18n } from '../../../core/i18n/inject-i18n';
+import { bestCoupon, pricedOffer } from '../../../core/pricing';
 import { BonoDto } from '../../../models/bono.dto';
+import { ClientCouponDto } from '../../../models/client-coupon.dto';
 import { ServiceDto } from '../../../models/service.dto';
 import { AuthApiService } from '../../../services/auth-api.service';
 import { ClientsApiService } from '../../../services/clients-api.service';
@@ -45,7 +47,12 @@ export class CatalogoComponent {
     { field: 'serviceName', header: this.literals.service },
     { field: 'offerName', header: this.literals.offer },
     { field: 'sessionCount', header: this.literals.sessions, type: 'number' },
-    { field: 'price', header: this.literals.price, type: 'currency' },
+    {
+      field: 'price',
+      header: this.literals.price,
+      type: 'currency',
+      compareField: 'listPrice',
+    },
   ]);
 
   readonly actions = computed<BonaGridAction[]>(() => [
@@ -101,7 +108,14 @@ export class CatalogoComponent {
       })
       .pipe(
         filter((ok) => ok),
-        switchMap(() => this.clientsApi.contractBono({ clientId: this.clientId, bonoId })),
+        switchMap(() => {
+          const couponId = String(event.item['couponId'] ?? '');
+          return this.clientsApi.contractBono({
+            clientId: this.clientId,
+            bonoId,
+            ...(couponId ? { couponId } : {}),
+          });
+        }),
         switchMap(() => this.loadRows()),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -118,14 +132,28 @@ export class CatalogoComponent {
     return forkJoin({
       services: this.servicesApi.getServices(),
       bonos: this.servicesApi.getBonos(),
-    }).pipe(map(({ services, bonos }) => this.toRows(services, bonos)));
+      coupons: this.clientsApi.getCoupons(this.clientId),
+    }).pipe(map(({ services, bonos, coupons }) => this.toRows(services, bonos, coupons)));
   }
 
-  private toRows(services: ServiceDto[], bonos: BonoDto[]): Record<string, unknown>[] {
+  private toRows(
+    services: ServiceDto[],
+    bonos: BonoDto[],
+    coupons: ClientCouponDto[],
+  ): Record<string, unknown>[] {
     const rows: Record<string, unknown>[] = [];
 
     for (const service of services) {
       for (const bono of bonos.filter((row) => row.serviceId === service.id)) {
+        const coupon = bestCoupon(
+          coupons,
+          service.id,
+          bono.id,
+          bono.price,
+          service.saleKind,
+          service.saleValue,
+        );
+        const priced = pricedOffer(bono.price, service.saleKind, service.saleValue, coupon);
         rows.push({
           id: bono.id,
           bonoId: bono.id,
@@ -133,7 +161,9 @@ export class CatalogoComponent {
           serviceName: service.name,
           offerName: bono.name,
           sessionCount: bono.sessionCount,
-          price: bono.price,
+          listPrice: priced.listPrice,
+          price: priced.paidPrice,
+          couponId: coupon?.id ?? '',
         });
       }
     }

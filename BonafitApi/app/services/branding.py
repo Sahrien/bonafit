@@ -80,6 +80,23 @@ class BrandingService:
             row.updated_at = utcnow()
             return branding_out(row)
 
+    def delete_asset(self, kind: str) -> BrandingOut:
+        if kind not in ASSET_KINDS:
+            raise BusinessError("branding.invalidAsset", 400)
+        with self._session_factory() as db:
+            row = _branding(db)
+            previous = row.logo_path if kind == "logo" else row.favicon_path
+            if previous:
+                old = self._uploads_dir / previous
+                if old.is_file():
+                    old.unlink()
+            if kind == "logo":
+                row.logo_path = None
+            else:
+                row.favicon_path = None
+            row.updated_at = utcnow()
+            return branding_out(row)
+
 
 def default_branding() -> Branding:
     return Branding(

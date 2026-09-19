@@ -56,8 +56,8 @@ def ranges_overlap(a_start: datetime, a_end: datetime, b_start: datetime, b_end:
     return a_start < b_end and a_end > b_start
 
 
-def shares_session_pool(service: object) -> bool:
-    return bool(getattr(service, "shares_session_pool", False))
+def shares_session_pool(_service: object) -> bool:
+    return True
 
 
 def occupies_trainer_slot(status: str) -> bool:

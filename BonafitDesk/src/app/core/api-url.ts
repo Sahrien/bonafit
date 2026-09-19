@@ -15,6 +15,7 @@ export const API_PATHS = {
   trainerSchedules: 'trainer-schedules',
   forms: 'forms',
   formAssignments: 'form-assignments',
+  clientCoupons: 'coupons',
   authLogin: 'auth/login',
   authLogout: 'auth/logout',
   authMe: 'auth/me',

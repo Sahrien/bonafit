@@ -68,6 +68,21 @@ describe('BonaInputTextFieldComponent', () => {
     expect(fixture.nativeElement.getAttribute('data-input-type')).toBe('time');
   });
 
+  it('puts a long compact-field prompt outside the outline so it is not clipped', () => {
+    const prompt = 'Hora límite del día anterior para reservar y anular';
+    fixture.componentRef.setInput('type', 'time');
+    fixture.componentRef.setInput('label', prompt);
+    fixture.detectChanges();
+
+    const stacked = fixture.nativeElement.querySelector('.bona-input__prompt') as HTMLLabelElement | null;
+    expect(fixture.nativeElement.classList.contains('bona-input--stacked')).toBeTrue();
+    expect(stacked).toBeTruthy();
+    expect(stacked?.textContent?.trim()).toBe(prompt);
+    expect(getComputedStyle(stacked!).whiteSpace).toBe('normal');
+    expect(fixture.nativeElement.querySelector('mat-label')).toBeNull();
+    expect(inputEl().id).toBe(stacked!.htmlFor);
+  });
+
   it('hides a password until the reveal button is pressed', () => {
     fixture.componentRef.setInput('type', 'password');
     fixture.detectChanges();

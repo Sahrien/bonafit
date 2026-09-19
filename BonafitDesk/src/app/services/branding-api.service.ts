@@ -21,8 +21,16 @@ export class BrandingApiService implements BrandingApi {
     return this.uploadAsset(API_PATHS.brandingLogo, file);
   }
 
+  deleteLogo(): Observable<BrandingDto> {
+    return this.http.delete<BrandingDto>(apiUrl(API_PATHS.brandingLogo));
+  }
+
   uploadFavicon(file: File): Observable<BrandingDto> {
     return this.uploadAsset(API_PATHS.brandingFavicon, file);
+  }
+
+  deleteFavicon(): Observable<BrandingDto> {
+    return this.http.delete<BrandingDto>(apiUrl(API_PATHS.brandingFavicon));
   }
 
   private uploadAsset(path: string, file: File): Observable<BrandingDto> {

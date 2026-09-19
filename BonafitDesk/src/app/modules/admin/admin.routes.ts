@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminSettingsLeaveGuard } from '../settings/admin-settings.leave-guard';
 
 export const ADMIN_ROUTES: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'calendar' },
@@ -41,5 +42,6 @@ export const ADMIN_ROUTES: Routes = [
     path: 'ajustes',
     loadComponent: () =>
       import('../settings/admin-settings.component').then((m) => m.AdminSettingsComponent),
+    canDeactivate: [adminSettingsLeaveGuard],
   },
 ];

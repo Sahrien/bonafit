@@ -85,12 +85,13 @@ describe('CatalogoComponent', () => {
 
   beforeEach(async () => {
     authApi = jasmine.createSpyObj('AuthApiService', ['getSession']);
-    clientsApi = jasmine.createSpyObj('ClientsApiService', ['contractBono']);
+    clientsApi = jasmine.createSpyObj('ClientsApiService', ['contractBono', 'getCoupons']);
     servicesApi = jasmine.createSpyObj('ServicesApiService', ['getServices', 'getBonos']);
     authApi.getSession.and.returnValue(of(session));
     servicesApi.getServices.and.returnValue(of(services));
     servicesApi.getBonos.and.returnValue(of(bonos));
     clientsApi.contractBono.and.returnValue(of(contracted));
+    clientsApi.getCoupons.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [CatalogoComponent],
@@ -154,6 +155,38 @@ describe('CatalogoComponent', () => {
     expect(clientsApi.contractBono).toHaveBeenCalledWith({
       clientId: 'client-1',
       bonoId: 'bono-masaje-1',
+    });
+  });
+
+  it('shows the stacked sale and coupon price and sends couponId', async () => {
+    servicesApi.getServices.and.returnValue(
+      of([{ ...services[0], saleKind: 'percent', saleValue: 20 }, services[1]]),
+    );
+    clientsApi.getCoupons.and.returnValue(
+      of([
+        {
+          id: 'coupon-1',
+          clientId: 'client-1',
+          kind: 'percent',
+          value: 10,
+        },
+      ]),
+    );
+    await create();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('400');
+    expect(text).toContain('288');
+
+    contractInRow('pack-10');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(clientsApi.contractBono).toHaveBeenCalledWith({
+      clientId: 'client-1',
+      bonoId: 'bono-ep-10',
+      couponId: 'coupon-1',
     });
   });
 });

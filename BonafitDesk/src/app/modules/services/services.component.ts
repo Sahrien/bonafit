@@ -11,10 +11,10 @@ import {
   BonaGridColumn,
   BonaGridComponent,
 } from '../../components/bona-grid/bona-grid.component';
-import { BonaInputTextFieldComponent } from '../../components/bona-input-text-field/bona-input-text-field.component';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { ApiBusinessError } from '../../core/api-business.error';
+import { apiErrorMessage } from '../../core/http/api-error-message';
 import { BonoDto, BonoWriteDto } from '../../models/bono.dto';
 import { ServiceDto, ServiceWriteDto, catalogText } from '../../models/service.dto';
 import { ServicesApiService } from '../../services/services-api.service';
@@ -27,11 +27,12 @@ const EMPTY_SERVICE: BonaFormValue = {
   nameEn: '',
   allowsSingleSession: 'false',
   bookableByClient: 'true',
-  sharesSessionPool: 'true',
   forcesSingleSession: 'false',
   durationMinutes: '60',
   singleSessionPrice: '',
   active: 'true',
+  saleKind: 'none',
+  saleValue: '',
 };
 
 const EMPTY_BONO: BonaFormValue = {
@@ -43,32 +44,20 @@ const EMPTY_BONO: BonaFormValue = {
   price: '',
 };
 
-function catalogSearchHaystack(parts: Array<string | number | null | undefined>): string {
-  return parts
-    .map((part) => String(part ?? ''))
-    .join(' ')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, ' ');
-}
+const SERVICE_PAGE_SIZE = 10;
 
-function catalogContains(parts: Array<string | number | null | undefined>, query: string): boolean {
-  const haystack = catalogSearchHaystack(parts);
-  const tokens = catalogSearchHaystack([query]).trim().split(/\s+/).filter(Boolean);
-  return tokens.every((token) => haystack.includes(token));
+function parseLocaleNumber(raw: string): number {
+  const normalized = raw.trim().replace(',', '.');
+  if (!normalized) {
+    return Number.NaN;
+  }
+  return Number(normalized);
 }
 
 @Component({
   selector: 'app-services',
   standalone: true,
-  imports: [
-    BonaPageComponent,
-    BonaGridComponent,
-    BonaFormComponent,
-    BonaButtonComponent,
-    BonaInputTextFieldComponent,
-  ],
+  imports: [BonaPageComponent, BonaGridComponent, BonaFormComponent, BonaButtonComponent],
   templateUrl: './services.component.html',
   styleUrl: './services.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -85,7 +74,7 @@ export class ServicesComponent {
   }
   readonly error = signal('');
   readonly loading = signal(true);
-  readonly search = signal('');
+  readonly pageSize = SERVICE_PAGE_SIZE;
   readonly selectedServiceId = signal<string | null>(null);
   readonly serviceForm = signal<BonaFormValue>({ ...EMPTY_SERVICE });
   readonly bonoFormOpen = signal(false);
@@ -101,6 +90,7 @@ export class ServicesComponent {
     { field: 'durationMinutesLabel', header: this.literals.durationMinutes },
     { field: 'sessionCountLabel', header: this.literals.sessionCount },
     { field: 'priceLabel', header: this.literals.price, type: 'currency' },
+    { field: 'saleLabel', header: this.literals.sale },
     { field: 'activeLabel', header: this.literals.active },
   ]);
 
@@ -122,17 +112,8 @@ export class ServicesComponent {
   ]);
 
   readonly serviceRows = computed(() => {
-    const query = this.search().trim().toLowerCase();
     const rows: Record<string, unknown>[] = [];
     for (const service of this.services()) {
-      const serviceBonos = this.bonos().filter((bono) => bono.serviceId === service.id);
-      const serviceMatches = !query || this.matchesService(service, query);
-      const matchingBonos = query
-        ? serviceBonos.filter((bono) => this.matchesBono(service, bono, query))
-        : serviceBonos;
-      if (!serviceMatches && matchingBonos.length === 0) {
-        continue;
-      }
       rows.push({
         rowKind: 'service',
         id: service.id,
@@ -141,9 +122,10 @@ export class ServicesComponent {
         durationMinutesLabel: String(service.durationMinutes),
         sessionCountLabel: '',
         priceLabel: service.singleSessionPrice,
+        saleLabel: this.saleLabel(service),
         activeLabel: service.active ? this.literals.yes : this.literals.no,
       });
-      for (const bono of matchingBonos) {
+      for (const bono of this.bonos().filter((item) => item.serviceId === service.id)) {
         rows.push({
           rowKind: 'bono',
           id: bono.id,
@@ -153,6 +135,7 @@ export class ServicesComponent {
           durationMinutesLabel: '',
           sessionCountLabel: String(bono.sessionCount),
           priceLabel: bono.price,
+          saleLabel: this.saleLabel(service),
           activeLabel: '',
         });
       }
@@ -181,7 +164,7 @@ export class ServicesComponent {
     ];
     const fields: BonaFieldDefinition[] = [
       { key: 'nameEs', label: this.literals.nameEs, type: 'text', required: true },
-      { key: 'nameEn', label: this.literals.nameEn, type: 'text', required: true },
+      { key: 'nameEn', label: this.literals.nameEn, type: 'text' },
       {
         key: 'durationMinutes',
         label: this.literals.durationMinutes,
@@ -190,18 +173,34 @@ export class ServicesComponent {
       },
       {
         key: 'singleSessionPrice',
-        label: this.literals.price,
+        label: this.literals.singleSessionPrice,
         type: 'number',
+        suffix: '€',
       },
+      {
+        key: 'saleKind',
+        label: this.literals.saleKind,
+        type: 'select',
+        options: [
+          { value: 'none', label: this.literals.saleNone },
+          { value: 'percent', label: this.literals.salePercent },
+          { value: 'amount', label: this.literals.saleAmount },
+        ],
+      },
+    ];
+    if (this.serviceForm()['saleKind'] !== 'none') {
+      fields.push({
+        key: 'saleValue',
+        label: this.literals.saleValue,
+        type: 'number',
+        required: true,
+        suffix: this.serviceForm()['saleKind'] === 'percent' ? '%' : '€',
+      });
+    }
+    fields.push(
       {
         key: 'active',
         label: this.literals.active,
-        type: 'select',
-        options: yesNo,
-      },
-      {
-        key: 'sharesSessionPool',
-        label: this.literals.sharesSessionPool,
         type: 'select',
         options: yesNo,
       },
@@ -210,8 +209,9 @@ export class ServicesComponent {
         label: this.literals.forcesSingleSession,
         type: 'select',
         options: yesNo,
+        hint: this.literals.forcesSingleSessionHint,
       },
-    ];
+    );
     if (!forcesSingleSession) {
       fields.push(
         {
@@ -225,6 +225,7 @@ export class ServicesComponent {
           label: this.literals.allowsSingleSession,
           type: 'select',
           options: yesNo,
+          hint: this.literals.allowsSingleSessionHint,
         },
       );
     }
@@ -233,19 +234,15 @@ export class ServicesComponent {
 
   readonly bonoFields = computed<BonaFieldDefinition[]>(() => [
     { key: 'nameEs', label: this.literals.nameEs, type: 'text', required: true },
-    { key: 'nameEn', label: this.literals.nameEn, type: 'text', required: true },
+    { key: 'nameEn', label: this.literals.nameEn, type: 'text' },
     { key: 'sessionCount', label: this.literals.sessionCount, type: 'number', required: true },
-    { key: 'price', label: this.literals.price, type: 'number', required: true },
+    { key: 'price', label: this.literals.price, type: 'number', required: true, suffix: '€' },
     { key: 'descriptionEs', label: this.literals.descriptionEs, type: 'textarea' },
     { key: 'descriptionEn', label: this.literals.descriptionEn, type: 'textarea' },
   ]);
 
   constructor() {
     this.loadAll();
-  }
-
-  onSearch(value: string): void {
-    this.search.set(value);
   }
 
   onCreateService(): void {
@@ -311,7 +308,7 @@ export class ServicesComponent {
         this.toast.success(this.literals.saved);
         this.loadAll(() => this.selectService(service.id));
       },
-      error: () => this.toast.error(this.literals.errorSave),
+      error: (error: unknown) => this.reportSaveError(error),
     });
   }
 
@@ -366,7 +363,7 @@ export class ServicesComponent {
         this.closeBonoForm();
         this.loadAll();
       },
-      error: () => this.toast.error(this.literals.errorSave),
+      error: (error: unknown) => this.reportSaveError(error),
     });
   }
 
@@ -445,6 +442,25 @@ export class ServicesComponent {
       });
   }
 
+  private reportSaveError(error: unknown): void {
+    const message = apiErrorMessage(error, {
+      fallback: this.literals.errorSave,
+      connection: this.literals.errorConnection,
+      salePercent: this.literals.errorSalePercent,
+      saveWithField: this.literals.errorSaveField,
+      fieldLabels: {
+        name: this.literals.name,
+        durationMinutes: this.literals.durationMinutes,
+        singleSessionPrice: this.literals.singleSessionPrice,
+        saleKind: this.literals.saleKind,
+        saleValue: this.literals.saleValue,
+        sessionCount: this.literals.sessionCount,
+        price: this.literals.price,
+      },
+    });
+    this.toast.error(message);
+  }
+
   private deleteError(error: unknown): string {
     if (
       error instanceof ApiBusinessError &&
@@ -468,8 +484,8 @@ export class ServicesComponent {
           this.loading.set(false);
           after?.();
         },
-        error: () => {
-          this.toast.error(this.literals.errorSave);
+        error: (error: unknown) => {
+          this.reportSaveError(error);
           this.loading.set(false);
         },
       });
@@ -486,12 +502,13 @@ export class ServicesComponent {
       nameEn: catalogText(service.i18n, 'name', 'en'),
       allowsSingleSession: service.allowsSingleSession ? 'true' : 'false',
       bookableByClient: service.bookableByClient ? 'true' : 'false',
-      sharesSessionPool: service.sharesSessionPool ? 'true' : 'false',
       forcesSingleSession: service.forcesSingleSession ? 'true' : 'false',
       durationMinutes: String(service.durationMinutes),
       singleSessionPrice:
         service.singleSessionPrice != null ? String(service.singleSessionPrice) : '',
       active: service.active ? 'true' : 'false',
+      saleKind: service.saleKind ?? 'none',
+      saleValue: service.saleValue != null && service.saleKind !== 'none' ? String(service.saleValue) : '',
     };
   }
 
@@ -508,71 +525,95 @@ export class ServicesComponent {
 
   private toServiceWrite(value: BonaFormValue): ServiceWriteDto | null {
     const nameEs = (value['nameEs'] ?? '').trim();
-    const nameEn = (value['nameEn'] ?? '').trim();
-    const durationMinutes = Number(value['durationMinutes']);
-    if (!nameEs || !nameEn || Number.isNaN(durationMinutes) || durationMinutes <= 0) {
+    const nameEn = (value['nameEn'] ?? '').trim() || nameEs;
+    const durationMinutes = parseLocaleNumber(value['durationMinutes'] ?? '');
+    if (!nameEs) {
       this.error.set(this.literals.errorRequired);
+      return null;
+    }
+    if (Number.isNaN(durationMinutes) || durationMinutes <= 0 || !Number.isInteger(durationMinutes)) {
+      this.error.set(
+        Number.isNaN(durationMinutes) || !Number.isInteger(durationMinutes)
+          ? this.literals.errorInvalidNumber
+          : this.literals.errorRequired,
+      );
       return null;
     }
     const forcesSingleSession = value['forcesSingleSession'] === 'true';
     const payload: ServiceWriteDto = {
       name: nameEs,
-      sharesSessionPool: value['sharesSessionPool'] === 'true',
+      sharesSessionPool: true,
       forcesSingleSession,
       allowsSingleSession: value['allowsSingleSession'] === 'true',
       bookableByClient: value['bookableByClient'] === 'true',
       durationMinutes,
       active: value['active'] !== 'false',
+      saleKind: (value['saleKind'] || 'none') as ServiceWriteDto['saleKind'],
+      saleValue: 0,
       i18n: { name: { es: nameEs, en: nameEn } },
     };
-    const priceRaw = value['singleSessionPrice'] ?? '';
-    if (priceRaw !== '') {
-      const price = Number(priceRaw);
-      if (Number.isNaN(price) || price < 0) {
+    if (payload.saleKind && payload.saleKind !== 'none') {
+      const saleRaw = (value['saleValue'] ?? '').trim();
+      if (!saleRaw) {
         this.error.set(this.literals.errorRequired);
+        return null;
+      }
+      const saleValue = parseLocaleNumber(saleRaw);
+      if (Number.isNaN(saleValue) || saleValue <= 0) {
+        this.error.set(this.literals.errorInvalidNumber);
+        return null;
+      }
+      if (payload.saleKind === 'percent' && saleValue > 100) {
+        this.error.set(this.literals.errorSalePercent);
+        return null;
+      }
+      payload.saleValue = saleValue;
+    }
+    const priceRaw = (value['singleSessionPrice'] ?? '').trim();
+    if (priceRaw !== '') {
+      const price = parseLocaleNumber(priceRaw);
+      if (Number.isNaN(price) || price < 0) {
+        this.error.set(this.literals.errorInvalidNumber);
         return null;
       }
       payload.singleSessionPrice = price;
     }
+    this.error.set('');
     return payload;
   }
 
-  private matchesService(service: ServiceDto, query: string): boolean {
-    return catalogContains(
-      [service.name, catalogText(service.i18n, 'name', 'es'), catalogText(service.i18n, 'name', 'en')],
-      query,
-    );
-  }
-
-  private matchesBono(service: ServiceDto, bono: BonoDto, query: string): boolean {
-    return catalogContains(
-      [
-        service.name,
-        catalogText(service.i18n, 'name', 'es'),
-        catalogText(service.i18n, 'name', 'en'),
-        bono.name,
-        catalogText(bono.i18n, 'name', 'es'),
-        catalogText(bono.i18n, 'name', 'en'),
-        bono.description,
-        catalogText(bono.i18n, 'description', 'es'),
-        catalogText(bono.i18n, 'description', 'en'),
-        bono.sessionCount,
-      ],
-      query,
-    );
+  private saleLabel(service: ServiceDto): string {
+    if (!service.saleKind || service.saleKind === 'none' || !service.saleValue) {
+      return '';
+    }
+    if (service.saleKind === 'percent') {
+      return `-${service.saleValue}%`;
+    }
+    return `-${service.saleValue}`;
   }
 
   private toBonoWrite(value: BonaFormValue, serviceId: string): BonoWriteDto | null {
     const nameEs = (value['nameEs'] ?? '').trim();
-    const nameEn = (value['nameEn'] ?? '').trim();
-    const sessionCount = Number(value['sessionCount']);
-    const price = Number(value['price']);
-    if (!nameEs || !nameEn || Number.isNaN(sessionCount) || Number.isNaN(price)) {
+    const nameEn = (value['nameEn'] ?? '').trim() || nameEs;
+    const sessionCount = parseLocaleNumber(value['sessionCount'] ?? '');
+    const price = parseLocaleNumber(value['price'] ?? '');
+    if (!nameEs) {
       this.error.set(this.literals.errorRequired);
+      return null;
+    }
+    if (
+      Number.isNaN(sessionCount) ||
+      Number.isNaN(price) ||
+      sessionCount <= 0 ||
+      price < 0 ||
+      !Number.isInteger(sessionCount)
+    ) {
+      this.error.set(this.literals.errorInvalidNumber);
       return null;
     }
     const descriptionEs = (value['descriptionEs'] ?? '').trim();
     const descriptionEn = (value['descriptionEn'] ?? '').trim();
+    this.error.set('');
     return {
       serviceId,
       name: nameEs,

@@ -3,7 +3,7 @@ import pytest
 from app.database import Database
 from app.errors import BusinessError, ForbiddenError, NotFoundError
 from app.models import Appointment
-from app.schemas import ClientBonoPatch, ClientWrite, ContractBono
+from app.schemas import ClientBonoPatch, ClientCouponWrite, ClientWrite, ContractBono
 from app.services.clients import ClientService
 from tests.factories import (
     add_appointment,
@@ -75,7 +75,7 @@ def test_client_update_keeps_email_and_notes(
     assert stored.firstName == "Marina"
 
 
-def test_session_balance_skips_masaje_and_empty(client_service: ClientService, db: Database) -> None:
+def test_session_balance_sums_all_services(client_service: ClientService, db: Database) -> None:
     add_client(db)
     add_service(db)
     add_service(db, id="svc-masaje", name="Masaje", shares_session_pool=False, allows_single_session=True)
@@ -84,10 +84,8 @@ def test_session_balance_skips_masaje_and_empty(client_service: ClientService, d
     add_client_bono(db, remaining_sessions=4)
     add_client_bono(db, id="cb-empty", remaining_sessions=0)
     add_client_bono(db, id="cb-m", bono_id="bono-m", remaining_sessions=1)
-    balance = client_service.session_balance("client-1", admin_user())
-    assert len(balance) == 1
-    assert balance[0].serviceId == "svc-1"
-    assert balance[0].remainingSessions == 4
+    balance = {row.serviceId: row.remainingSessions for row in client_service.session_balance("client-1", admin_user())}
+    assert balance == {"svc-1": 4, "svc-masaje": 1}
 
 
 def test_contract_and_list_bonos(client_service: ClientService, db: Database) -> None:
@@ -236,3 +234,60 @@ def test_delete_client(client_service: ClientService, db: Database, password_has
     client_service.delete_client("client-1")
     with pytest.raises(NotFoundError):
         client_service.get_client("client-1", admin_user())
+
+
+def test_contract_applies_sale_and_coupon(client_service: ClientService, db: Database) -> None:
+    add_client(db)
+    add_service(db, sale_kind="percent", sale_value=20)
+    add_bono(db, price=200)
+    coupon = client_service.create_coupon(
+        "client-1",
+        ClientCouponWrite(kind="percent", value=10),
+    )
+    contracted = client_service.contract_bono(
+        ContractBono(clientId="client-1", bonoId="bono-1"),
+        client_user(),
+    )
+    assert contracted.listPrice == 200
+    assert contracted.paidPrice == 144
+    assert contracted.couponId == coupon.id
+    stored = client_service.list_coupons("client-1", client_user())
+    assert stored[0].usedAt is not None
+
+
+def test_gift_does_not_consume_coupon(client_service: ClientService, db: Database) -> None:
+    add_client(db)
+    add_service(db, sale_kind="percent", sale_value=50)
+    add_bono(db, price=200)
+    coupon = client_service.create_coupon(
+        "client-1",
+        ClientCouponWrite(kind="amount", value=20),
+    )
+    gifted = client_service.contract_bono(
+        ContractBono(clientId="client-1", bonoId="bono-1", isGift=True),
+        admin_user(),
+    )
+    assert gifted.isGift is True
+    assert gifted.paidPrice == 0
+    assert gifted.couponId is None
+    unused = client_service.list_coupons("client-1", admin_user())
+    assert unused[0].id == coupon.id
+    assert unused[0].usedAt is None
+
+
+def test_invalid_coupon_on_contract(client_service: ClientService, db: Database) -> None:
+    add_client(db)
+    add_service(db)
+    add_bono(db)
+    add_bono(db, id="bono-2", name="other", price=80)
+    scoped = client_service.create_coupon(
+        "client-1",
+        ClientCouponWrite(kind="percent", value=10, bonoId="bono-1"),
+    )
+    with pytest.raises(BusinessError) as exc:
+        client_service.contract_bono(
+            ContractBono(clientId="client-1", bonoId="bono-2", couponId=scoped.id),
+            client_user(),
+        )
+    assert exc.value.code == "discount.couponInvalid"
+

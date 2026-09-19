@@ -38,11 +38,13 @@ class CatalogService:
             resolved, i18n = merge_i18n({"name": payload.name}, payload.i18n)
             row = Service(
                 name=resolved["name"],
-                shares_session_pool=payload.sharesSessionPool,
+                shares_session_pool=True,
                 forces_single_session=payload.forcesSingleSession,
                 single_session_price=payload.singleSessionPrice,
                 duration_minutes=payload.durationMinutes,
                 active=payload.active,
+                sale_kind=payload.saleKind,
+                sale_value=payload.saleValue,
                 i18n=i18n,
             )
             _apply_service_rules(row, payload)
@@ -58,11 +60,13 @@ class CatalogService:
             resolved, i18n = merge_i18n({"name": payload.name}, payload.i18n)
             row.name = resolved["name"]
             row.i18n = i18n
-            row.shares_session_pool = payload.sharesSessionPool
+            row.shares_session_pool = True
             row.forces_single_session = payload.forcesSingleSession
             row.single_session_price = payload.singleSessionPrice
             row.duration_minutes = payload.durationMinutes
             row.active = payload.active
+            row.sale_kind = payload.saleKind
+            row.sale_value = payload.saleValue
             _apply_service_rules(row, payload)
             return service_out(row)
 

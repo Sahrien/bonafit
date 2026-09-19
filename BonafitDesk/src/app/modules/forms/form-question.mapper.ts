@@ -155,29 +155,73 @@ export interface FormAnswerDisplayItem {
   longHeading: boolean;
 }
 
+const BLANK_RUN = /_{3,}/;
+const INLINE_NAME_TYPES = new Set<FormQuestionDto['type']>(['shortText', 'fullName']);
+
+function inlineNameValue(
+  question: FormQuestionDto,
+  answers: FormAnswerDto[],
+): string {
+  const trimmed = answerValue(answers, question.id).trim();
+  if (!trimmed) {
+    return '';
+  }
+  if (question.type === 'fullName') {
+    return formatFullName(trimmed);
+  }
+  return trimmed;
+}
+
 export function answerDisplayItems(
   questions: FormQuestionDto[],
   answers: FormAnswerDto[],
   labels: FormAnswerLabels,
 ): FormAnswerDisplayItem[] {
-  return orderedQuestions(questions).map((question) => {
-    if (isFormHeading(question.type)) {
+  const ordered = orderedQuestions(questions);
+  const hiddenIds = new Set<string>();
+  const filledPrompts = new Map<string, string>();
+
+  for (let index = 0; index < ordered.length; index += 1) {
+    const question = ordered[index];
+    if (!isFormHeading(question.type) || question.prompt.length <= FORM_LONG_HEADING) {
+      continue;
+    }
+    if (!BLANK_RUN.test(question.prompt)) {
+      continue;
+    }
+    const nameQuestion = ordered
+      .slice(index + 1)
+      .find((candidate) => INLINE_NAME_TYPES.has(candidate.type));
+    if (!nameQuestion) {
+      continue;
+    }
+    const name = inlineNameValue(nameQuestion, answers);
+    if (name) {
+      filledPrompts.set(question.id, question.prompt.replace(BLANK_RUN, name));
+    }
+    hiddenIds.add(nameQuestion.id);
+  }
+
+  return ordered
+    .filter((question) => !hiddenIds.has(question.id))
+    .map((question) => {
+      if (isFormHeading(question.type)) {
+        return {
+          id: question.id,
+          kind: 'heading' as const,
+          prompt: filledPrompts.get(question.id) ?? question.prompt,
+          answer: '',
+          longHeading: question.prompt.length > FORM_LONG_HEADING,
+        };
+      }
       return {
         id: question.id,
-        kind: 'heading' as const,
+        kind: 'answer' as const,
         prompt: question.prompt,
-        answer: '',
-        longHeading: question.prompt.length > FORM_LONG_HEADING,
+        answer: formatQuestionAnswer(question, answers, labels),
+        longHeading: false,
       };
-    }
-    return {
-      id: question.id,
-      kind: 'answer' as const,
-      prompt: question.prompt,
-      answer: formatQuestionAnswer(question, answers, labels),
-      longHeading: false,
-    };
-  });
+    });
 }
 
 export interface FormAnswerBlock {

@@ -1,10 +1,11 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { MOCK_BONOS, MOCK_SERVICES } from '../../testing/fixtures';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
+import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { ServicesApiService } from '../../services/services-api.service';
 import { ServicesComponent } from './services.component';
 import { SERVICES_LITERALS } from './services.literals';
@@ -52,45 +53,44 @@ describe('ServicesComponent', () => {
     expect(text).toContain(SERVICES_LITERALS.price);
     expect(text).toContain(SERVICES_LITERALS.kind);
     expect(text).toContain(SERVICES_LITERALS.sessionCount);
+    expect(text).toContain(SERVICES_LITERALS.sale);
     expect(text).toContain('Entrenamiento personal');
     expect(text).toContain('pack-10');
     expect(text).toContain('Masaje');
     expect(fixture.nativeElement.querySelector('app-bona-grid')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.page-toolbar')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.bona-grid__filter-row')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.bona-grid__pager')).toBeTruthy();
   });
 
-  it('filters the catalog by a partial bono name', () => {
-    fixture.componentInstance.onSearch('pack 8');
+  it('filters catalog rows by column content without requiring equality', () => {
+    const nameFilter = fixture.nativeElement.querySelector(
+      '.services-catalog__list .bona-grid__table .bona-grid__filter',
+    ) as HTMLInputElement;
+    nameFilter.value = 'ck-8';
+    nameFilter.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('pack-8');
-    expect(text).toContain('Hipopresivos');
     expect(text).not.toContain('pack-10');
     expect(text).not.toContain('pack-5');
     expect(text).not.toContain('Entrenamiento personal');
     expect(text).not.toContain('Masaje');
   });
 
-  it('filters the catalog by bono description fragments', () => {
-    fixture.componentInstance.onSearch('sessions 5');
+  it('opens the service editor over the catalog table', () => {
+    fixture.componentInstance.onCreateService();
     fixture.detectChanges();
 
-    const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('pack-5');
-    expect(text).toContain('Entrenamiento personal');
-    expect(text).not.toContain('pack-10');
-    expect(text).not.toContain('Hipopresivos');
-  });
-
-  it('keeps a bono that contains the query under its service', () => {
-    fixture.componentInstance.onSearch('10');
-    fixture.detectChanges();
-
-    const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('pack-10');
-    expect(text).toContain('Entrenamiento personal');
-    expect(text).not.toContain('pack-5');
-    expect(text).not.toContain('Hipopresivos');
+    const catalog = fixture.nativeElement.querySelector('.services-catalog') as HTMLElement;
+    const list = fixture.nativeElement.querySelector('.services-catalog__list') as HTMLElement;
+    const editor = fixture.nativeElement.querySelector('.services-catalog__editor') as HTMLElement;
+    expect(catalog.classList.contains('services-catalog--detail')).toBeTrue();
+    expect(getComputedStyle(list).display).toBe('none');
+    expect(editor).toBeTruthy();
+    expect(getComputedStyle(editor).position).not.toBe('absolute');
+    expect(fixture.nativeElement.textContent).toContain(SERVICES_LITERALS.serviceEditor);
   });
 
   it('opens nested bonos for a service', () => {
@@ -102,6 +102,105 @@ describe('ServicesComponent', () => {
     expect(text).toContain(SERVICES_LITERALS.price);
     expect(text).toContain('sesion-suelta');
     expect(text).toContain('45');
-    expect(fixture.nativeElement.querySelectorAll('app-bona-grid').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.services-catalog__editor app-bona-grid').length).toBe(1);
+  });
+
+  it('saves a new service with only the Spanish name and duration', () => {
+    servicesApi.createService.and.returnValue(
+      of({ ...MOCK_SERVICES[0], id: 'svc-pilates', name: 'Pilates' }),
+    );
+    fixture.componentInstance.onCreateService();
+    fixture.detectChanges();
+
+    const nameEs = fixture.nativeElement.querySelector('[data-field-key="nameEs"]') as HTMLInputElement;
+    nameEs.value = 'Pilates';
+    nameEs.dispatchEvent(new Event('input'));
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain(SERVICES_LITERALS.errorRequired);
+    expect(servicesApi.createService).toHaveBeenCalled();
+    const payload = servicesApi.createService.calls.mostRecent().args[0];
+    expect(payload.name).toBe('Pilates');
+    expect(payload.i18n?.['name']?.['en']).toBe('Pilates');
+    expect(payload.durationMinutes).toBe(60);
+    expect(payload.sharesSessionPool).toBeTrue();
+  });
+
+  it('shows percent or euro on the sale value field', () => {
+    fixture.componentInstance.onCreateService();
+    fixture.componentInstance.onServiceFormChange({
+      ...fixture.componentInstance.serviceForm(),
+      saleKind: 'percent',
+    });
+    fixture.detectChanges();
+
+    const saleField = saleValueField(fixture);
+    expect(saleField?.textContent).toContain('%');
+
+    fixture.componentInstance.onServiceFormChange({
+      ...fixture.componentInstance.serviceForm(),
+      saleKind: 'amount',
+    });
+    fixture.detectChanges();
+    expect(saleValueField(fixture)?.textContent).toContain('€');
+  });
+
+  it('explains session-pack flags in the service editor', () => {
+    fixture.componentInstance.onCreateService();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain(SERVICES_LITERALS.forcesSingleSession);
+    expect(text).toContain(SERVICES_LITERALS.forcesSingleSessionHint);
+    expect(text).toContain(SERVICES_LITERALS.allowsSingleSession);
+    expect(text).toContain(SERVICES_LITERALS.allowsSingleSessionHint);
+  });
+
+  it('explains a 422 sale percent error instead of a generic save failure', () => {
+    const toast = TestBed.inject(BonaToast) as jasmine.SpyObj<BonaToast>;
+    servicesApi.createService.and.returnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 422,
+            error: {
+              detail: [{ loc: ['body'], msg: 'Value error, sale percent cannot exceed 100' }],
+            },
+          }),
+      ),
+    );
+    submitNewService(fixture);
+
+    expect(toast.error).toHaveBeenCalledWith(SERVICES_LITERALS.errorSalePercent);
+    expect(fixture.nativeElement.textContent).not.toContain(SERVICES_LITERALS.errorSalePercent);
+    expect(toast.error).not.toHaveBeenCalledWith(SERVICES_LITERALS.errorSave);
+  });
+
+  it('explains a network failure when saving a service', () => {
+    const toast = TestBed.inject(BonaToast) as jasmine.SpyObj<BonaToast>;
+    servicesApi.createService.and.returnValue(
+      throwError(() => new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' })),
+    );
+    submitNewService(fixture);
+
+    expect(toast.error).toHaveBeenCalledWith(SERVICES_LITERALS.errorConnection);
+    expect(fixture.nativeElement.textContent).not.toContain(SERVICES_LITERALS.errorConnection);
   });
 });
+
+function submitNewService(fixture: ComponentFixture<ServicesComponent>): void {
+  fixture.componentInstance.onCreateService();
+  fixture.detectChanges();
+  const nameEs = fixture.nativeElement.querySelector('[data-field-key="nameEs"]') as HTMLInputElement;
+  nameEs.value = 'Pilates';
+  nameEs.dispatchEvent(new Event('input'));
+  const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  fixture.detectChanges();
+}
+
+function saleValueField(fixture: ComponentFixture<ServicesComponent>): HTMLElement | null {
+  return fixture.nativeElement.querySelector('[data-field-key="saleValue"]')?.closest('app-bona-field') ?? null;
+}

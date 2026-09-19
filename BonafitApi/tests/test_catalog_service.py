@@ -111,3 +111,15 @@ def test_create_service_keeps_pool_flag(catalog_service: CatalogService) -> None
     created = catalog_service.create_service(_service())
     assert created.sharesSessionPool is True
     assert created.forcesSingleSession is False
+
+
+def test_create_service_always_shares_session_pool(catalog_service: CatalogService) -> None:
+    created = catalog_service.create_service(_service(sharesSessionPool=False))
+    assert created.sharesSessionPool is True
+
+
+def test_create_service_with_sale(catalog_service: CatalogService) -> None:
+    created = catalog_service.create_service(_service(saleKind="percent", saleValue=25))
+    assert created.saleKind == "percent"
+    assert created.saleValue == 25
+

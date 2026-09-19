@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { ClientBonoDto, ClientBonoPatchDto, ContractBonoDto } from '../models/client-bono.dto';
+import { ClientCouponDto, ClientCouponWriteDto } from '../models/client-coupon.dto';
 import { ClientDto, ClientWriteDto } from '../models/client.dto';
 
 export interface ClientsApi {
@@ -12,4 +13,7 @@ export interface ClientsApi {
   contractBono(payload: ContractBonoDto): Observable<ClientBonoDto>;
   updateClientBono(id: string, payload: ClientBonoPatchDto): Observable<ClientBonoDto>;
   deleteClientBono(id: string): Observable<void>;
+  getCoupons(clientId: string): Observable<ClientCouponDto[]>;
+  createCoupon(clientId: string, payload: ClientCouponWriteDto): Observable<ClientCouponDto>;
+  deleteCoupon(clientId: string, couponId: string): Observable<void>;
 }

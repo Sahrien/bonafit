@@ -91,6 +91,13 @@ describe('BonaFormComponent', () => {
     expect(spy).toHaveBeenCalledWith({ nombre: 'Luis', email: 'luis@test' });
   });
 
+  it('aligns actions to the start when actionsAlign is start', () => {
+    fixture.componentRef.setInput('actionsAlign', 'start');
+    fixture.detectChanges();
+    const actions = fixture.nativeElement.querySelector('.bona-form__actions') as HTMLElement;
+    expect(actions.classList.contains('bona-form__actions--start')).toBeTrue();
+  });
+
   it('renders projected extra actions next to submit', () => {
     const hostFixture = TestBed.createComponent(FormActionsHostComponent);
     hostFixture.detectChanges();

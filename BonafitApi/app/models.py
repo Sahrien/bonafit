@@ -4,6 +4,7 @@ from uuid import uuid4
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     DateTime,
     Enum,
     ForeignKey,
@@ -49,6 +50,7 @@ class Client(Base):
 
     user: Mapped["User | None"] = relationship(back_populates="client", uselist=False)
     bonos: Mapped[list["ClientBono"]] = relationship(back_populates="client")
+    coupons: Mapped[list["ClientCoupon"]] = relationship(back_populates="client")
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="client")
     form_assignments: Mapped[list["FormAssignment"]] = relationship(back_populates="client")
 
@@ -85,13 +87,15 @@ class Service(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    shares_session_pool: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    shares_session_pool: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     forces_single_session: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     allows_single_session: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     single_session_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
     duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     bookable_by_client: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    sale_kind: Mapped[str] = mapped_column(String(20), nullable=False, default="none", server_default="none")
+    sale_value: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0, server_default="0")
     i18n: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"), default=dict, nullable=False)
 
     bonos: Mapped[list["Bono"]] = relationship(back_populates="service")
@@ -123,10 +127,34 @@ class ClientBono(Base):
     is_gift: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     purchased_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    list_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    paid_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    coupon_id: Mapped[str | None] = mapped_column(ForeignKey("client_coupons.id"))
 
     client: Mapped[Client] = relationship(back_populates="bonos")
     bono: Mapped[Bono] = relationship(back_populates="client_bonos")
+    coupon: Mapped["ClientCoupon | None"] = relationship()
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="client_bono")
+
+
+class ClientCoupon(Base):
+    __tablename__ = "client_coupons"
+    __table_args__ = (
+        CheckConstraint(
+            "(service_id IS NULL) OR (bono_id IS NULL)",
+            name="client_coupon_one_scope",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    client_id: Mapped[str] = mapped_column(ForeignKey("clients.id"), nullable=False)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    value: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    service_id: Mapped[str | None] = mapped_column(ForeignKey("services.id"))
+    bono_id: Mapped[str | None] = mapped_column(ForeignKey("bonos.id"))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    client: Mapped[Client] = relationship(back_populates="coupons")
 
 
 class TrainerSchedule(Base):

@@ -19,6 +19,7 @@ export class BonaFormComponent {
   readonly submitText = input('Guardar');
   readonly disabled = input(false);
   readonly showSubmit = input(true);
+  readonly actionsAlign = input<'start' | 'end'>('end');
 
   readonly valueChange = output<BonaFormValue>();
   readonly submitted = output<BonaFormValue>();

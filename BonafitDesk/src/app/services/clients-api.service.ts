@@ -5,6 +5,7 @@ import { API_PATHS, apiUrl } from '../core/api-url';
 import { ClientsApi } from '../core/clients-api';
 import { toHttpParams } from '../core/http-params';
 import { ClientBonoDto, ClientBonoPatchDto, ContractBonoDto } from '../models/client-bono.dto';
+import { ClientCouponDto, ClientCouponWriteDto } from '../models/client-coupon.dto';
 import { ClientDto, ClientWriteDto } from '../models/client.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -47,6 +48,21 @@ export class ClientsApiService implements ClientsApi {
 
   deleteClientBono(id: string): Observable<void> {
     return this.http.delete<void>(apiUrl(API_PATHS.clientBonos, id));
+  }
+
+  getCoupons(clientId: string): Observable<ClientCouponDto[]> {
+    return this.http.get<ClientCouponDto[]>(apiUrl(API_PATHS.clients, clientId, API_PATHS.clientCoupons));
+  }
+
+  createCoupon(clientId: string, payload: ClientCouponWriteDto): Observable<ClientCouponDto> {
+    return this.http.post<ClientCouponDto>(
+      apiUrl(API_PATHS.clients, clientId, API_PATHS.clientCoupons),
+      payload,
+    );
+  }
+
+  deleteCoupon(clientId: string, couponId: string): Observable<void> {
+    return this.http.delete<void>(apiUrl(API_PATHS.clients, clientId, API_PATHS.clientCoupons, couponId));
   }
 }
 
