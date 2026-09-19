@@ -4,6 +4,12 @@
       [text]="literals.close"
       variant="secondary"
       (action)="onBack()" />
+    @if (!isNew()) {
+      <app-bona-button
+        [text]="literals.deleteClient"
+        variant="secondary"
+        (action)="onDelete()" />
+    }
     <app-bona-button
       [text]="literals.save"
       [disabled]="saving()"
@@ -29,6 +35,7 @@
     <section class="page-nested">
       <header class="page-nested__header">
         <h2>{{ literals.assignedTitle }}</h2>
+        <app-bona-button [text]="literals.gift" (action)="onOpenGift()" />
       </header>
       <app-bona-grid
         [data]="bonoRows()"
@@ -52,20 +59,27 @@
           </app-bona-form>
         </div>
       }
-
-      <div class="page-nested__form">
-        <h3>{{ literals.giftTitle }}</h3>
-        <app-bona-form
-          [fields]="giftFields()"
-          [value]="giftForm()"
-          [submitText]="literals.gift"
-          (valueChange)="onGiftFormChange($event)"
-          (submitted)="onGiftSubmit($event)" />
-      </div>
+      @if (giftFormOpen()) {
+        <div class="page-nested__form">
+          <app-bona-form
+            [fields]="giftFields()"
+            [value]="giftForm()"
+            [submitText]="literals.gift"
+            (valueChange)="onGiftFormChange($event)"
+            (submitted)="onGiftSubmit($event)">
+            <app-bona-button
+              bonaFormActions
+              [text]="literals.close"
+              variant="secondary"
+              (action)="onCancelGift()" />
+          </app-bona-form>
+        </div>
+      }
     </section>
     <section class="page-nested">
       <header class="page-nested__header">
         <h2>{{ literals.couponsTitle }}</h2>
+        <app-bona-button [text]="literals.giftCoupon" (action)="onOpenCouponGift()" />
       </header>
       <app-bona-grid
         [data]="couponRows()"
@@ -73,15 +87,22 @@
         [actions]="couponActions()"
         [emptyMessage]="literals.emptyCoupons"
         (action)="onCouponAction($event)" />
-      <div class="page-nested__form">
-        <h3>{{ literals.giftCoupon }}</h3>
-        <app-bona-form
-          [fields]="couponFields()"
-          [value]="couponForm()"
-          [submitText]="literals.giftCoupon"
-          (valueChange)="onCouponFormChange($event)"
-          (submitted)="onCouponSubmit($event)" />
-      </div>
+      @if (couponFormOpen()) {
+        <div class="page-nested__form">
+          <app-bona-form
+            [fields]="couponFields()"
+            [value]="couponForm()"
+            [submitText]="literals.giftCoupon"
+            (valueChange)="onCouponFormChange($event)"
+            (submitted)="onCouponSubmit($event)">
+            <app-bona-button
+              bonaFormActions
+              [text]="literals.close"
+              variant="secondary"
+              (action)="onCancelCouponGift()" />
+          </app-bona-form>
+        </div>
+      }
     </section>
     <section class="page-nested page-nested--history" [class.page-nested--history-open]="historyOpen()">
       <header class="page-nested__header">
@@ -124,11 +145,5 @@
         }
       }
     </section>
-    <div class="page-actions">
-      <app-bona-button
-        [text]="literals.delete"
-        variant="secondary"
-        (action)="onDelete()" />
-    </div>
   }
 </app-bona-page>

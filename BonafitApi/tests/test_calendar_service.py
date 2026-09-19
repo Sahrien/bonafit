@@ -4,7 +4,7 @@ import pytest
 
 from app.database import Database
 from app.errors import BusinessError, NotFoundError
-from app.models import ClientBono
+from app.models import BookingSettings, ClientBono
 from app.schemas import AppointmentWrite, BookingSettingsWrite, TrainerScheduleWrite, TrainerWrite
 from app.services.calendar import CalendarService
 from tests.factories import (
@@ -36,6 +36,17 @@ def test_trainers(calendar_service: CalendarService, db: Database) -> None:
         calendar_service.get_trainer("missing")
     with pytest.raises(NotFoundError):
         calendar_service.update_trainer("missing", TrainerWrite(name="X", concurrentCapacity=1))
+
+
+def test_get_booking_settings_creates_defaults(calendar_service: CalendarService, db: Database) -> None:
+    settings = calendar_service.get_booking_settings()
+    assert settings.id == "booking-settings"
+    assert settings.nextDayCutoffTime == "18:00"
+    assert settings.defaultLocation == "studio-1"
+    with db.session() as session:
+        row = session.get(BookingSettings, "booking-settings")
+        assert row is not None
+        assert row.default_location == "studio-1"
 
 
 def test_booking_settings(calendar_service: CalendarService, db: Database) -> None:

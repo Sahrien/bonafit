@@ -54,6 +54,8 @@ from app.serializers import appointment_out, ensure_aware, schedule_out, setting
 HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 E = BOOKING_ERROR_CODES
 SETTINGS_ID = "booking-settings"
+DEFAULT_CUTOFF_TIME = "18:00"
+DEFAULT_LOCATION = "studio-1"
 
 
 def _trainer_capacities(db: Session) -> dict[str, int]:
@@ -253,10 +255,20 @@ class _AppointmentView:
         self.status = row.status
 
 
+def default_booking_settings() -> BookingSettings:
+    return BookingSettings(
+        id=SETTINGS_ID,
+        next_day_cutoff_time=DEFAULT_CUTOFF_TIME,
+        default_location=DEFAULT_LOCATION,
+    )
+
+
 def _settings(db: Session) -> BookingSettings:
     row = db.get(BookingSettings, SETTINGS_ID)
     if row is None:
-        raise NotFoundError("booking-settings", SETTINGS_ID)
+        row = default_booking_settings()
+        db.add(row)
+        db.flush()
     return row
 
 

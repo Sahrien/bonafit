@@ -103,6 +103,8 @@ export class ClientFichaComponent {
   readonly saving = signal(false);
   readonly temporaryPassword = signal('');
   readonly bonoFormOpen = signal(false);
+  readonly giftFormOpen = signal(false);
+  readonly couponFormOpen = signal(false);
   readonly bonoForm = signal<BonaFormValue>({ remainingSessions: '', expiresAt: '' });
   readonly giftForm = signal<BonaFormValue>({ ...EMPTY_GIFT });
   readonly couponForm = signal<BonaFormValue>({ ...EMPTY_COUPON });
@@ -165,16 +167,18 @@ export class ClientFichaComponent {
   ]);
 
   readonly bonoRows = computed(() =>
-    this.clientBonos().map((row) => {
-      const bono = this.bonos().find((item) => item.id === row.bonoId);
-      const service = this.services().find((item) => item.id === bono?.serviceId);
-      return {
-        ...row,
-        serviceName: service?.name ?? '',
-        name: this.assignedBonoLabel(row, bono),
-        expiresAtLabel: row.expiresAt ?? this.literals.noExpiry,
-      };
-    }),
+    this.clientBonos()
+      .filter((row) => row.remainingSessions > 0)
+      .map((row) => {
+        const bono = this.bonos().find((item) => item.id === row.bonoId);
+        const service = this.services().find((item) => item.id === bono?.serviceId);
+        return {
+          ...row,
+          serviceName: service?.name ?? '',
+          name: this.assignedBonoLabel(row, bono),
+          expiresAtLabel: row.expiresAt ?? this.literals.noExpiry,
+        };
+      }),
   );
 
   readonly historyColumns = computed<BonaGridColumn[]>(() => [
@@ -269,7 +273,7 @@ export class ClientFichaComponent {
     this.coupons().map((row) => ({
       ...row,
       kindLabel: row.kind === 'percent' ? this.literals.couponPercent : this.literals.couponAmount,
-      valueLabel: row.kind === 'percent' ? `${row.value}%` : String(row.value),
+      valueLabel: row.kind === 'percent' ? `${row.value}%` : `${row.value} €`,
       scopeLabel: this.couponScopeLabel(row),
       statusLabel: row.usedAt ? this.literals.couponUsed : this.literals.couponUnused,
     })),
@@ -288,7 +292,7 @@ export class ClientFichaComponent {
           { value: 'amount', label: this.literals.couponAmount },
         ],
       },
-      { key: 'value', label: this.literals.couponValue, type: 'number', required: true },
+      { key: 'value', label: this.literals.couponValue, type: 'number', required: true, suffix: this.couponForm()['kind'] === 'amount' ? '€' : '%' },
       {
         key: 'scope',
         label: this.literals.couponScope,
@@ -429,6 +433,7 @@ export class ClientFichaComponent {
         next: () => {
           this.toast.success(this.literals.gifted);
           this.giftForm.set({ ...EMPTY_GIFT, serviceId: value['serviceId'] ?? '' });
+          this.giftFormOpen.set(false);
           this.loadBonos(payload.clientId);
         },
         error: () => this.toast.error(this.literals.giftError),
@@ -464,6 +469,7 @@ export class ClientFichaComponent {
         next: () => {
           this.toast.success(this.literals.couponGifted);
           this.couponForm.set({ ...EMPTY_COUPON });
+          this.couponFormOpen.set(false);
           this.loadCoupons(clientId);
         },
         error: () => this.toast.error(this.literals.errorSave),
@@ -552,6 +558,27 @@ export class ClientFichaComponent {
     this.editingBonoId.set(null);
   }
 
+  onOpenGift(): void {
+    this.giftFormOpen.set(true);
+    this.couponFormOpen.set(false);
+    this.bonoFormOpen.set(false);
+  }
+
+  onCancelGift(): void {
+    this.giftFormOpen.set(false);
+    this.giftForm.set({ ...EMPTY_GIFT });
+  }
+
+  onOpenCouponGift(): void {
+    this.couponFormOpen.set(true);
+    this.giftFormOpen.set(false);
+  }
+
+  onCancelCouponGift(): void {
+    this.couponFormOpen.set(false);
+    this.couponForm.set({ ...EMPTY_COUPON });
+  }
+
   onToggleHistory(): void {
     if (this.historyOpen()) {
       this.historyOpen.set(false);
@@ -637,6 +664,8 @@ export class ClientFichaComponent {
 
   private load(id: string): void {
     this.bonoFormOpen.set(false);
+    this.giftFormOpen.set(false);
+    this.couponFormOpen.set(false);
     this.sessionNoteFormOpen.set(false);
     this.historyOpen.set(false);
     this.historyLoadedFor.set(null);

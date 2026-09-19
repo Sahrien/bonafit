@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, forkJoin, switchMap } from 'rxjs';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
 import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
+import { BonaFieldComponent } from '../../components/bona-field/bona-field.component';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import {
@@ -11,6 +12,7 @@ import {
   BonaGridColumn,
   BonaGridComponent,
 } from '../../components/bona-grid/bona-grid.component';
+import { BonaInputTextFieldComponent } from '../../components/bona-input-text-field/bona-input-text-field.component';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { ApiBusinessError } from '../../core/api-business.error';
@@ -46,6 +48,13 @@ const EMPTY_BONO: BonaFormValue = {
 
 const SERVICE_PAGE_SIZE = 10;
 
+type CatalogSort = 'name' | 'duration' | 'price' | 'active';
+
+interface CatalogGroup {
+  service: ServiceDto;
+  bonos: BonoDto[];
+}
+
 function parseLocaleNumber(raw: string): number {
   const normalized = raw.trim().replace(',', '.');
   if (!normalized) {
@@ -57,7 +66,14 @@ function parseLocaleNumber(raw: string): number {
 @Component({
   selector: 'app-services',
   standalone: true,
-  imports: [BonaPageComponent, BonaGridComponent, BonaFormComponent, BonaButtonComponent],
+  imports: [
+    BonaPageComponent,
+    BonaGridComponent,
+    BonaFormComponent,
+    BonaButtonComponent,
+    BonaInputTextFieldComponent,
+    BonaFieldComponent,
+  ],
   templateUrl: './services.component.html',
   styleUrl: './services.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,12 +85,18 @@ export class ServicesComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly i18n = injectI18n('services');
+  private readonly gridI18n = injectI18n('grid');
   get literals() {
     return this.i18n();
   }
+  get gridLiterals() {
+    return this.gridI18n();
+  }
   readonly error = signal('');
   readonly loading = signal(true);
-  readonly pageSize = SERVICE_PAGE_SIZE;
+  readonly search = signal('');
+  readonly catalogSort = signal<CatalogSort>('name');
+  readonly pageIndex = signal(0);
   readonly selectedServiceId = signal<string | null>(null);
   readonly serviceForm = signal<BonaFormValue>({ ...EMPTY_SERVICE });
   readonly bonoFormOpen = signal(false);
@@ -111,33 +133,61 @@ export class ServicesComponent {
     { label: this.literals.delete, action: 'delete' },
   ]);
 
+  readonly sortField = computed<BonaFieldDefinition>(() => ({
+    key: 'catalogSort',
+    label: this.literals.sortBy,
+    type: 'select',
+    options: [
+      { value: 'name', label: this.literals.sortName },
+      { value: 'duration', label: this.literals.sortDuration },
+      { value: 'price', label: this.literals.sortPrice },
+      { value: 'active', label: this.literals.sortActive },
+    ],
+  }));
+
+  readonly catalogGroups = computed(() => {
+    const query = this.search().trim().toLowerCase();
+    const groups = this.services().map((service) => ({
+      service,
+      bonos: this.sortedBonos(service.id),
+    }));
+    const matched = query ? groups.filter((group) => this.groupMatches(group, query)) : groups;
+    return [...matched].sort((left, right) => this.compareServices(left.service, right.service));
+  });
+
+  readonly catalogPageCount = computed(() =>
+    Math.max(1, Math.ceil(this.catalogGroups().length / SERVICE_PAGE_SIZE)),
+  );
+
+  readonly showCatalogPager = computed(() => this.catalogGroups().length > SERVICE_PAGE_SIZE);
+
+  readonly catalogEmptyMessage = computed(() =>
+    this.search().trim() && this.services().length > 0
+      ? this.literals.emptyServicesFilter
+      : this.literals.emptyServices,
+  );
+
+  readonly catalogEmptyAction = computed(() =>
+    this.search().trim() ? '' : this.literals.newService,
+  );
+
+  readonly catalogPageLabel = computed(() =>
+    this.gridLiterals.pageOf
+      .replace('{{page}}', String(this.clampedPageIndex() + 1))
+      .replace('{{pages}}', String(this.catalogPageCount())),
+  );
+
+  readonly catalogCanPrevious = computed(() => this.clampedPageIndex() > 0);
+  readonly catalogCanNext = computed(() => this.clampedPageIndex() < this.catalogPageCount() - 1);
+
   readonly serviceRows = computed(() => {
+    const start = this.clampedPageIndex() * SERVICE_PAGE_SIZE;
+    const page = this.catalogGroups().slice(start, start + SERVICE_PAGE_SIZE);
     const rows: Record<string, unknown>[] = [];
-    for (const service of this.services()) {
-      rows.push({
-        rowKind: 'service',
-        id: service.id,
-        name: service.name,
-        kindLabel: this.literals.kindService,
-        durationMinutesLabel: String(service.durationMinutes),
-        sessionCountLabel: '',
-        priceLabel: service.singleSessionPrice,
-        saleLabel: this.saleLabel(service),
-        activeLabel: service.active ? this.literals.yes : this.literals.no,
-      });
-      for (const bono of this.bonos().filter((item) => item.serviceId === service.id)) {
-        rows.push({
-          rowKind: 'bono',
-          id: bono.id,
-          serviceId: service.id,
-          name: bono.name,
-          kindLabel: this.literals.kindBono,
-          durationMinutesLabel: '',
-          sessionCountLabel: String(bono.sessionCount),
-          priceLabel: bono.price,
-          saleLabel: this.saleLabel(service),
-          activeLabel: '',
-        });
+    for (const group of page) {
+      rows.push(this.serviceRow(group.service));
+      for (const bono of group.bonos) {
+        rows.push(this.bonoRow(group.service, bono));
       }
     }
     return rows;
@@ -245,6 +295,24 @@ export class ServicesComponent {
     this.loadAll();
   }
 
+  onSearch(value: string): void {
+    this.search.set(value);
+    this.pageIndex.set(0);
+  }
+
+  onCatalogSort(value: string): void {
+    this.catalogSort.set((value as CatalogSort) || 'name');
+    this.pageIndex.set(0);
+  }
+
+  onCatalogPrevious(): void {
+    this.pageIndex.set(Math.max(0, this.clampedPageIndex() - 1));
+  }
+
+  onCatalogNext(): void {
+    this.pageIndex.set(Math.min(this.catalogPageCount() - 1, this.clampedPageIndex() + 1));
+  }
+
   onCreateService(): void {
     this.selectedServiceId.set(NEW_ID);
     this.serviceForm.set({ ...EMPTY_SERVICE });
@@ -304,9 +372,10 @@ export class ServicesComponent {
         ? this.servicesApi.createService(payload)
         : this.servicesApi.updateService(id, payload);
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (service) => {
+      next: () => {
         this.toast.success(this.literals.saved);
-        this.loadAll(() => this.selectService(service.id));
+        this.onCancelService();
+        this.loadAll();
       },
       error: (error: unknown) => this.reportSaveError(error),
     });
@@ -494,6 +563,97 @@ export class ServicesComponent {
   private closeBonoForm(): void {
     this.bonoFormOpen.set(false);
     this.editingBonoId.set(null);
+  }
+
+  private clampedPageIndex(): number {
+    return Math.min(this.pageIndex(), this.catalogPageCount() - 1);
+  }
+
+  private sortedBonos(serviceId: string): BonoDto[] {
+    return this.bonos()
+      .filter((bono) => bono.serviceId === serviceId)
+      .slice()
+      .sort((left, right) => {
+        if (left.sessionCount !== right.sessionCount) {
+          return left.sessionCount - right.sessionCount;
+        }
+        return left.price - right.price;
+      });
+  }
+
+  private groupMatches(group: CatalogGroup, query: string): boolean {
+    if (this.serviceHaystack(group.service).includes(query)) {
+      return true;
+    }
+    return group.bonos.some((bono) => this.bonoHaystack(group.service, bono).includes(query));
+  }
+
+  private serviceHaystack(service: ServiceDto): string {
+    return [
+      service.name,
+      this.literals.kindService,
+      String(service.durationMinutes),
+      service.singleSessionPrice ?? '',
+      this.saleLabel(service),
+      service.active ? this.literals.yes : this.literals.no,
+    ]
+      .join(' ')
+      .toLowerCase();
+  }
+
+  private bonoHaystack(service: ServiceDto, bono: BonoDto): string {
+    return [bono.name, this.literals.kindBono, String(bono.sessionCount), String(bono.price), this.saleLabel(service)]
+      .join(' ')
+      .toLowerCase();
+  }
+
+  private compareServices(left: ServiceDto, right: ServiceDto): number {
+    const byName = left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: 'base' });
+    switch (this.catalogSort()) {
+      case 'duration': {
+        const delta = left.durationMinutes - right.durationMinutes;
+        return delta !== 0 ? delta : byName;
+      }
+      case 'price': {
+        const delta = (left.singleSessionPrice ?? Number.POSITIVE_INFINITY) - (right.singleSessionPrice ?? Number.POSITIVE_INFINITY);
+        return delta !== 0 ? delta : byName;
+      }
+      case 'active': {
+        const delta = Number(right.active) - Number(left.active);
+        return delta !== 0 ? delta : byName;
+      }
+      default:
+        return byName;
+    }
+  }
+
+  private serviceRow(service: ServiceDto): Record<string, unknown> {
+    return {
+      rowKind: 'service',
+      id: service.id,
+      name: service.name,
+      kindLabel: this.literals.kindService,
+      durationMinutesLabel: String(service.durationMinutes),
+      sessionCountLabel: '',
+      priceLabel: service.singleSessionPrice,
+      saleLabel: this.saleLabel(service),
+      activeLabel: service.active ? this.literals.yes : this.literals.no,
+    };
+  }
+
+  private bonoRow(service: ServiceDto, bono: BonoDto): Record<string, unknown> {
+    return {
+      rowKind: 'bono',
+      id: bono.id,
+      serviceId: service.id,
+      name: bono.name,
+      kindLabel: this.literals.kindBono,
+      durationMinutesLabel: '',
+      sessionCountLabel: String(bono.sessionCount),
+      priceLabel: bono.price,
+      saleLabel: this.saleLabel(service),
+      activeLabel: '',
+    };
   }
 
   private toServiceForm(service: ServiceDto): BonaFormValue {

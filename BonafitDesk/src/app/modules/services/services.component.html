@@ -9,25 +9,57 @@
 
   <div class="services-catalog" [class.services-catalog--detail]="showDetail()">
     <div class="services-catalog__list">
+      <div class="page-toolbar">
+        <div class="page-toolbar__search">
+          <app-bona-input-text-field
+            [label]="literals.search"
+            [placeholder]="literals.searchPlaceholder"
+            [value]="search()"
+            (valueChange)="onSearch($event)" />
+        </div>
+        <app-bona-field
+          class="page-toolbar__sort"
+          [definition]="sortField()"
+          [value]="catalogSort()"
+          (valueChange)="onCatalogSort($event)" />
+      </div>
       <app-bona-grid
         [data]="serviceRows()"
         [columns]="serviceColumns()"
         [actions]="serviceActions()"
-        [pageSize]="pageSize"
-        [columnFilters]="true"
-        [columnSort]="true"
-        [emptyMessage]="literals.emptyServices"
+        [emptyMessage]="catalogEmptyMessage()"
         [emptyTitle]="literals.emptyServicesTitle"
         [emptyFilteredMessage]="literals.emptyServicesFilter"
-        [emptyActionLabel]="literals.newService"
+        [emptyActionLabel]="catalogEmptyAction()"
         (emptyAction)="onCreateService()"
         (action)="onServiceAction($event)"
         (rowClick)="onServiceRowClick($event)" />
+      @if (showCatalogPager()) {
+        <div class="services-catalog__pager">
+          <app-bona-button
+            [text]="gridLiterals.previousPage"
+            variant="secondary"
+            [disabled]="!catalogCanPrevious()"
+            (action)="onCatalogPrevious()" />
+          <span>{{ catalogPageLabel() }}</span>
+          <app-bona-button
+            [text]="gridLiterals.nextPage"
+            variant="secondary"
+            [disabled]="!catalogCanNext()"
+            (action)="onCatalogNext()" />
+        </div>
+      }
     </div>
 
     @if (showDetail()) {
       <section class="services-catalog__editor" [attr.aria-label]="literals.serviceEditor">
-        <h2>{{ literals.serviceEditor }}</h2>
+        <header class="services-catalog__editor-header">
+          <h2>{{ literals.serviceEditor }}</h2>
+          <app-bona-button
+            [text]="literals.close"
+            variant="secondary"
+            (action)="onCancelService()" />
+        </header>
         <app-bona-form
           [fields]="serviceFields()"
           [value]="serviceForm()"

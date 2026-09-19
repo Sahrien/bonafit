@@ -135,7 +135,17 @@ describe('ClientFichaComponent', () => {
     const pageActions = harness.routeNativeElement?.querySelector('.bona-page__actions');
     expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.close);
     expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.save);
-    expect(pageActions?.textContent).not.toContain(CLIENTS_LITERALS.delete);
+    expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.deleteClient);
+  });
+
+  it('hides delete profile on a new ficha', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/admin/clients/new', ClientFichaComponent);
+
+    const pageActions = harness.routeNativeElement?.querySelector('.bona-page__actions');
+    expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.close);
+    expect(pageActions?.textContent).toContain(CLIENTS_LITERALS.save);
+    expect(pageActions?.textContent).not.toContain(CLIENTS_LITERALS.deleteClient);
   });
 
   it('lists assigned bonos and the gift form', async () => {
@@ -148,8 +158,39 @@ describe('ClientFichaComponent', () => {
     expect(text).toContain(CLIENTS_LITERALS.assignedTitle);
     expect(text).toContain('Entrenamiento personal');
     expect(text).toContain('pack-10');
-    expect(text).toContain(CLIENTS_LITERALS.giftTitle);
     expect(text).toContain(CLIENTS_LITERALS.gift);
+    const assignedHeader = harness.routeNativeElement?.querySelector('.page-nested__header');
+    expect(assignedHeader?.textContent).toContain(CLIENTS_LITERALS.gift);
+  });
+
+  it('hides assigned packs with no remaining sessions', async () => {
+    clientsApi.getClientBonos.and.returnValue(
+      of([
+        {
+          id: 'cb-done',
+          clientId: 'client-1',
+          bonoId: 'bono-ep-10',
+          remainingSessions: 0,
+          purchasedAt: '2026-06-01T10:00:00.000Z',
+          expiresAt: null,
+        },
+        {
+          id: 'cb-open',
+          clientId: 'client-1',
+          bonoId: 'bono-ep-5',
+          remainingSessions: 2,
+          purchasedAt: '2026-09-01T10:00:00.000Z',
+          expiresAt: null,
+        },
+      ]),
+    );
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/admin/clients/client-1', ClientFichaComponent);
+
+    const assigned = harness.routeNativeElement?.querySelector('.page-nested app-bona-grid');
+    const text = assigned?.textContent ?? '';
+    expect(text).toContain('pack-5');
+    expect(text).not.toContain('pack-10');
   });
 
   it('lists coupons and gifts a new coupon', async () => {
@@ -161,6 +202,12 @@ describe('ClientFichaComponent', () => {
           kind: 'percent',
           value: 15,
         },
+        {
+          id: 'coupon-2',
+          clientId: 'client-1',
+          kind: 'amount',
+          value: 20,
+        },
       ]),
     );
     const harness = await RouterTestingHarness.create();
@@ -169,8 +216,18 @@ describe('ClientFichaComponent', () => {
     expect(clientsApi.getCoupons).toHaveBeenCalledWith('client-1');
     const text = harness.routeNativeElement?.textContent ?? '';
     expect(text).toContain(CLIENTS_LITERALS.couponsTitle);
+    expect(text).toContain(CLIENTS_LITERALS.giftCoupon);
     expect(text).toContain('15%');
+    expect(text).toContain('20 €');
     expect(text).toContain(CLIENTS_LITERALS.couponAny);
+
+    component.onOpenCouponGift();
+    harness.fixture.detectChanges();
+    const valueField = component.couponFields().find((field) => field.key === 'value');
+    expect(valueField?.suffix).toBe('%');
+    component.onCouponFormChange({ ...component.couponForm(), kind: 'amount' });
+    harness.fixture.detectChanges();
+    expect(component.couponFields().find((field) => field.key === 'value')?.suffix).toBe('€');
 
     component.onCouponSubmit({
       kind: 'amount',

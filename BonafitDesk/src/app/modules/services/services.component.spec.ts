@@ -58,24 +58,39 @@ describe('ServicesComponent', () => {
     expect(text).toContain('pack-10');
     expect(text).toContain('Masaje');
     expect(fixture.nativeElement.querySelector('app-bona-grid')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.page-toolbar')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.bona-grid__filter-row')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.bona-grid__pager')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.page-toolbar')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.bona-grid__filter-row')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.bona-grid__pager')).toBeNull();
+    expect(catalogNames(fixture)).toEqual([
+      'Entrenamiento personal',
+      'pack-5',
+      'pack-10',
+      'Hipopresivos',
+      'pack-8',
+      'Masaje',
+      'sesion-suelta',
+    ]);
   });
 
-  it('filters catalog rows by column content without requiring equality', () => {
-    const nameFilter = fixture.nativeElement.querySelector(
-      '.services-catalog__list .bona-grid__table .bona-grid__filter',
-    ) as HTMLInputElement;
-    nameFilter.value = 'ck-8';
-    nameFilter.dispatchEvent(new Event('input'));
+  it('keeps the matching service and all of its packs when searching', () => {
+    fixture.componentInstance.onSearch('ck-8');
     fixture.detectChanges();
 
-    const text = fixture.nativeElement.textContent as string;
+    let text = fixture.nativeElement.textContent as string;
     expect(text).toContain('pack-8');
+    expect(text).toContain('Hipopresivos');
     expect(text).not.toContain('pack-10');
     expect(text).not.toContain('pack-5');
     expect(text).not.toContain('Entrenamiento personal');
+    expect(text).not.toContain('Masaje');
+
+    fixture.componentInstance.onSearch('pack-10');
+    fixture.detectChanges();
+    text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Entrenamiento personal');
+    expect(text).toContain('pack-5');
+    expect(text).toContain('pack-10');
+    expect(text).not.toContain('Hipopresivos');
     expect(text).not.toContain('Masaje');
   });
 
@@ -126,6 +141,19 @@ describe('ServicesComponent', () => {
     expect(payload.i18n?.['name']?.['en']).toBe('Pilates');
     expect(payload.durationMinutes).toBe(60);
     expect(payload.sharesSessionPool).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.services-catalog__editor')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.services-catalog--detail')).toBeNull();
+  });
+
+  it('puts close next to the editor title', () => {
+    fixture.componentInstance.onCreateService();
+    fixture.detectChanges();
+
+    const pageActions = fixture.nativeElement.querySelector('.bona-page__actions') as HTMLElement;
+    expect(pageActions.textContent).not.toContain(SERVICES_LITERALS.close);
+    expect(fixture.nativeElement.querySelector('.services-catalog__editor-header')?.textContent).toContain(
+      SERVICES_LITERALS.close,
+    );
   });
 
   it('shows percent or euro on the sale value field', () => {
@@ -203,4 +231,10 @@ function submitNewService(fixture: ComponentFixture<ServicesComponent>): void {
 
 function saleValueField(fixture: ComponentFixture<ServicesComponent>): HTMLElement | null {
   return fixture.nativeElement.querySelector('[data-field-key="saleValue"]')?.closest('app-bona-field') ?? null;
+}
+
+function catalogNames(fixture: ComponentFixture<ServicesComponent>): string[] {
+  return [...fixture.nativeElement.querySelectorAll('.services-catalog__list tbody tr td:first-of-type')].map((cell) =>
+    (cell.textContent ?? '').trim(),
+  );
 }

@@ -1,8 +1,4 @@
 <app-bona-page [title]="literals.title" [subtitle]="literals.subtitleAdmin" [loading]="loading()">
-  @if (error()) {
-    <p class="settings-error">{{ error() }}</p>
-  }
-
   <section class="settings-section">
     <h2>{{ literals.accountTitle }}</h2>
     <dl class="settings-account">

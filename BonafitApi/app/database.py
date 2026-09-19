@@ -23,10 +23,7 @@ class Database:
         else:
             self._engine = create_engine(db_url, pool_pre_ping=True)
         self._session_factory = sessionmaker(bind=self._engine, autoflush=False, autocommit=False)
-        _ensure_appointment_notes(self._engine)
-        _ensure_trainer_concurrent_capacity(self._engine)
-        _ensure_user_language(self._engine)
-        _ensure_catalog_i18n(self._engine)
+        _ensure_runtime_schema(self._engine)
 
     @property
     def engine(self) -> Engine:
@@ -37,10 +34,7 @@ class Database:
 
         Base.metadata.create_all(self._engine)
         _flatten_legacy_categories(self._engine)
-        _ensure_appointment_notes(self._engine)
-        _ensure_trainer_concurrent_capacity(self._engine)
-        _ensure_user_language(self._engine)
-        _ensure_catalog_i18n(self._engine)
+        _ensure_runtime_schema(self._engine)
 
     def clear_tables(self) -> None:
         import app.models  # noqa: F401
@@ -208,5 +202,64 @@ def _ensure_catalog_i18n(engine: Engine) -> None:
             connection.execute(
                 text(f"ALTER TABLE {table} ADD COLUMN {column} {json_type} NOT NULL DEFAULT {default}")
             )
+
+
+def _ensure_runtime_schema(engine: Engine) -> None:
+    import app.models  # noqa: F401
+
+    Base.metadata.create_all(engine)
+    _ensure_appointment_notes(engine)
+    _ensure_trainer_concurrent_capacity(engine)
+    _ensure_user_language(engine)
+    _ensure_catalog_i18n(engine)
+    _ensure_service_sale(engine)
+    _ensure_client_bono_pricing(engine)
+
+
+def _ensure_service_sale(engine: Engine) -> None:
+    inspector = inspect(engine)
+    if "services" not in inspector.get_table_names():
+        return
+    columns = {column["name"] for column in inspector.get_columns("services")}
+    statements: list[str] = []
+    if "sale_kind" not in columns:
+        statements.append("ALTER TABLE services ADD COLUMN sale_kind VARCHAR(20) NOT NULL DEFAULT 'none'")
+    if "sale_value" not in columns:
+        statements.append("ALTER TABLE services ADD COLUMN sale_value NUMERIC(10, 2) NOT NULL DEFAULT 0")
+    if not statements:
+        return
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
+def _ensure_client_bono_pricing(engine: Engine) -> None:
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    if "client_bonos" not in tables:
+        return
+    dialect = engine.dialect.name
+    false_sql = "FALSE" if dialect == "postgresql" else "0"
+    columns = {column["name"] for column in inspector.get_columns("client_bonos")}
+    statements: list[str] = []
+    if "is_gift" not in columns:
+        statements.append(
+            f"ALTER TABLE client_bonos ADD COLUMN is_gift BOOLEAN NOT NULL DEFAULT {false_sql}"
+        )
+    if "list_price" not in columns:
+        statements.append("ALTER TABLE client_bonos ADD COLUMN list_price NUMERIC(10, 2)")
+    if "paid_price" not in columns:
+        statements.append("ALTER TABLE client_bonos ADD COLUMN paid_price NUMERIC(10, 2)")
+    if "coupon_id" not in columns:
+        coupon_sql = "ALTER TABLE client_bonos ADD COLUMN coupon_id VARCHAR(36)"
+        if "client_coupons" in tables:
+            coupon_sql += " REFERENCES client_coupons(id)"
+        statements.append(coupon_sql)
+    if not statements:
+        return
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
 
 

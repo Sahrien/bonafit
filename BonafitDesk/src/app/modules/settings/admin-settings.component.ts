@@ -54,7 +54,6 @@ export class AdminSettingsComponent {
     return this.i18n();
   }
   readonly loading = signal(true);
-  readonly error = signal('');
   readonly userName = this.authSession.userName;
   readonly userEmail = this.authSession.userEmail;
   readonly bookingForm = signal<BonaFormValue>({
@@ -146,7 +145,7 @@ export class AdminSettingsComponent {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set(this.literals.errorSave);
+          this.toast.error(this.literals.errorLoad);
           this.loading.set(false);
         },
       });
@@ -200,10 +199,9 @@ export class AdminSettingsComponent {
     const nextDayCutoffTime = (value['nextDayCutoffTime'] ?? '').trim();
     const defaultLocation = (value['defaultLocation'] ?? '').trim();
     if (!nextDayCutoffTime || !defaultLocation) {
-      this.error.set(this.literals.errorRequired);
+      this.toast.error(this.literals.errorRequired);
       return;
     }
-    this.error.set('');
     this.calendarApi
       .updateBookingSettings({ nextDayCutoffTime, defaultLocation })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -224,7 +222,6 @@ export class AdminSettingsComponent {
     if (!payload) {
       return;
     }
-    this.error.set('');
     concat(...this.brandSaveOps(payload))
       .pipe(last(), takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -303,7 +300,7 @@ export class AdminSettingsComponent {
     const accentHex = this.normalizeHex(this.accentHex());
     const surfaceHex = this.normalizeHex(this.surfaceHex());
     if (!studioName || !primaryHex || !accentHex || !surfaceHex) {
-      this.error.set(!studioName ? this.literals.errorRequired : this.literals.errorColor);
+      this.toast.error(!studioName ? this.literals.errorRequired : this.literals.errorColor);
       return null;
     }
     return { studioName, slogan, primaryHex, accentHex, surfaceHex, colorScheme };

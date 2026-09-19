@@ -1,3 +1,32 @@
+.page-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--bona-space-3);
+  margin-bottom: var(--bona-space-3);
+}
+
+.page-toolbar__search {
+  flex: 1 1 16rem;
+  max-width: 22rem;
+}
+
+.page-toolbar__sort {
+  flex: 0 1 14rem;
+}
+
+.services-catalog__pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--bona-space-2);
+  min-height: 3.5rem;
+  padding: var(--bona-space-3) 0;
+  color: var(--bona-color-text-muted);
+  font-size: 0.875rem;
+}
+
 .page-error {
   margin: 0 0 var(--bona-space-3);
   color: var(--bona-color-danger);
@@ -18,20 +47,28 @@
   border: 1px solid var(--bona-color-border);
   border-radius: var(--bona-radius-lg);
   box-shadow: var(--bona-shadow-card);
+}
 
-  h2,
-  h3,
-  h4 {
-    margin: 0 0 var(--bona-space-3);
-  }
+.services-catalog__editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bona-space-3);
+  margin-bottom: var(--bona-space-3);
 
   h2 {
+    margin: 0;
     font-size: 1.125rem;
   }
+}
 
-  h3 {
-    font-size: 1rem;
-  }
+.services-catalog__editor h3,
+.services-catalog__editor h4 {
+  margin: 0 0 var(--bona-space-3);
+}
+
+.services-catalog__editor h3 {
+  font-size: 1rem;
 }
 
 .page-nested {
