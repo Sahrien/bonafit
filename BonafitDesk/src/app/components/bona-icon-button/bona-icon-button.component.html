@@ -1,0 +1,8 @@
+<button
+  mat-icon-button
+  type="button"
+  [disabled]="disabled()"
+  [attr.aria-label]="label()"
+  (click)="onClick()">
+  <mat-icon>{{ icon() }}</mat-icon>
+</button>

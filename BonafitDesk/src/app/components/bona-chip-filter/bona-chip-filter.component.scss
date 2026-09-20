@@ -1,0 +1,32 @@
+:host {
+  display: block;
+}
+
+.bona-chip-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bona-space-1);
+  padding: var(--bona-space-1);
+  background: var(--bona-color-nested);
+  border-radius: var(--bona-radius-md);
+}
+
+.bona-chip-filter__chip {
+  appearance: none;
+  min-height: 1.75rem;
+  padding: 0.125rem 0.625rem;
+  border: 0;
+  border-radius: var(--bona-radius-sm);
+  background: transparent;
+  color: var(--bona-color-text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  cursor: pointer;
+
+  &.is-active {
+    background: var(--bona-color-surface);
+    color: var(--bona-color-primary);
+    font-weight: 600;
+  }
+}

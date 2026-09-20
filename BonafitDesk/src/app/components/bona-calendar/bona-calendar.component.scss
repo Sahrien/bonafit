@@ -4,10 +4,8 @@
 
 .bona-calendar {
   min-height: 480px;
-  padding: var(--bona-space-4);
-  background: var(--bona-color-surface);
-  border: 1px solid var(--bona-color-border);
-  border-radius: var(--bona-radius-lg);
+  padding: 0;
+  background: transparent;
   font-family: var(--bona-font-family);
   color: var(--bona-color-text);
   --fc-page-bg-color: var(--bona-color-surface);

@@ -5,6 +5,8 @@ export interface BonaTabItem {
   label: string;
 }
 
+export type BonaTabsVariant = 'underline' | 'segmented';
+
 @Component({
   selector: 'app-bona-tabs',
   standalone: true,
@@ -16,6 +18,7 @@ export class BonaTabsComponent {
   readonly tabs = input<BonaTabItem[]>([]);
   readonly active = input('');
   readonly label = input('');
+  readonly variant = input<BonaTabsVariant>('underline');
   readonly activeChange = output<string>();
 
   onSelect(id: string): void {

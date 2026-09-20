@@ -1,0 +1,70 @@
+:host {
+  display: block;
+}
+
+.bona-board {
+  display: flex;
+  gap: var(--bona-space-3);
+  overflow-x: auto;
+  padding-bottom: var(--bona-space-2);
+}
+
+.bona-board__column {
+  flex: 1 1 16rem;
+  min-width: 16rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bona-space-2);
+  padding: 0;
+  background: transparent;
+}
+
+.bona-board__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--bona-space-2);
+
+  h2 {
+    margin: 0;
+    font-size: 0.9375rem;
+  }
+}
+
+.bona-board__count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--bona-color-text-muted);
+}
+
+.bona-board__empty {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--bona-color-text-muted);
+}
+
+.bona-board__card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  width: 100%;
+  padding: var(--bona-space-3);
+  border: 0;
+  border-radius: var(--bona-radius-md);
+  background: var(--bona-color-nested);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+
+  strong {
+    font-weight: 600;
+  }
+
+  span {
+    font-size: 0.8125rem;
+    color: var(--bona-color-text-muted);
+  }
+}

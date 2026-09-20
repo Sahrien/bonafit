@@ -1,4 +1,8 @@
-<div class="bona-tabs" role="tablist" [attr.aria-label]="label() || null">
+<div
+  class="bona-tabs"
+  [class.bona-tabs--segmented]="variant() === 'segmented'"
+  role="tablist"
+  [attr.aria-label]="label() || null">
   @for (tab of tabs(); track tab.id) {
     <button
       type="button"

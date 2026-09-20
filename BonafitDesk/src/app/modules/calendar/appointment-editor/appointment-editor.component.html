@@ -1,0 +1,55 @@
+<app-bona-dialog-layout [title]="editorTitle()">
+  <app-bona-form
+    [fields]="appointmentFields()"
+    [value]="formValue()"
+    [showSubmit]="false"
+    actionsAlign="start"
+    (valueChange)="onFormChange($event)"
+    (submitted)="onSubmit($event)">
+    <div bonaFormActions class="appointment-editor__more">
+      <app-bona-button
+        [text]="moreOpen() ? literals.hideOptions : literals.moreOptions"
+        variant="secondary"
+        (action)="onToggleMore()" />
+    </div>
+  </app-bona-form>
+  <div bonaDialogActions class="appointment-editor__actions">
+    @if (selectedClientId()) {
+      <app-bona-button
+        [text]="literals.viewClient"
+        variant="secondary"
+        (action)="onOpenClient()" />
+    }
+    @if (editingId() && currentStatus() === 'pending') {
+      <app-bona-button [text]="literals.confirm" (action)="onConfirm()" />
+    }
+    @if (editingId() && currentStatus() === 'confirmed') {
+      <app-bona-button [text]="literals.complete" (action)="onComplete()" />
+    }
+    @if (editingId() && canCancel()) {
+      <button
+        mat-icon-button
+        type="button"
+        [matMenuTriggerFor]="statusMenu"
+        [attr.aria-label]="literals.moreActions">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #statusMenu="matMenu">
+        @if (currentStatus() === 'pending') {
+          <button mat-menu-item type="button" (click)="onComplete()">
+            {{ literals.complete }}
+          </button>
+        }
+        <button mat-menu-item type="button" (click)="onCancelAppointment()">
+          {{ literals.cancelAppointment }}
+        </button>
+      </mat-menu>
+    }
+    <span class="appointment-editor__spacer"></span>
+    <app-bona-button
+      [text]="literals.closeEditor"
+      variant="secondary"
+      (action)="onClose()" />
+    <app-bona-button [text]="literals.save" (action)="onSubmit(formValue())" />
+  </div>
+</app-bona-dialog-layout>

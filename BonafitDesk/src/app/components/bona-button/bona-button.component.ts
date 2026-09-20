@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 
-export type BonaButtonVariant = 'primary' | 'secondary';
+export type BonaButtonVariant = 'primary' | 'secondary' | 'ghost';
 export type BonaButtonType = 'button' | 'submit' | 'reset';
 
 @Component({

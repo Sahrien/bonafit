@@ -32,4 +32,11 @@ describe('BonaTabsComponent', () => {
     const tablist = fixture.nativeElement.querySelector('[role="tablist"]') as HTMLElement;
     expect(tablist.getAttribute('aria-label')).toBe('Vista');
   });
+
+  it('applies the segmented variant class', () => {
+    fixture.componentRef.setInput('variant', 'segmented');
+    fixture.detectChanges();
+    const tablist = fixture.nativeElement.querySelector('[role="tablist"]') as HTMLElement;
+    expect(tablist.classList.contains('bona-tabs--segmented')).toBeTrue();
+  });
 });

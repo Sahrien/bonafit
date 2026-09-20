@@ -6,6 +6,14 @@
     (click)="onClick()">
     {{ text }}
   </button>
+} @else if (variant === 'ghost') {
+  <button
+    mat-button
+    [type]="type"
+    [disabled]="disabled"
+    (click)="onClick()">
+    {{ text }}
+  </button>
 } @else {
   <button
     mat-flat-button

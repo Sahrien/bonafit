@@ -66,6 +66,14 @@ describe('BonaButtonComponent', () => {
     expect(button().className).toContain('mdc-button--unelevated');
   });
 
+  it('renders a text button for the ghost variant', () => {
+    fixture.componentRef.setInput('variant', 'ghost');
+    fixture.detectChanges();
+
+    expect(button().className).not.toContain('mdc-button--outlined');
+    expect(button().className).not.toContain('mdc-button--unelevated');
+  });
+
   function button(): HTMLButtonElement {
     return fixture.nativeElement.querySelector('button');
   }

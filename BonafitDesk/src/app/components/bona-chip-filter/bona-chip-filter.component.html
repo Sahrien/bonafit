@@ -1,0 +1,20 @@
+<div class="bona-chip-filter" role="group" [attr.aria-label]="label() || null">
+  @if (allLabel()) {
+    <button
+      type="button"
+      class="bona-chip-filter__chip"
+      [class.is-active]="allSelected()"
+      (click)="onAll()">
+      {{ allLabel() }}
+    </button>
+  }
+  @for (item of items(); track item.id) {
+    <button
+      type="button"
+      class="bona-chip-filter__chip"
+      [class.is-active]="isActive(item.id)"
+      (click)="onToggle(item.id)">
+      {{ item.label }}
+    </button>
+  }
+</div>

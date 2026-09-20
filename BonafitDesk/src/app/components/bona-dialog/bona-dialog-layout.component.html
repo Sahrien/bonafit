@@ -1,0 +1,13 @@
+<div class="bona-dialog-layout">
+  @if (title()) {
+    <header class="bona-dialog-layout__header">
+      <h2>{{ title() }}</h2>
+    </header>
+  }
+  <div class="bona-dialog-layout__body">
+    <ng-content />
+  </div>
+  <div class="bona-dialog-layout__actions">
+    <ng-content select="[bonaDialogActions]" />
+  </div>
+</div>

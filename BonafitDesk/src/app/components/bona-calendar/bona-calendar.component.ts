@@ -12,7 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
-import { CalendarOptions, DateSelectArg, EventClickArg, EventInput } from '@fullcalendar/core';
+import { CalendarOptions, DateSelectArg, EventClickArg, EventDropArg, EventInput } from '@fullcalendar/core';
 import esLocale from '@fullcalendar/core/locales/es';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -31,11 +31,19 @@ export interface BonaCalendarEvent {
   color?: string;
   classNames?: string[];
   interactive?: boolean;
+  startEditable?: boolean;
 }
 
 export interface BonaCalendarSlotSelect {
   start: Date;
   end: Date;
+}
+
+export interface BonaCalendarEventDrop {
+  event: BonaCalendarEvent;
+  start: Date;
+  end: Date | null;
+  revert: () => void;
 }
 
 export function toFullCalendarEvent(event: BonaCalendarEvent): EventInput {
@@ -57,6 +65,9 @@ export function toFullCalendarEvent(event: BonaCalendarEvent): EventInput {
   };
   if (typeof event.interactive === 'boolean') {
     mapped.interactive = event.interactive;
+  }
+  if (typeof event.startEditable === 'boolean') {
+    mapped.startEditable = event.startEditable;
   }
   return mapped;
 }
@@ -109,11 +120,13 @@ export class BonaCalendarComponent {
   readonly events = input<BonaCalendarEvent[]>([]);
   readonly locale = input('es');
   readonly selectable = input(true);
+  readonly editable = input(false);
   readonly showHeader = input(true);
   readonly focusDate = input<Date | undefined>();
 
   readonly eventClick = output<BonaCalendarEvent>();
   readonly slotSelect = output<BonaCalendarSlotSelect>();
+  readonly eventDrop = output<BonaCalendarEventDrop>();
 
   readonly calendarOptions = computed<CalendarOptions>(() => ({
     plugins: [timeGridPlugin, interactionPlugin],
@@ -128,6 +141,8 @@ export class BonaCalendarComponent {
       : false,
     events: this.events().map(toFullCalendarEvent),
     selectable: this.selectable(),
+    editable: this.editable(),
+    eventDurationEditable: false,
     selectMirror: true,
     selectOverlap: true,
     eventOverlap: true,
@@ -150,6 +165,20 @@ export class BonaCalendarComponent {
     select: (info: DateSelectArg) => {
       this.slotSelect.emit({ start: info.start, end: info.end });
       info.view.calendar.unselect();
+    },
+    eventDrop: (info: EventDropArg) => {
+      this.eventDrop.emit({
+        event: fromFullCalendarEvent({
+          id: info.event.id,
+          title: info.event.title,
+          start: info.event.start,
+          end: info.event.end,
+          extendedProps: info.event.extendedProps,
+        }),
+        start: info.event.start ?? info.oldEvent.start ?? new Date(),
+        end: info.event.end,
+        revert: () => info.revert(),
+      });
     },
   }));
 

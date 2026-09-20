@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Calendar, DateSelectArg, EventClickArg } from '@fullcalendar/core';
+import { Calendar, DateSelectArg, EventClickArg, EventDropArg } from '@fullcalendar/core';
 import {
   BonaCalendarComponent,
   BonaCalendarEvent,
@@ -43,6 +43,11 @@ describe('BonaCalendarComponent', () => {
     it('maps interactive true without treating undefined as false', () => {
       const mapped = toFullCalendarEvent({ ...sample, interactive: true });
       expect(mapped.interactive).toBeTrue();
+    });
+
+    it('maps startEditable so completed events can stay locked', () => {
+      const mapped = toFullCalendarEvent({ ...sample, startEditable: false });
+      expect(mapped.startEditable).toBeFalse();
     });
 
     it('maps cancelled appointments as non-interactive so the slot stays selectable', () => {
@@ -119,6 +124,42 @@ describe('BonaCalendarComponent', () => {
       } as unknown as EventClickArg);
 
       expect(spy).toHaveBeenCalledWith(sample);
+    });
+
+    it('enables drag without resize when editable is true', () => {
+      fixture.componentRef.setInput('editable', true);
+      fixture.detectChanges();
+      const options = component.calendarOptions();
+      expect(options.editable).toBeTrue();
+      expect(options.eventDurationEditable).toBeFalse();
+    });
+
+    it('emits eventDrop with revert', () => {
+      const spy = jasmine.createSpy('eventDrop');
+      component.eventDrop.subscribe(spy);
+      const revert = jasmine.createSpy('revert');
+      const start = new Date(sample.start);
+      const end = new Date(String(sample.end));
+      component.calendarOptions().eventDrop?.({
+        event: {
+          id: sample.id,
+          title: sample.title,
+          start,
+          end,
+          extendedProps: { source: sample },
+        },
+        oldEvent: { start, end },
+        revert,
+      } as unknown as EventDropArg);
+      expect(spy).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          event: sample,
+          start,
+          end,
+        }),
+      );
+      spy.calls.mostRecent().args[0].revert();
+      expect(revert).toHaveBeenCalled();
     });
 
     it('emits slotSelect for a chosen time range', () => {

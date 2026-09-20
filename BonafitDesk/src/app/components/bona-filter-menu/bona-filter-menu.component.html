@@ -1,0 +1,36 @@
+<button
+  type="button"
+  class="bona-filter-menu__trigger"
+  [class.is-active]="!allSelected()"
+  [matMenuTriggerFor]="menu"
+  [attr.aria-label]="label()">
+  <span>{{ triggerLabel() }}</span>
+  <mat-icon>arrow_drop_down</mat-icon>
+</button>
+<mat-menu #menu="matMenu" class="bona-filter-menu-panel">
+  <div class="bona-filter-menu__body" (click)="keepMenu($event)">
+    <label class="bona-filter-menu__search">
+      <span class="bona-filter-menu__search-label">{{ searchLabel() }}</span>
+      <input
+        type="search"
+        [attr.aria-label]="searchLabel()"
+        [placeholder]="searchLabel()"
+        [value]="query()"
+        (input)="onQueryInput($event)" />
+    </label>
+    <button type="button" class="bona-filter-menu__option" [class.is-active]="allSelected()" (click)="onAll()">
+      {{ allLabel() }}
+    </button>
+    @for (item of visibleItems(); track item.id) {
+      <button
+        type="button"
+        class="bona-filter-menu__option"
+        [class.is-active]="isActive(item.id)"
+        (click)="onToggle(item.id)">
+        {{ item.label }}
+      </button>
+    } @empty {
+      <p class="bona-filter-menu__empty">{{ emptyLabel() }}</p>
+    }
+  </div>
+</mat-menu>

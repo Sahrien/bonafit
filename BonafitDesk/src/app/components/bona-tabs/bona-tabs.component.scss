@@ -10,6 +10,13 @@
   border-bottom: 1px solid var(--bona-color-border);
 }
 
+.bona-tabs--segmented {
+  margin-bottom: 0;
+  padding: 0;
+  border-bottom: 0;
+  width: fit-content;
+}
+
 .bona-tabs__tab {
   appearance: none;
   border: 0;
@@ -26,4 +33,16 @@
   color: var(--bona-color-primary);
   border-bottom-color: var(--bona-color-primary);
   font-weight: 600;
+}
+
+.bona-tabs--segmented .bona-tabs__tab {
+  margin-bottom: 0;
+  padding: 0.375rem 0.75rem;
+  border-bottom: 0;
+  border-radius: var(--bona-radius-sm);
+  font-size: 0.875rem;
+}
+
+.bona-tabs--segmented .bona-tabs__tab--active {
+  color: var(--bona-color-primary);
 }

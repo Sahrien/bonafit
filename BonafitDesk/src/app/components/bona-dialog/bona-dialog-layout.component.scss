@@ -1,0 +1,46 @@
+:host {
+  display: block;
+}
+
+.bona-dialog-layout {
+  display: flex;
+  flex-direction: column;
+  min-width: min(32rem, 100%);
+  max-height: min(40rem, calc(100vh - 4rem));
+}
+
+.bona-dialog-layout__header {
+  padding: var(--bona-space-4) var(--bona-space-4) 0;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.bona-dialog-layout__body {
+  padding: var(--bona-space-4);
+  overflow: auto;
+}
+
+.bona-dialog-layout__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--bona-space-2);
+  padding: 0 var(--bona-space-4) var(--bona-space-4);
+  border-top: 1px solid var(--bona-color-border);
+  padding-top: var(--bona-space-3);
+
+  &:not(:has(*)) {
+    display: none;
+  }
+}
+
+@media (max-width: 48rem) {
+  .bona-dialog-layout {
+    max-height: 100%;
+    min-height: 100%;
+  }
+}

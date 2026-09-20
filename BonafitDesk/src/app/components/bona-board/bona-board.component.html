@@ -1,0 +1,21 @@
+<div class="bona-board">
+  @for (column of columns(); track column.id) {
+    <section class="bona-board__column" [attr.aria-label]="column.label">
+      <header class="bona-board__header">
+        <h2>{{ column.label }}</h2>
+        <span class="bona-board__count">{{ itemsFor(column.id).length }}</span>
+      </header>
+      @if (itemsFor(column.id).length === 0) {
+        <p class="bona-board__empty">{{ emptyLabel() }}</p>
+      }
+      @for (item of itemsFor(column.id); track item.id) {
+        <button type="button" class="bona-board__card" (click)="itemClick.emit(item)">
+          <strong>{{ item.title }}</strong>
+          @if (item.subtitle) {
+            <span>{{ item.subtitle }}</span>
+          }
+        </button>
+      }
+    </section>
+  }
+</div>

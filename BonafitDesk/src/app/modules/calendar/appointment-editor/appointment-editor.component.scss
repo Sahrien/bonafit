@@ -1,0 +1,15 @@
+.appointment-editor__more {
+  width: 100%;
+}
+
+.appointment-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bona-space-2);
+  width: 100%;
+}
+
+.appointment-editor__spacer {
+  flex: 1 1 0.5rem;
+}
