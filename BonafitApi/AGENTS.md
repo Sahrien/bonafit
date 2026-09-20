@@ -25,6 +25,7 @@ app/routers/         # thin HTTP adapters
 scripts/create_db.py # create tables from models
 scripts/seed.py      # demo data if trainer-1 is missing; --force wipes after RESET
 scripts/create_user.py
+scripts/start.py     # uvicorn without reload (uv run start; PORT from .env)
 tests/               # pytest (provider override, no DB required for container tests)
 ```
 
@@ -44,6 +45,7 @@ uv run seed                 # optional demo data (no-op if already seeded)
 uv run seed --force         # wipe all rows; type RESET to confirm, then reseed
 uv run create-user EMAIL [--role admin|client] [--name "Display Name"]
 uv run uvicorn app.main:app --reload --port 8080
+uv run start                # uvicorn, no reload (host 0.0.0.0, PORT from .env, default 8080)
 uv run pytest
 ```
 

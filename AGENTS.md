@@ -1,12 +1,13 @@
 # Bonafit — agent notes
 
-Three independent apps for a personal-training studio. There is no npm/pnpm workspace and no shared Python package. Work in the package that owns the change; read that package’s `AGENTS.md` before editing.
+Three independent apps for a personal-training studio, plus a deploy CLI. There is no npm/pnpm workspace and no shared Python package. Work in the package that owns the change; read that package’s `AGENTS.md` before editing.
 
 | Package | Role | Stack |
 | --- | --- | --- |
 | [BonafitDesk](BonafitDesk/AGENTS.md) | Authenticated product: admin studio + client portal | Angular 19 |
 | [BonafitApi](BonafitApi/AGENTS.md) | JSON API + PostgreSQL for Desk | FastAPI |
 | [Webonafit](Webonafit/AGENTS.md) | Public marketing site | Angular 19 |
+| [BonafitDeploy](BonafitDeploy/AGENTS.md) | Local build + FTP deploy CLI | Python / uv |
 
 `docs/TARIFA.ods` is commercial pricing reference, not runtime config.
 
@@ -15,6 +16,7 @@ Three independent apps for a personal-training studio. There is no npm/pnpm work
 - Admin calendar, clients, services/bonos, forms, or client portal → **BonafitDesk**, and **BonafitApi** if the contract or persistence changes.
 - Public landing, brand, or contact page → **Webonafit** only. Do not import Desk `bona-*` components. Webonafit may `GET /branding` from BonafitApi for studio colors, name, slogan, and logo.
 - Database, auth tokens, booking rules on the server, SMTP → **BonafitApi**.
+- FTP/SSH deploy of Desk, API, or Webonafit → **BonafitDeploy**.
 
 Keep Desk and API DTO/JSON shapes in lockstep (camelCase). Booking rules exist in both `BonafitDesk/src/app/core/booking.ts` and `BonafitApi/app/booking.py`; change them together.
 
@@ -44,9 +46,21 @@ cd Webonafit && npm test
 cd BonafitApi && docker compose up -d
 cd BonafitApi && uv sync && uv run create-db && uv run seed
 cd BonafitApi && uv run uvicorn app.main:app --reload --port 8080
+cd BonafitApi && uv run start  # no reload; PORT from .env (default 8080)
 ```
 
 Desk talks to BonafitApi at `environment.apiUrl` (dev: `http://localhost:8080`). Login is `{ email, password }`; send `Authorization: Bearer <token>` on other routes.
+
+```bash
+# BonafitDeploy (from BonafitDeploy/; copy .env.example → .env first)
+cd BonafitDeploy && uv sync
+uv run deploy frontend
+uv run deploy backend --dev --skip-tests
+uv run deploy web
+uv run deploy all
+```
+
+`--dev` uses the development FTP/SSH user. Remote paths are the same as production. App tests run unless `--skip-tests`.
 
 ## Do not
 

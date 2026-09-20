@@ -23,6 +23,7 @@ dependencies = [
 create-db = "scripts.create_db:main"
 seed = "scripts.seed:main"
 create-user = "scripts.create_user:main"
+start = "scripts.start:main"
 
 [build-system]
 requires = ["hatchling"]

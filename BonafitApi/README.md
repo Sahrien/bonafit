@@ -19,6 +19,7 @@ uv run create-db
 uv run seed
 uv run seed --force   # type RESET to wipe all rows and reseed
 uv run uvicorn app.main:app --reload --port 8080
+uv run start          # no reload; listens on PORT from .env (default 8080)
 ```
 
 Create a login without the demo seed:
@@ -30,7 +31,8 @@ uv run create-user you@example.com --role admin --name "Your Name"
 That prints a generated temporary password. Optional: `docker compose up -d` starts a Postgres 16 container with user/db `bonafit` if Docker is installed.
 
 API: `http://localhost:8080`  
-Docs: `http://localhost:8080/docs`
+Docs: `http://localhost:8080/docs`  
+Listen port is `PORT` in `.env` (default `8080`). `uv run start` uses that value; `uvicorn --reload` still needs `--port`.
 
 CORS allows `http://localhost:4200` and `http://127.0.0.1:4200` (and port 4201). Set `CORS_ORIGINS` if Desk is served from another origin.
 
