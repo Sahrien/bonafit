@@ -1,143 +1,61 @@
 <app-bona-page [title]="literals.title" [subtitle]="literals.subtitle" [loading]="loading()">
-  <app-bona-button
+  <app-bona-tabs
     bonaPageActions
-    variant="secondary"
-    [attr.aria-pressed]="capacityOpen()"
-    [text]="literals.capacitySettings"
-    (action)="onToggleCapacity()" />
-  <app-bona-button bonaPageActions [text]="literals.newSchedule" (action)="onCreate()" />
+    variant="segmented"
+    [tabs]="modeTabs()"
+    [active]="activeMode()"
+    [label]="literals.modeLabel"
+    (activeChange)="onMode($event)" />
 
-  @if (error() && !formOpen() && !capacityOpen()) {
+  @if (error()) {
     <p class="page-error">{{ error() }}</p>
   }
 
-  @if (capacityOpen()) {
-    <section class="page-section page-section--save schedules-capacity" [attr.aria-label]="literals.capacityTitle">
-      <h2>{{ literals.capacityTitle }}</h2>
-      <p>{{ literals.capacityHint }}</p>
-      @if (error()) {
-        <p class="page-error">{{ error() }}</p>
-      }
-      <ul class="schedules-capacity__trainers">
-        @for (trainer of catalogTrainers(); track trainer.id) {
-          <li
-            class="schedules-capacity__trainer"
-            [class.schedules-capacity__trainer--open]="isTrainerOpen(trainer.id)">
-            <button
-              type="button"
-              class="schedules-capacity__trainer-toggle"
-              [attr.aria-expanded]="isTrainerOpen(trainer.id)"
-              [attr.aria-label]="
-                isTrainerOpen(trainer.id) ? literals.hideTrainerCapacity : literals.showTrainerCapacity
-              "
-              (click)="onToggleTrainer(trainer.id)">
-              <span>{{ trainer.name }}</span>
-              <span class="schedules-capacity__value">{{ capacityDraft(trainer) }}</span>
-              <mat-icon class="schedules-capacity__icon" aria-hidden="true">expand_more</mat-icon>
-            </button>
-            @if (isTrainerOpen(trainer.id)) {
-              <app-bona-field
-                class="schedules-capacity__field"
-                [definition]="capacityField()"
-                [value]="capacityDraft(trainer)"
-                (valueChange)="onCapacityDraftChange(trainer.id, $event)" />
-            }
-          </li>
-        }
-      </ul>
-      <div class="page-section__save">
-        <app-bona-button
-          [text]="literals.cancel"
-          variant="secondary"
-          (action)="onCloseCapacity()" />
-        <app-bona-button [text]="literals.save" (action)="onSaveCapacities()" />
-      </div>
-    </section>
-  }
-
-    @if (formOpen()) {
-      <section class="page-section page-section--save" [attr.aria-label]="scheduleFormTitle()">
-      <h2>{{ scheduleFormTitle() }}</h2>
-      @if (error()) {
-        <p class="page-error">{{ error() }}</p>
-      }
-      <app-bona-form
-        [fields]="formFields()"
-        [value]="formValue()"
-        [showSubmit]="false"
-        actionsAlign="start"
-        (valueChange)="onFormChange($event)"
-        (submitted)="onSave($event)" />
-      <div class="page-section__save">
-        <app-bona-button
-          [text]="literals.cancel"
-          variant="secondary"
-          (action)="onCancel()" />
-        <app-bona-button [text]="literals.save" (action)="onSave(formValue())" />
-      </div>
-    </section>
-  }
-
-  @if (trainerGroups().length === 0) {
-    <div class="schedules-empty">
-      <p class="schedules-empty__title">{{ literals.emptyTitle }}</p>
-      <p class="schedules-empty__message">{{ literals.empty }}</p>
-      <app-bona-button [text]="literals.newSchedule" (action)="onCreate()" />
+  @if (activeMode() === 'estudio') {
+    <div class="schedules-hours">
+      <app-bona-summary-card [kicker]="literals.hoursTotal" [title]="hoursLabel(hours().totalMinutes)" />
+      <app-bona-summary-card [kicker]="literals.hoursAverage" [title]="hoursLabel(hours().averageMinutesPerDay)" />
     </div>
-  } @else {
-    <ul class="schedules-list">
-      @for (group of trainerGroups(); track group.trainerId) {
-        <li
-          class="schedules-list__trainer"
-          [class.schedules-list__trainer--open]="isScheduleTrainerOpen(group.trainerId)">
-          <button
-            type="button"
-            class="schedules-list__trainer-toggle"
-            [attr.aria-expanded]="isScheduleTrainerOpen(group.trainerId)"
-            [attr.aria-label]="
-              isScheduleTrainerOpen(group.trainerId)
-                ? literals.hideTrainerSchedule
-                : literals.showTrainerSchedule
-            "
-            (click)="onToggleScheduleTrainer(group.trainerId)">
-            <span>{{ group.trainerName }}</span>
-            <span class="schedules-list__count">{{ slotCountLabel(group.slotCount) }}</span>
-            <mat-icon class="schedules-list__icon" aria-hidden="true">expand_more</mat-icon>
-          </button>
-          @if (isScheduleTrainerOpen(group.trainerId)) {
-            <div class="schedules-list__days">
-              @for (day of group.days; track day.weekday) {
-                <section class="schedules-list__day">
-                  <h3>{{ day.weekdayLabel }}</h3>
-                  <ul class="schedules-list__slots">
-                    @for (slot of day.slots; track slot.id) {
-                      <li class="schedules-list__slot">
-                        <span class="schedules-list__time">{{ slot.startTime }} – {{ slot.endTime }}</span>
-                        <div class="schedules-list__slot-actions">
-                          <button
-                            type="button"
-                            class="schedules-list__action"
-                            [attr.aria-label]="literals.edit"
-                            (click)="onEdit(slot.id)">
-                            <mat-icon aria-hidden="true">edit</mat-icon>
-                          </button>
-                          <button
-                            type="button"
-                            class="schedules-list__action schedules-list__action--danger"
-                            [attr.aria-label]="literals.delete"
-                            (click)="onDelete(slot.id)">
-                            <mat-icon aria-hidden="true">delete</mat-icon>
-                          </button>
-                        </div>
-                      </li>
-                    }
-                  </ul>
-                </section>
-              }
-            </div>
-          }
-        </li>
-      }
-    </ul>
   }
+
+  <div class="calendar-toolbar">
+    <div class="calendar-toolbar__when">
+      <app-bona-button [text]="literals.periodToday" variant="ghost" (action)="onFocusToday()" />
+      <app-bona-icon-button icon="chevron_left" [label]="literals.periodPrev" (action)="onPrevPeriod()" />
+      <strong>{{ periodTitle() }}</strong>
+      <app-bona-icon-button icon="chevron_right" [label]="literals.periodNext" (action)="onNextPeriod()" />
+    </div>
+    @if (activeMode() === 'estudio' && trainerFilterItems().length > 1) {
+      <app-bona-filter-menu
+        [items]="trainerFilterItems()"
+        [selectedIds]="selectedTrainerIds()"
+        [label]="literals.trainer"
+        [allLabel]="literals.allTrainers"
+        [searchLabel]="literals.filterSearch"
+        [emptyLabel]="literals.filterEmpty"
+        (selectedChange)="onTrainerFilter($event)" />
+    }
+    <div class="calendar-toolbar__views">
+      <app-bona-tabs
+        variant="segmented"
+        [tabs]="viewTabs()"
+        [active]="view()"
+        [label]="literals.thisPeriod"
+        (activeChange)="onView($event)" />
+    </div>
+  </div>
+
+  <app-bona-calendar
+    [view]="view()"
+    [locale]="language.language()"
+    [events]="events()"
+    [editable]="true"
+    [eventDurationEditable]="true"
+    [allDaySlot]="true"
+    [showHeader]="false"
+    [focusDate]="focusDate()"
+    (slotSelect)="onSlotSelect($event)"
+    (eventClick)="onEventClick($event)"
+    (eventDrop)="onEventDrop($event)"
+    (eventResize)="onEventDrop($event)" />
 </app-bona-page>

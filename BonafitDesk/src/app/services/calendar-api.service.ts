@@ -12,6 +12,18 @@ import {
   AvailabilitySlotDto,
 } from '../models/appointment.dto';
 import { BookingSettingsDto, BookingSettingsWriteDto } from '../models/booking-settings.dto';
+import {
+  PublicHolidayDto,
+  PublicHolidayWriteDto,
+  ResolvedDayDto,
+  ScheduleAbsenceDto,
+  ScheduleAbsenceWriteDto,
+  ScheduleDateWindowDto,
+  ScheduleDateWindowWriteDto,
+  ScheduleHoursDto,
+  ScheduleRangeQuery,
+  ScheduleResolvedQuery,
+} from '../models/schedule.dto';
 import { TrainerScheduleDto, TrainerScheduleWriteDto } from '../models/trainer-schedule.dto';
 import { TrainerDto, TrainerWriteDto } from '../models/trainer.dto';
 
@@ -100,5 +112,96 @@ export class CalendarApiService implements CalendarApi {
 
   deleteTrainerSchedule(id: string): Observable<void> {
     return this.http.delete<void>(apiUrl(API_PATHS.trainerSchedules, id));
+  }
+
+  getScheduleDateWindows(query?: ScheduleRangeQuery): Observable<ScheduleDateWindowDto[]> {
+    return this.http.get<ScheduleDateWindowDto[]>(apiUrl(API_PATHS.scheduleDateWindows), {
+      params: toHttpParams({
+        trainerId: query?.trainerId,
+        from: query?.from,
+        to: query?.to,
+      }),
+    });
+  }
+
+  createScheduleDateWindow(payload: ScheduleDateWindowWriteDto): Observable<ScheduleDateWindowDto> {
+    return this.http.post<ScheduleDateWindowDto>(apiUrl(API_PATHS.scheduleDateWindows), payload);
+  }
+
+  updateScheduleDateWindow(
+    id: string,
+    payload: ScheduleDateWindowWriteDto,
+  ): Observable<ScheduleDateWindowDto> {
+    return this.http.put<ScheduleDateWindowDto>(apiUrl(API_PATHS.scheduleDateWindows, id), payload);
+  }
+
+  deleteScheduleDateWindow(id: string): Observable<void> {
+    return this.http.delete<void>(apiUrl(API_PATHS.scheduleDateWindows, id));
+  }
+
+  getScheduleAbsences(query?: ScheduleRangeQuery): Observable<ScheduleAbsenceDto[]> {
+    return this.http.get<ScheduleAbsenceDto[]>(apiUrl(API_PATHS.scheduleAbsences), {
+      params: toHttpParams({
+        trainerId: query?.trainerId,
+        from: query?.from,
+        to: query?.to,
+      }),
+    });
+  }
+
+  createScheduleAbsence(payload: ScheduleAbsenceWriteDto): Observable<ScheduleAbsenceDto> {
+    return this.http.post<ScheduleAbsenceDto>(apiUrl(API_PATHS.scheduleAbsences), payload);
+  }
+
+  updateScheduleAbsence(
+    id: string,
+    payload: ScheduleAbsenceWriteDto,
+  ): Observable<ScheduleAbsenceDto> {
+    return this.http.put<ScheduleAbsenceDto>(apiUrl(API_PATHS.scheduleAbsences, id), payload);
+  }
+
+  deleteScheduleAbsence(id: string): Observable<void> {
+    return this.http.delete<void>(apiUrl(API_PATHS.scheduleAbsences, id));
+  }
+
+  getPublicHolidays(query?: ScheduleRangeQuery): Observable<PublicHolidayDto[]> {
+    return this.http.get<PublicHolidayDto[]>(apiUrl(API_PATHS.publicHolidays), {
+      params: toHttpParams({
+        from: query?.from,
+        to: query?.to,
+      }),
+    });
+  }
+
+  createPublicHoliday(payload: PublicHolidayWriteDto): Observable<PublicHolidayDto> {
+    return this.http.post<PublicHolidayDto>(apiUrl(API_PATHS.publicHolidays), payload);
+  }
+
+  updatePublicHoliday(id: string, payload: PublicHolidayWriteDto): Observable<PublicHolidayDto> {
+    return this.http.put<PublicHolidayDto>(apiUrl(API_PATHS.publicHolidays, id), payload);
+  }
+
+  deletePublicHoliday(id: string): Observable<void> {
+    return this.http.delete<void>(apiUrl(API_PATHS.publicHolidays, id));
+  }
+
+  getResolvedSchedules(query: ScheduleResolvedQuery): Observable<ResolvedDayDto[]> {
+    return this.http.get<ResolvedDayDto[]>(apiUrl(API_PATHS.schedulesResolved), {
+      params: toHttpParams({
+        from: query.from,
+        to: query.to,
+        trainerId: query.trainerId,
+      }),
+    });
+  }
+
+  getScheduleHours(query: ScheduleResolvedQuery): Observable<ScheduleHoursDto> {
+    return this.http.get<ScheduleHoursDto>(apiUrl(API_PATHS.schedulesHours), {
+      params: toHttpParams({
+        from: query.from,
+        to: query.to,
+        trainerId: query.trainerId,
+      }),
+    });
   }
 }

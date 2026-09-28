@@ -202,7 +202,12 @@ def list_availability_slots(
     ignore_appointment_id: str | None = None,
     trainer_capacities: dict[str, int] | None = None,
     client_id: str | None = None,
+    date_windows: list | None = None,
+    absences: list | None = None,
+    holidays: list | None = None,
 ) -> list[dict]:
+    from app.schedule import ScheduleRules, resolve_day
+
     if duration_minutes <= 0:
         return []
     earliest = earliest_bookable_local_date(now, cutoff_time) if actor == "client" else None
@@ -218,39 +223,51 @@ def list_availability_slots(
         days.append(cursor)
         cursor = cursor + timedelta(days=1)
 
+    rules = ScheduleRules(
+        templates=schedules,
+        date_windows=date_windows or [],
+        absences=absences or [],
+        holidays=holidays or [],
+    )
+    if trainer_id:
+        trainer_ids = [trainer_id]
+    else:
+        trainer_ids = sorted(
+            {row.trainer_id for row in schedules}
+            | {row.trainer_id for row in rules.date_windows}
+            | {row.trainer_id for row in rules.absences}
+        )
+
     slots: list[dict] = []
     for day in days:
         if earliest and day < earliest:
             continue
-        weekday = day.isoweekday()
-        for schedule in schedules:
-            if schedule.weekday != weekday:
-                continue
-            if trainer_id and schedule.trainer_id != trainer_id:
-                continue
-            window_start = at_local_time(day, schedule.start_time)
-            window_end = at_local_time(day, schedule.end_time)
-            slot_start = window_start
-            while add_minutes(slot_start, duration_minutes) <= window_end:
-                slot_end = add_minutes(slot_start, duration_minutes)
-                taken = slot_taken_for_trainer(
-                    busy,
-                    schedule.trainer_id,
-                    slot_start,
-                    slot_end,
-                    concurrent_capacity_of(trainer_capacities, schedule.trainer_id),
-                )
-                if not taken and client_id:
-                    taken = slot_taken_for_client(busy, client_id, slot_start, slot_end)
-                if not taken:
-                    slots.append(
-                        {
-                            "trainerId": schedule.trainer_id,
-                            "startsAt": to_utc_iso(slot_start),
-                            "endsAt": to_utc_iso(slot_end),
-                        }
+        for tid in trainer_ids:
+            resolved = resolve_day(tid, to_madrid(day).date(), rules)
+            for window in resolved.windows:
+                window_start = at_local_time(day, window.start_time)
+                window_end = at_local_time(day, window.end_time)
+                slot_start = window_start
+                while add_minutes(slot_start, duration_minutes) <= window_end:
+                    slot_end = add_minutes(slot_start, duration_minutes)
+                    taken = slot_taken_for_trainer(
+                        busy,
+                        tid,
+                        slot_start,
+                        slot_end,
+                        concurrent_capacity_of(trainer_capacities, tid),
                     )
-                slot_start = slot_end
+                    if not taken and client_id:
+                        taken = slot_taken_for_client(busy, client_id, slot_start, slot_end)
+                    if not taken:
+                        slots.append(
+                            {
+                                "trainerId": tid,
+                                "startsAt": to_utc_iso(slot_start),
+                                "endsAt": to_utc_iso(slot_end),
+                            }
+                        )
+                    slot_start = slot_end
     return slots
 
 

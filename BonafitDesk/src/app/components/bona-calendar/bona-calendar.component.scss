@@ -23,7 +23,7 @@
   --fc-button-hover-border-color: color-mix(in srgb, var(--bona-color-primary) 86%, var(--bona-color-text));
   --fc-button-active-bg-color: color-mix(in srgb, var(--bona-color-primary) 72%, var(--bona-color-text));
   --fc-button-active-border-color: color-mix(in srgb, var(--bona-color-primary) 72%, var(--bona-color-text));
-  --fc-event-text-color: var(--bona-color-text);
+  --fc-event-text-color: var(--bona-color-primary-contrast);
 
   ::ng-deep .fc,
   ::ng-deep .fc-col-header-cell,
@@ -36,6 +36,18 @@
 
   ::ng-deep .fc-event {
     cursor: pointer;
+    opacity: 1;
+  }
+
+  ::ng-deep .fc-event .fc-event-main,
+  ::ng-deep .fc-event .fc-event-title,
+  ::ng-deep .fc-event .fc-event-time {
+    color: inherit;
+  }
+
+  ::ng-deep .fc-bg-event {
+    cursor: default;
+    opacity: 1;
   }
 
   ::ng-deep .fc-event.bona-calendar__event--cancelled,
@@ -70,6 +82,23 @@
     .fc-event-time {
       color: inherit;
     }
+  }
+
+  ::ng-deep .fc-bg-event.calendar-availability {
+    background: color-mix(in srgb, var(--bona-color-primary) 16%, transparent) !important;
+    border: 0 !important;
+    opacity: 1;
+
+    .fc-event-title,
+    .fc-event-time {
+      display: none;
+    }
+  }
+
+  ::ng-deep .fc-event.calendar-holiday {
+    background: color-mix(in srgb, var(--bona-color-text-muted) 28%, var(--bona-color-surface)) !important;
+    border-color: var(--bona-color-border) !important;
+    color: var(--bona-color-text) !important;
   }
 
   ::ng-deep .fc-event.bona-cal-status-completed {

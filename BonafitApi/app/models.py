@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import date, datetime
 from uuid import uuid4
 
 from sqlalchemy import (
     JSON,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Enum,
     ForeignKey,
@@ -33,6 +34,8 @@ class Trainer(Base):
     concurrent_capacity: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
 
     schedules: Mapped[list["TrainerSchedule"]] = relationship(back_populates="trainer")
+    date_windows: Mapped[list["ScheduleDateWindow"]] = relationship(back_populates="trainer")
+    absences: Mapped[list["ScheduleAbsence"]] = relationship(back_populates="trainer")
     appointments: Mapped[list["Appointment"]] = relationship(back_populates="trainer")
     user: Mapped["User | None"] = relationship(back_populates="trainer", uselist=False)
 
@@ -168,6 +171,48 @@ class TrainerSchedule(Base):
     end_time: Mapped[str] = mapped_column(String(5), nullable=False)
 
     trainer: Mapped[Trainer] = relationship(back_populates="schedules")
+
+
+class ScheduleDateWindow(Base):
+    __tablename__ = "schedule_date_windows"
+    __table_args__ = (UniqueConstraint("trainer_id", "date", "start_time", "end_time"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    trainer_id: Mapped[str] = mapped_column(ForeignKey("trainers.id"), nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    start_time: Mapped[str] = mapped_column(String(5), nullable=False)
+    end_time: Mapped[str] = mapped_column(String(5), nullable=False)
+    note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+    trainer: Mapped[Trainer] = relationship(back_populates="date_windows")
+
+
+class ScheduleAbsence(Base):
+    __tablename__ = "schedule_absences"
+    __table_args__ = (
+        CheckConstraint(
+            "reason IN ('vacation', 'personal', 'sick', 'unknown')",
+            name="schedule_absence_reason",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    trainer_id: Mapped[str] = mapped_column(ForeignKey("trainers.id"), nullable=False)
+    starts_on: Mapped[date] = mapped_column(Date, nullable=False)
+    ends_on: Mapped[date] = mapped_column(Date, nullable=False)
+    reason: Mapped[str] = mapped_column(String(20), nullable=False)
+    note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+    trainer: Mapped[Trainer] = relationship(back_populates="absences")
+
+
+class PublicHoliday(Base):
+    __tablename__ = "public_holidays"
+    __table_args__ = (UniqueConstraint("date", name="public_holiday_date"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
 
 
 class BookingSettings(Base):

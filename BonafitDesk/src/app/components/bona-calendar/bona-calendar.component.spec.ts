@@ -61,6 +61,27 @@ describe('BonaCalendarComponent', () => {
       expect(mapped.classNames).toEqual(['bona-calendar__event--cancelled']);
     });
 
+    it('maps color as background and optional all-day flag', () => {
+      const mapped = toFullCalendarEvent({
+        ...sample,
+        color: '#336699',
+        allDay: true,
+      });
+      expect(mapped.backgroundColor).toBe('#336699');
+      expect(mapped.borderColor).toBe('#336699');
+      expect(mapped.allDay).toBeTrue();
+    });
+
+    it('maps contrast text and background display', () => {
+      const mapped = toFullCalendarEvent({
+        ...sample,
+        textColor: '#ffffff',
+        display: 'background',
+      });
+      expect(mapped.textColor).toBe('#ffffff');
+      expect(mapped.display).toBe('background');
+    });
+
     it('restores the original DTO from a FullCalendar event', () => {
       const mapped = toFullCalendarEvent(sample);
       const restored = fromFullCalendarEvent({
@@ -100,7 +121,24 @@ describe('BonaCalendarComponent', () => {
       expect(options.selectOverlap).toBeTrue();
       expect(options.eventOverlap).toBeTrue();
       expect(options.slotEventOverlap).toBeFalse();
+      expect(options.eventDurationEditable).toBeFalse();
+      expect(options.allDaySlot).toBeFalse();
       expect(options.events).toEqual([toFullCalendarEvent(sample)]);
+    });
+
+    it('uses dayGrid month view when view is month', () => {
+      fixture.componentRef.setInput('view', 'month');
+      fixture.detectChanges();
+      expect(component.calendarOptions().initialView).toBe('dayGridMonth');
+    });
+
+    it('opts into all-day slot and duration resize', () => {
+      fixture.componentRef.setInput('allDaySlot', true);
+      fixture.componentRef.setInput('eventDurationEditable', true);
+      fixture.detectChanges();
+      const options = component.calendarOptions();
+      expect(options.allDaySlot).toBeTrue();
+      expect(options.eventDurationEditable).toBeTrue();
     });
 
     it('hides the FullCalendar toolbar when showHeader is false', () => {
@@ -174,7 +212,54 @@ describe('BonaCalendarComponent', () => {
         view: { calendar: { unselect: () => undefined } },
       } as unknown as DateSelectArg);
 
-      expect(spy).toHaveBeenCalledWith({ start, end });
+      expect(spy).toHaveBeenCalledWith({ start, end, allDay: false });
+    });
+
+    it('emits slotSelect with allDay for an all-day range', () => {
+      const spy = jasmine.createSpy('slotSelect');
+      component.slotSelect.subscribe(spy);
+      const start = new Date('2026-09-04T00:00:00');
+      const end = new Date('2026-09-06T00:00:00');
+
+      component.calendarOptions().select?.({
+        start,
+        end,
+        allDay: true,
+        view: { calendar: { unselect: () => undefined } },
+      } as unknown as DateSelectArg);
+
+      expect(spy).toHaveBeenCalledWith({ start, end, allDay: true });
+    });
+
+    it('emits eventResize with revert', () => {
+      const spy = jasmine.createSpy('eventResize');
+      component.eventResize.subscribe(spy);
+      const revert = jasmine.createSpy('revert');
+      const start = new Date(sample.start);
+      const end = new Date('2026-09-04T12:00:00');
+      const options = component.calendarOptions() as {
+        eventResize?: (info: EventDropArg) => void;
+      };
+      options.eventResize?.({
+        event: {
+          id: sample.id,
+          title: sample.title,
+          start,
+          end,
+          extendedProps: { source: sample },
+        },
+        oldEvent: { start, end: new Date(String(sample.end)) },
+        revert,
+      } as unknown as EventDropArg);
+      expect(spy).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          event: sample,
+          start,
+          end,
+        }),
+      );
+      spy.calls.mostRecent().args[0].revert();
+      expect(revert).toHaveBeenCalled();
     });
 
     it('asks FullCalendar to updateSize after the first layout', (done) => {

@@ -1,0 +1,12 @@
+.schedule-action__range,
+.schedule-action__hint {
+  margin: 0 0 var(--bona-space-3);
+  color: var(--bona-color-text-muted);
+}
+
+.schedule-action__menu {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--bona-space-2);
+}

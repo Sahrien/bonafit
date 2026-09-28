@@ -48,6 +48,10 @@ BOOKING_ERROR_CODES = {
     "noSessions": "booking.noSessions",
     "invalidStatus": "booking.invalidStatus",
     "serviceInactive": "booking.serviceInactive",
+    "invalidSchedule": "booking.invalidSchedule",
+    "scheduleTaken": "booking.scheduleTaken",
+    "scheduleConflict": "booking.scheduleConflict",
+    "scheduleHasAppointments": "booking.scheduleHasAppointments",
     "mustChangePassword": "auth.mustChangePassword",
     "invalidCurrentPassword": "auth.invalidCurrentPassword",
 }

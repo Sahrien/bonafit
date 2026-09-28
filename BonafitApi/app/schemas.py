@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, PlainSerializer, model_validator
@@ -338,6 +338,94 @@ class TrainerScheduleWrite(BaseModel):
     weekday: int = Field(ge=1, le=7)
     startTime: str
     endTime: str
+
+
+class ScheduleDateWindowOut(BaseModel):
+    model_config = camel_config()
+    id: str
+    trainerId: str
+    date: date
+    startTime: str
+    endTime: str
+    note: str = ""
+
+
+class ScheduleDateWindowWrite(BaseModel):
+    model_config = camel_config()
+    trainerId: str
+    date: date
+    startTime: str
+    endTime: str
+    note: str = ""
+
+
+class ScheduleAbsenceOut(BaseModel):
+    model_config = camel_config()
+    id: str
+    trainerId: str
+    startsOn: date
+    endsOn: date
+    reason: Literal["vacation", "personal", "sick", "unknown"]
+    note: str = ""
+
+
+class ScheduleAbsenceWrite(BaseModel):
+    model_config = camel_config()
+    trainerId: str
+    startsOn: date
+    endsOn: date
+    reason: Literal["vacation", "personal", "sick", "unknown"]
+    note: str = ""
+
+
+class PublicHolidayOut(BaseModel):
+    model_config = camel_config()
+    id: str
+    date: date
+    name: str
+
+
+class PublicHolidayWrite(BaseModel):
+    model_config = camel_config()
+    date: date
+    name: str = Field(min_length=1, max_length=200)
+
+
+class ResolvedWindowOut(BaseModel):
+    model_config = camel_config()
+    startTime: str
+    endTime: str
+
+
+class ResolvedDayOut(BaseModel):
+    model_config = camel_config()
+    trainerId: str
+    date: date
+    windows: list[ResolvedWindowOut]
+    source: Literal["template", "override", "absence", "holiday"]
+    reason: Literal["vacation", "personal", "sick", "unknown", "publicHoliday"] | None = None
+
+
+class ScheduleHoursDayOut(BaseModel):
+    model_config = camel_config()
+    trainerId: str
+    date: date
+    minutes: int
+
+
+class ScheduleHoursTrainerOut(BaseModel):
+    model_config = camel_config()
+    trainerId: str
+    totalMinutes: int
+    averageMinutesPerDay: float
+
+
+class ScheduleHoursOut(BaseModel):
+    model_config = camel_config()
+    days: list[ScheduleHoursDayOut]
+    totals: list[ScheduleHoursTrainerOut]
+    totalMinutes: int
+    averageMinutesPerDay: float
 
 
 class FormQuestionOptionIn(BaseModel):

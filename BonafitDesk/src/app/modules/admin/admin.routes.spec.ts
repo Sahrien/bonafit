@@ -28,10 +28,24 @@ describe('ADMIN_ROUTES horarios', () => {
     auth.getSession.and.returnValue(of(createMockSession(MOCK_ACCOUNTS[0])));
     const calendarApi = jasmine.createSpyObj('CalendarApiService', [
       'getTrainers',
+      'getTrainer',
       'getTrainerSchedules',
+      'getScheduleDateWindows',
+      'getScheduleAbsences',
+      'getPublicHolidays',
+      'getResolvedSchedules',
+      'getScheduleHours',
     ]);
     calendarApi.getTrainers.and.returnValue(of(MOCK_TRAINERS));
+    calendarApi.getTrainer.and.returnValue(of(MOCK_TRAINERS[0]));
     calendarApi.getTrainerSchedules.and.returnValue(of(MOCK_TRAINER_SCHEDULES));
+    calendarApi.getScheduleDateWindows.and.returnValue(of([]));
+    calendarApi.getScheduleAbsences.and.returnValue(of([]));
+    calendarApi.getPublicHolidays.and.returnValue(of([]));
+    calendarApi.getResolvedSchedules.and.returnValue(of([]));
+    calendarApi.getScheduleHours.and.returnValue(
+      of({ days: [], totals: [], totalMinutes: 0, averageMinutesPerDay: 0 }),
+    );
     const statsApi = jasmine.createSpyObj('StatsApiService', ['getStats']);
     const accountingApi = jasmine.createSpyObj('AccountingApiService', [
       'getSummary',
@@ -154,7 +168,6 @@ describe('ADMIN_ROUTES horarios', () => {
     await harness.navigateByUrl(AUTH_PATHS.adminSchedules);
     expect(TestBed.inject(Router).url).toBe(AUTH_PATHS.adminSchedules);
     expect(harness.routeNativeElement?.textContent).toContain(SCHEDULES_LITERALS.subtitle);
-    expect(harness.routeNativeElement?.textContent).toContain(SCHEDULES_LITERALS.newSchedule);
   });
 
   it('loads the statistics screen at /admin/stats', async () => {

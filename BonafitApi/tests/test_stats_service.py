@@ -9,8 +9,10 @@ from tests.factories import (
     add_bono,
     add_client,
     add_client_bono,
+    add_date_window,
     add_form,
     add_form_assignment,
+    add_holiday,
     add_schedule,
     add_service,
     add_trainer,
@@ -228,6 +230,27 @@ def test_occupancy_uses_schedule_minutes_and_occupying_appointments(
     assert out.agenda.trainers[0].bookedMinutes == 60
     assert out.agenda.emptySlots[0].weekday == 2
     assert out.agenda.emptySlots[0].emptyDays == 1
+
+
+def test_occupancy_uses_resolved_minutes_on_holiday(
+    stats_service: StatsService, db: Database
+) -> None:
+    add_client(db)
+    add_trainer(db)
+    add_service(db)
+    add_schedule(db, weekday=3, start_time="10:00", end_time="12:00")
+    add_schedule(db, id="sch-2", weekday=2, start_time="10:00", end_time="12:00")
+    add_holiday(db, date=datetime(2026, 9, 16).date(), name="Fiesta")
+    add_appointment(
+        db,
+        starts_at=datetime(2026, 9, 16, 8, 0, tzinfo=UTC),
+        ends_at=datetime(2026, 9, 16, 9, 0, tzinfo=UTC),
+        status="confirmed",
+    )
+
+    out = stats_service.get_stats("7d", now=NOW)
+    assert out.agenda.trainers[0].scheduleMinutes == 120
+    assert out.agenda.occupancyRate == 0.5
 
 
 def test_new_clients_need_first_activity_in_period(stats_service: StatsService, db: Database) -> None:

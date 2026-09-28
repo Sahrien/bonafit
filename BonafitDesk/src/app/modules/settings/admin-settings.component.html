@@ -162,6 +162,23 @@
       actionsAlign="start"
       (valueChange)="onBookingChange($event)"
       (submitted)="onSaveBooking($event)" />
+    @if (trainers().length) {
+      <div class="settings-capacity">
+        <h3>{{ literals.capacityTitle }}</h3>
+        <p>{{ literals.capacityHint }}</p>
+        <ul class="settings-capacity__trainers">
+          @for (trainer of trainers(); track trainer.id) {
+            <li class="settings-capacity__trainer">
+              <span>{{ trainer.name }}</span>
+              <app-bona-field
+                [definition]="capacityField()"
+                [value]="capacityDraft(trainer)"
+                (valueChange)="onCapacityDraftChange(trainer.id, $event)" />
+            </li>
+          }
+        </ul>
+      </div>
+    }
     <div class="page-section__save">
       <app-bona-button [text]="literals.save" (action)="onSaveBooking(bookingForm())" />
     </div>

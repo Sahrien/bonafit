@@ -119,4 +119,44 @@ describe('CalendarApiService', () => {
     });
     expect((await pending).nextDayCutoffTime).toBe('18:00');
   });
+
+  it('GET /schedule-date-windows with query params', async () => {
+    const pending = firstValueFrom(
+      api.getScheduleDateWindows({ trainerId: 'trainer-1', from: '2026-09-01', to: '2026-09-30' }),
+    );
+    const req = http.expectOne(
+      (request) =>
+        request.method === 'GET' &&
+        request.url === apiUrl(API_PATHS.scheduleDateWindows) &&
+        request.params.get('trainerId') === 'trainer-1' &&
+        request.params.get('from') === '2026-09-01',
+    );
+    req.flush([]);
+    expect(await pending).toEqual([]);
+  });
+
+  it('GET /schedules/resolved and /schedules/hours', async () => {
+    const resolved = firstValueFrom(
+      api.getResolvedSchedules({ from: '2026-09-07', to: '2026-09-13', trainerId: 'trainer-1' }),
+    );
+    const resolvedReq = http.expectOne(
+      (request) =>
+        request.method === 'GET' &&
+        request.url === apiUrl(API_PATHS.schedulesResolved) &&
+        request.params.get('trainerId') === 'trainer-1',
+    );
+    resolvedReq.flush([]);
+    expect(await resolved).toEqual([]);
+
+    const hours = firstValueFrom(api.getScheduleHours({ from: '2026-09-07', to: '2026-09-13' }));
+    const hoursReq = http.expectOne(
+      (request) =>
+        request.method === 'GET' &&
+        request.url === apiUrl(API_PATHS.schedulesHours) &&
+        request.params.get('from') === '2026-09-07' &&
+        request.params.get('to') === '2026-09-13',
+    );
+    hoursReq.flush({ days: [], totals: [], totalMinutes: 0, averageMinutesPerDay: 0 });
+    expect((await hours).totalMinutes).toBe(0);
+  });
 });

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import NamedTuple
 
 from sqlalchemy import or_, select
@@ -14,10 +14,14 @@ from app.models import (
     Client,
     ClientBono,
     FormAssignment,
+    PublicHoliday,
+    ScheduleAbsence,
+    ScheduleDateWindow,
     Service,
     Trainer,
     TrainerSchedule,
 )
+from app.schedule import ScheduleRules, resolve_day, windows_minutes
 from app.schemas import (
     StatsAgendaOut,
     StatsAtRiskOut,
@@ -81,6 +85,25 @@ class _Schedule(NamedTuple):
     weekday: int
     start_time: str
     end_time: str
+
+
+class _DateWindow(NamedTuple):
+    trainer_id: str
+    date: date
+    start_time: str
+    end_time: str
+
+
+class _Absence(NamedTuple):
+    trainer_id: str
+    starts_on: date
+    ends_on: date
+    reason: str
+
+
+class _Holiday(NamedTuple):
+    date: date
+    name: str
 
 
 class _BonoState(NamedTuple):
@@ -310,7 +333,7 @@ def _period_days(start: datetime, end: datetime):
 
 def _occupancy(
     appointments: list[_Appointment],
-    schedules: list[_Schedule],
+    rules: ScheduleRules,
     trainers: dict[str, str],
     start: datetime,
     end: datetime,
@@ -323,14 +346,11 @@ def _occupancy(
         if minutes:
             booked[item.trainer_id] += minutes
     scheduled: dict[str, int] = defaultdict(int)
+    trainer_ids = sorted({*booked, *trainers}, key=lambda trainer_id: trainers.get(trainer_id, trainer_id))
     for day in _period_days(start, end):
-        weekday = day.isoweekday()
-        for slot in schedules:
-            if slot.weekday != weekday:
-                continue
-            slot_start = _local_slot(day, slot.start_time)
-            slot_end = _local_slot(day, slot.end_time)
-            scheduled[slot.trainer_id] += _minutes_between(slot_start, slot_end)
+        for trainer_id in trainer_ids:
+            resolved = resolve_day(trainer_id, day, rules)
+            scheduled[trainer_id] += windows_minutes(resolved.windows)
     rows: list[StatsTrainerOccupancyOut] = []
     trainer_ids = sorted({*booked, *scheduled, *trainers}, key=lambda trainer_id: trainers.get(trainer_id, trainer_id))
     total_booked = 0
@@ -431,15 +451,15 @@ def _empty_slots(
 def _agenda(
     current: list[_Appointment],
     previous: list[_Appointment],
-    schedules: list[_Schedule],
+    rules: ScheduleRules,
     trainers: dict[str, str],
     start: datetime,
     end: datetime,
     previous_start: datetime,
     previous_end: datetime,
 ) -> StatsAgendaOut:
-    occupancy, trainer_rows = _occupancy(current, schedules, trainers, start, end)
-    previous_occupancy, _ = _occupancy(previous, schedules, trainers, previous_start, previous_end)
+    occupancy, trainer_rows = _occupancy(current, rules, trainers, start, end)
+    previous_occupancy, _ = _occupancy(previous, rules, trainers, previous_start, previous_end)
     demand = [item for item in current if item.status in DEMAND_STATUSES]
     previous_demand = [item for item in previous if item.status in DEMAND_STATUSES]
     return StatsAgendaOut(
@@ -451,7 +471,7 @@ def _agenda(
         heatmapHours=HEATMAP_HOURS,
         statuses=_statuses(current, previous),
         trainers=trainer_rows,
-        emptySlots=_empty_slots(current, schedules, start, end),
+        emptySlots=_empty_slots(current, rules.templates, start, end),
     )
 
 
@@ -600,7 +620,7 @@ class StatsService:
         previous = [
             item for item in history if _in_window(item.purchased_at, window.previous_start, window.previous_end)
         ]
-        appointments, schedules, trainers, names, bonos, assignments = self._load_ops(window.previous_start)
+        appointments, rules, trainers, names, bonos, assignments = self._load_ops(window.previous_start)
         current_apts = [item for item in appointments if _in_window(item.starts_at, window.start, window.end)]
         previous_apts = [
             item for item in appointments if _in_window(item.starts_at, window.previous_start, window.previous_end)
@@ -617,7 +637,7 @@ class StatsService:
                 "agenda": _agenda(
                     current_apts,
                     previous_apts,
-                    schedules,
+                    rules,
                     trainers,
                     window.start,
                     window.end,
@@ -647,7 +667,7 @@ class StatsService:
         self, since: datetime
     ) -> tuple[
         list[_Appointment],
-        list[_Schedule],
+        ScheduleRules,
         dict[str, str],
         dict[str, str],
         list[_BonoState],
@@ -664,15 +684,39 @@ class StatsService:
                 )
                 for row in db.scalars(select(Appointment).where(Appointment.starts_at >= since)).all()
             ]
-            schedules = [
-                _Schedule(
-                    trainer_id=row.trainer_id,
-                    weekday=row.weekday,
-                    start_time=row.start_time,
-                    end_time=row.end_time,
-                )
-                for row in db.scalars(select(TrainerSchedule)).all()
-            ]
+            rules = ScheduleRules(
+                templates=[
+                    _Schedule(
+                        trainer_id=row.trainer_id,
+                        weekday=row.weekday,
+                        start_time=row.start_time,
+                        end_time=row.end_time,
+                    )
+                    for row in db.scalars(select(TrainerSchedule)).all()
+                ],
+                date_windows=[
+                    _DateWindow(
+                        trainer_id=row.trainer_id,
+                        date=row.date,
+                        start_time=row.start_time,
+                        end_time=row.end_time,
+                    )
+                    for row in db.scalars(select(ScheduleDateWindow)).all()
+                ],
+                absences=[
+                    _Absence(
+                        trainer_id=row.trainer_id,
+                        starts_on=row.starts_on,
+                        ends_on=row.ends_on,
+                        reason=row.reason,
+                    )
+                    for row in db.scalars(select(ScheduleAbsence)).all()
+                ],
+                holidays=[
+                    _Holiday(date=row.date, name=row.name)
+                    for row in db.scalars(select(PublicHoliday)).all()
+                ],
+            )
             trainers = {row.id: row.name for row in db.scalars(select(Trainer)).all()}
             names = {
                 row.id: f"{row.first_name} {row.last_name}".strip()
@@ -697,4 +741,4 @@ class StatsService:
                     )
                 ).all()
             ]
-        return appointments, schedules, trainers, names, bonos, assignments
+        return appointments, rules, trainers, names, bonos, assignments

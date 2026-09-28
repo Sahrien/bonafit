@@ -14,10 +14,11 @@ import {
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, DateSelectArg, EventClickArg, EventDropArg, EventInput } from '@fullcalendar/core';
 import esLocale from '@fullcalendar/core/locales/es';
-import interactionPlugin from '@fullcalendar/interaction';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin, { EventResizeDoneArg } from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
 
-export type BonaCalendarView = 'week' | 'day';
+export type BonaCalendarView = 'week' | 'day' | 'month';
 
 export interface BonaCalendarEvent {
   id: string;
@@ -32,11 +33,15 @@ export interface BonaCalendarEvent {
   classNames?: string[];
   interactive?: boolean;
   startEditable?: boolean;
+  allDay?: boolean;
+  textColor?: string;
+  display?: 'auto' | 'background' | 'inverse-background' | 'none';
 }
 
 export interface BonaCalendarSlotSelect {
   start: Date;
   end: Date;
+  allDay: boolean;
 }
 
 export interface BonaCalendarEventDrop {
@@ -45,6 +50,8 @@ export interface BonaCalendarEventDrop {
   end: Date | null;
   revert: () => void;
 }
+
+export type BonaCalendarEventResize = BonaCalendarEventDrop;
 
 export function toFullCalendarEvent(event: BonaCalendarEvent): EventInput {
   const mapped: EventInput = {
@@ -68,6 +75,15 @@ export function toFullCalendarEvent(event: BonaCalendarEvent): EventInput {
   }
   if (typeof event.startEditable === 'boolean') {
     mapped.startEditable = event.startEditable;
+  }
+  if (typeof event.allDay === 'boolean') {
+    mapped.allDay = event.allDay;
+  }
+  if (event.textColor) {
+    mapped.textColor = event.textColor;
+  }
+  if (event.display) {
+    mapped.display = event.display;
   }
   return mapped;
 }
@@ -99,8 +115,14 @@ function optionalString(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-function viewName(view: BonaCalendarView): 'timeGridWeek' | 'timeGridDay' {
-  return view === 'day' ? 'timeGridDay' : 'timeGridWeek';
+function viewName(view: BonaCalendarView): 'timeGridWeek' | 'timeGridDay' | 'dayGridMonth' {
+  if (view === 'day') {
+    return 'timeGridDay';
+  }
+  if (view === 'month') {
+    return 'dayGridMonth';
+  }
+  return 'timeGridWeek';
 }
 
 @Component({
@@ -121,15 +143,18 @@ export class BonaCalendarComponent {
   readonly locale = input('es');
   readonly selectable = input(true);
   readonly editable = input(false);
+  readonly eventDurationEditable = input(false);
+  readonly allDaySlot = input(false);
   readonly showHeader = input(true);
   readonly focusDate = input<Date | undefined>();
 
   readonly eventClick = output<BonaCalendarEvent>();
   readonly slotSelect = output<BonaCalendarSlotSelect>();
   readonly eventDrop = output<BonaCalendarEventDrop>();
+  readonly eventResize = output<BonaCalendarEventResize>();
 
   readonly calendarOptions = computed<CalendarOptions>(() => ({
-    plugins: [timeGridPlugin, interactionPlugin],
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     initialView: viewName(this.view()),
     locale: this.locale() === 'es' ? esLocale : this.locale(),
     headerToolbar: this.showHeader()
@@ -142,12 +167,12 @@ export class BonaCalendarComponent {
     events: this.events().map(toFullCalendarEvent),
     selectable: this.selectable(),
     editable: this.editable(),
-    eventDurationEditable: false,
+    eventDurationEditable: this.eventDurationEditable(),
     selectMirror: true,
     selectOverlap: true,
     eventOverlap: true,
     slotEventOverlap: false,
-    allDaySlot: false,
+    allDaySlot: this.allDaySlot(),
     slotMinTime: '07:00:00',
     slotMaxTime: '22:00:00',
     height: 'auto',
@@ -163,22 +188,14 @@ export class BonaCalendarComponent {
       );
     },
     select: (info: DateSelectArg) => {
-      this.slotSelect.emit({ start: info.start, end: info.end });
+      this.slotSelect.emit({ start: info.start, end: info.end, allDay: Boolean(info.allDay) });
       info.view.calendar.unselect();
     },
     eventDrop: (info: EventDropArg) => {
-      this.eventDrop.emit({
-        event: fromFullCalendarEvent({
-          id: info.event.id,
-          title: info.event.title,
-          start: info.event.start,
-          end: info.event.end,
-          extendedProps: info.event.extendedProps,
-        }),
-        start: info.event.start ?? info.oldEvent.start ?? new Date(),
-        end: info.event.end,
-        revert: () => info.revert(),
-      });
+      this.eventDrop.emit(this.dropPayload(info));
+    },
+    eventResize: (info: EventResizeDoneArg) => {
+      this.eventResize.emit(this.dropPayload(info));
     },
   }));
 
@@ -207,6 +224,21 @@ export class BonaCalendarComponent {
         api.gotoDate(date);
       }
     });
+  }
+
+  private dropPayload(info: EventDropArg | EventResizeDoneArg): BonaCalendarEventDrop {
+    return {
+      event: fromFullCalendarEvent({
+        id: info.event.id,
+        title: info.event.title,
+        start: info.event.start,
+        end: info.event.end,
+        extendedProps: info.event.extendedProps,
+      }),
+      start: info.event.start ?? info.oldEvent.start ?? new Date(),
+      end: info.event.end,
+      revert: () => info.revert(),
+    };
   }
 
   private syncSize(): void {

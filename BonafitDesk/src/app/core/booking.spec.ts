@@ -8,6 +8,7 @@ import {
     listAvailabilitySlots,
     pickPreferredBono,
     remainingSessionsDelta,
+    resolveDay,
     canAdminCancelAppointment,
     canCancelAppointment,
     canClientConfirmAppointment,
@@ -302,5 +303,117 @@ describe('booking rules', () => {
     expect(hasActiveClientAppointmentForService(rows, 'svc-hipo')).toBeTrue();
     expect(hasActiveClientAppointmentForService(rows, 'svc-ep', 'ep')).toBeFalse();
     expect(hasActiveClientAppointmentForService(rows, 'svc-masaje')).toBeFalse();
+  });
+
+  it('resolves weekday templates unless an override, absence, or holiday applies', () => {
+    const templates = [
+      { trainerId: 'trainer-1', weekday: 3, startTime: '08:00', endTime: '18:00' },
+    ];
+    const wednesday = '2026-09-09';
+    const rules = { templates };
+    const templated = resolveDay('trainer-1', wednesday, rules);
+    expect(templated.source).toBe('template');
+    expect(templated.windows).toEqual([{ startTime: '08:00', endTime: '18:00' }]);
+    expect(templated.reason).toBeUndefined();
+
+    const override = resolveDay('trainer-1', wednesday, {
+      templates,
+      dateWindows: [
+        { trainerId: 'trainer-1', date: wednesday, startTime: '10:00', endTime: '12:00' },
+      ],
+    });
+    expect(override.source).toBe('override');
+    expect(override.windows).toEqual([{ startTime: '10:00', endTime: '12:00' }]);
+
+    const absence = resolveDay('trainer-1', wednesday, {
+      templates,
+      dateWindows: [
+        { trainerId: 'trainer-1', date: wednesday, startTime: '10:00', endTime: '12:00' },
+      ],
+      absences: [
+        {
+          trainerId: 'trainer-1',
+          startsOn: '2026-09-08',
+          endsOn: '2026-09-10',
+          reason: 'vacation',
+        },
+      ],
+    });
+    expect(absence.source).toBe('absence');
+    expect(absence.windows).toEqual([]);
+    expect(absence.reason).toBe('vacation');
+
+    const holiday = resolveDay('trainer-1', wednesday, {
+      templates,
+      dateWindows: [
+        { trainerId: 'trainer-1', date: wednesday, startTime: '10:00', endTime: '12:00' },
+      ],
+      absences: [
+        {
+          trainerId: 'trainer-1',
+          startsOn: wednesday,
+          endsOn: wednesday,
+          reason: 'personal',
+        },
+      ],
+      holidays: [{ date: wednesday }],
+    });
+    expect(holiday.source).toBe('holiday');
+    expect(holiday.windows).toEqual([]);
+    expect(holiday.reason).toBe('publicHoliday');
+  });
+
+  it('skips closed days and lets custom hours replace the weekday template', () => {
+    const service = {
+      id: 'svc-ep',
+      name: 'EP',
+      durationMinutes: 60,
+      sharesSessionPool: true,
+      forcesSingleSession: false,
+      allowsSingleSession: false,
+      bookableByClient: true,
+      active: true,
+    };
+    const schedules = [
+      { id: 'sch-1', trainerId: 'trainer-1', weekday: 3, startTime: '08:00', endTime: '10:00' },
+    ];
+    const settings = { id: 'booking-settings', nextDayCutoffTime: '18:00', defaultLocation: 'studio' };
+    const input = {
+      service,
+      schedules,
+      appointments: [] as [],
+      settings,
+      now: new Date(2026, 8, 9, 8, 0, 0),
+      from: new Date(2026, 8, 9),
+      to: new Date(2026, 8, 9, 23, 0, 0),
+      actor: 'trainer' as const,
+    };
+    const open = listAvailabilitySlots(input);
+    expect(open.some((slot) => new Date(slot.startsAt).getHours() === 8)).toBeTrue();
+
+    expect(listAvailabilitySlots({ ...input, holidays: [{ date: '2026-09-09' }] })).toEqual([]);
+    expect(
+      listAvailabilitySlots({
+        ...input,
+        absences: [
+          {
+            trainerId: 'trainer-1',
+            startsOn: '2026-09-09',
+            endsOn: '2026-09-09',
+            reason: 'sick',
+          },
+        ],
+      }),
+    ).toEqual([]);
+
+    const custom = listAvailabilitySlots({
+      ...input,
+      dateWindows: [
+        { trainerId: 'trainer-1', date: '2026-09-09', startTime: '11:00', endTime: '12:00' },
+      ],
+    });
+    const hours = custom.map((slot) => new Date(slot.startsAt).getHours());
+    expect(hours).not.toContain(8);
+    expect(hours).toContain(11);
   });
 });

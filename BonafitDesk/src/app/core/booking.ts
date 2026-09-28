@@ -4,6 +4,11 @@ import { ClientBonoDto } from '../models/client-bono.dto';
 import { ServiceDto } from '../models/service.dto';
 import { TrainerDto } from '../models/trainer.dto';
 import { TrainerScheduleDto } from '../models/trainer-schedule.dto';
+import {
+  AbsenceReason,
+  ClosedReason,
+  ResolvedScheduleSource,
+} from '../models/schedule.dto';
 
 export type BookingActor = 'client' | 'trainer';
 
@@ -110,6 +115,92 @@ export function startOfLocalDay(date: Date): Date {
   return next;
 }
 
+export function localDateKey(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+export function asDateKey(value: string | Date): string {
+  if (value instanceof Date) {
+    return localDateKey(value);
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return value.slice(0, 10);
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : localDateKey(parsed);
+}
+
+export type ScheduleTimeWindow = { startTime: string; endTime: string };
+
+export interface ScheduleResolveRules {
+  templates: Pick<TrainerScheduleDto, 'trainerId' | 'weekday' | 'startTime' | 'endTime'>[];
+  dateWindows?: Array<{ trainerId: string; date: string | Date; startTime: string; endTime: string }>;
+  absences?: Array<{
+    trainerId: string;
+    startsOn: string | Date;
+    endsOn: string | Date;
+    reason?: AbsenceReason | string;
+  }>;
+  holidays?: Array<{ date: string | Date }>;
+}
+
+export interface ResolvedScheduleDay {
+  trainerId: string;
+  date: string;
+  windows: ScheduleTimeWindow[];
+  source: ResolvedScheduleSource;
+  reason?: ClosedReason;
+}
+
+const ABSENCE_REASONS: ReadonlySet<string> = new Set(['vacation', 'personal', 'sick', 'unknown']);
+
+function holidayOn(day: string, holidays: Array<{ date: string | Date }>): boolean {
+  return holidays.some((row) => asDateKey(row.date) === day);
+}
+
+function absenceOn(
+  trainerId: string,
+  day: string,
+  absences: NonNullable<ScheduleResolveRules['absences']>,
+): NonNullable<ScheduleResolveRules['absences']>[number] | undefined {
+  return absences.find(
+    (row) =>
+      row.trainerId === trainerId && asDateKey(row.startsOn) <= day && day <= asDateKey(row.endsOn),
+  );
+}
+
+export function resolveDay(trainerId: string, day: Date | string, rules: ScheduleResolveRules): ResolvedScheduleDay {
+  const date = asDateKey(day);
+  if (holidayOn(date, rules.holidays ?? [])) {
+    return { trainerId, date, windows: [], source: 'holiday', reason: 'publicHoliday' };
+  }
+  const absence = absenceOn(trainerId, date, rules.absences ?? []);
+  if (absence) {
+    const raw = absence.reason ?? 'unknown';
+    const reason: ClosedReason = ABSENCE_REASONS.has(raw) ? (raw as AbsenceReason) : 'unknown';
+    return { trainerId, date, windows: [], source: 'absence', reason };
+  }
+  const dated = (rules.dateWindows ?? [])
+    .filter((row) => row.trainerId === trainerId && asDateKey(row.date) === date)
+    .map((row) => ({ startTime: row.startTime, endTime: row.endTime }))
+    .sort((left, right) => left.startTime.localeCompare(right.startTime));
+  if (dated.length > 0) {
+    return { trainerId, date, windows: dated, source: 'override' };
+  }
+  const weekday = isoWeekday(typeof day === 'string' ? parseLocalDateKey(date) : day);
+  const templates = rules.templates
+    .filter((row) => row.trainerId === trainerId && row.weekday === weekday)
+    .map((row) => ({ startTime: row.startTime, endTime: row.endTime }))
+    .sort((left, right) => left.startTime.localeCompare(right.startTime));
+  return { trainerId, date, windows: templates, source: 'template' };
+}
+
+export function parseLocalDateKey(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1);
+}
+
 export function earliestBookableLocalDate(now: Date, cutoffTime: string): Date {
   const cutoff = atLocalTime(now, cutoffTime);
   const day = startOfLocalDay(now);
@@ -198,6 +289,9 @@ export interface AvailabilityInput {
   ignoreAppointmentId?: string;
   trainers?: Pick<TrainerDto, 'id' | 'concurrentCapacity'>[];
   clientId?: string;
+  dateWindows?: NonNullable<ScheduleResolveRules['dateWindows']>;
+  absences?: NonNullable<ScheduleResolveRules['absences']>;
+  holidays?: NonNullable<ScheduleResolveRules['holidays']>;
 }
 
 export function listAvailabilitySlots(input: AvailabilityInput): AvailabilitySlotDto[] {
@@ -218,42 +312,50 @@ export function listAvailabilitySlots(input: AvailabilityInput): AvailabilitySlo
     cursor.setDate(cursor.getDate() + 1);
   }
   const slots: AvailabilitySlotDto[] = [];
+  const rules: ScheduleResolveRules = {
+    templates: input.schedules,
+    dateWindows: input.dateWindows ?? [],
+    absences: input.absences ?? [],
+    holidays: input.holidays ?? [],
+  };
+  const trainerIds = input.trainerId
+    ? [input.trainerId]
+    : [
+        ...new Set([
+          ...input.schedules.map((row) => row.trainerId),
+          ...(input.dateWindows ?? []).map((row) => row.trainerId),
+          ...(input.absences ?? []).map((row) => row.trainerId),
+        ]),
+      ].sort();
   for (const day of days) {
     if (earliest && day.getTime() < earliest.getTime()) {
       continue;
     }
-    const weekday = isoWeekday(day);
-    for (const schedule of input.schedules) {
-      if (schedule.weekday !== weekday) {
-        continue;
-      }
-      if (input.trainerId && schedule.trainerId !== input.trainerId) {
-        continue;
-      }
-      const windowStart = atLocalTime(day, schedule.startTime);
-      const windowEnd = atLocalTime(day, schedule.endTime);
-      let slotStart = new Date(windowStart);
-      while (addMinutes(slotStart, duration).getTime() <= windowEnd.getTime()) {
-        const slotEnd = addMinutes(slotStart, duration);
-        const taken =
-          slotTakenForTrainer(
-            busy,
-            schedule.trainerId,
-            slotStart,
-            slotEnd,
-            concurrentCapacityOf(schedule.trainerId, input.trainers),
-          ) ||
-          Boolean(
-            input.clientId && slotTakenForClient(busy, input.clientId, slotStart, slotEnd),
-          );
-        if (!taken) {
-          slots.push({
-            trainerId: schedule.trainerId,
-            startsAt: slotStart.toISOString(),
-            endsAt: slotEnd.toISOString(),
-          });
+    for (const trainerId of trainerIds) {
+      const resolved = resolveDay(trainerId, day, rules);
+      for (const window of resolved.windows) {
+        const windowStart = atLocalTime(day, window.startTime);
+        const windowEnd = atLocalTime(day, window.endTime);
+        let slotStart = new Date(windowStart);
+        while (addMinutes(slotStart, duration).getTime() <= windowEnd.getTime()) {
+          const slotEnd = addMinutes(slotStart, duration);
+          const taken =
+            slotTakenForTrainer(
+              busy,
+              trainerId,
+              slotStart,
+              slotEnd,
+              concurrentCapacityOf(trainerId, input.trainers),
+            ) || Boolean(input.clientId && slotTakenForClient(busy, input.clientId, slotStart, slotEnd));
+          if (!taken) {
+            slots.push({
+              trainerId,
+              startsAt: slotStart.toISOString(),
+              endsAt: slotEnd.toISOString(),
+            });
+          }
+          slotStart = slotEnd;
         }
-        slotStart = slotEnd;
       }
     }
   }

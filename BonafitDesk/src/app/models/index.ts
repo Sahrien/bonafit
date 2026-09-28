@@ -19,6 +19,24 @@ export type {
 export type { BookingSettingsDto, BookingSettingsWriteDto } from './booking-settings.dto';
 export type { TrainerScheduleDto, TrainerScheduleWriteDto } from './trainer-schedule.dto';
 export type {
+  AbsenceReason,
+  ClosedReason,
+  PublicHolidayDto,
+  PublicHolidayWriteDto,
+  ResolvedDayDto,
+  ResolvedScheduleSource,
+  ResolvedWindowDto,
+  ScheduleAbsenceDto,
+  ScheduleAbsenceWriteDto,
+  ScheduleDateWindowDto,
+  ScheduleDateWindowWriteDto,
+  ScheduleHoursDayDto,
+  ScheduleHoursDto,
+  ScheduleHoursTrainerDto,
+  ScheduleRangeQuery,
+  ScheduleResolvedQuery,
+} from './schedule.dto';
+export type {
   UserRole,
   AuthUserDto,
   AuthSessionDto,

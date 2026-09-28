@@ -1,8 +1,23 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from app.database import Database
 from app.identity import CurrentUser
-from app.models import Appointment, Bono, BookingSettings, Client, ClientBono, Form, FormAssignment, Service, Trainer, TrainerSchedule, User
+from app.models import (
+    Appointment,
+    Bono,
+    BookingSettings,
+    Client,
+    ClientBono,
+    Form,
+    FormAssignment,
+    PublicHoliday,
+    ScheduleAbsence,
+    ScheduleDateWindow,
+    Service,
+    Trainer,
+    TrainerSchedule,
+    User,
+)
 from app.roles import UserRole
 
 
@@ -135,6 +150,45 @@ def add_schedule(db: Database, **overrides: object) -> None:
     values.update(overrides)
     with db.session() as session:
         session.add(TrainerSchedule(**values))
+
+
+def add_date_window(db: Database, **overrides: object) -> None:
+    values: dict[str, object] = {
+        "id": "dw-1",
+        "trainer_id": "trainer-1",
+        "date": date(2026, 9, 9),
+        "start_time": "10:00",
+        "end_time": "12:00",
+        "note": "",
+    }
+    values.update(overrides)
+    with db.session() as session:
+        session.add(ScheduleDateWindow(**values))
+
+
+def add_absence(db: Database, **overrides: object) -> None:
+    values: dict[str, object] = {
+        "id": "abs-1",
+        "trainer_id": "trainer-1",
+        "starts_on": date(2026, 9, 9),
+        "ends_on": date(2026, 9, 9),
+        "reason": "vacation",
+        "note": "",
+    }
+    values.update(overrides)
+    with db.session() as session:
+        session.add(ScheduleAbsence(**values))
+
+
+def add_holiday(db: Database, **overrides: object) -> None:
+    values: dict[str, object] = {
+        "id": "hol-1",
+        "date": date(2026, 9, 9),
+        "name": "Fiesta",
+    }
+    values.update(overrides)
+    with db.session() as session:
+        session.add(PublicHoliday(**values))
 
 
 def add_appointment(db: Database, **overrides: object) -> None:

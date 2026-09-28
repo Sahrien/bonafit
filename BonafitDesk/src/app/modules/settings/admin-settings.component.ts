@@ -2,9 +2,11 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { Observable, concat, forkJoin, last } from 'rxjs';
+import { Observable, concat, forkJoin, last, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
 import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
+import { BonaFieldComponent } from '../../components/bona-field/bona-field.component';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { BonaLanguageSwitcherComponent } from '../../components/bona-language-switcher/bona-language-switcher.component';
@@ -17,6 +19,7 @@ import { injectI18n } from '../../core/i18n/inject-i18n';
 import { BrandingDto, BrandingWriteDto, ColorScheme } from '../../models/branding.dto';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { BrandingApiService } from '../../services/branding-api.service';
+import { TrainerDto, TrainerWriteDto } from '../../models/trainer.dto';
 import { PasswordChangeFormComponent } from './password-change-form.component';
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
@@ -27,6 +30,7 @@ const HEX = /^#[0-9A-Fa-f]{6}$/;
   imports: [
     BonaPageComponent,
     BonaFormComponent,
+    BonaFieldComponent,
     BonaButtonComponent,
     PasswordChangeFormComponent,
     BonaLanguageSwitcherComponent,
@@ -60,6 +64,8 @@ export class AdminSettingsComponent {
     nextDayCutoffTime: '18:00',
     defaultLocation: '',
   });
+  readonly trainers = signal<TrainerDto[]>([]);
+  private readonly capacityDrafts = signal<Record<string, string>>({});
   readonly brandForm = signal<BonaFormValue>({
     studioName: '',
     slogan: '',
@@ -111,6 +117,13 @@ export class AdminSettingsComponent {
     { key: 'defaultLocation', label: this.literals.defaultLocation, type: 'text', required: true },
   ]);
 
+  readonly capacityField = computed<BonaFieldDefinition>(() => ({
+    key: 'concurrentCapacity',
+    label: this.literals.concurrentCapacity,
+    type: 'number',
+    required: true,
+  }));
+
   readonly brandFields = computed<BonaFieldDefinition[]>(() => [
     { key: 'studioName', label: this.literals.studioName, type: 'text', required: true },
     { key: 'slogan', label: this.literals.slogan, type: 'text' },
@@ -131,14 +144,19 @@ export class AdminSettingsComponent {
     forkJoin({
       booking: this.calendarApi.getBookingSettings(),
       branding: this.brandingApi.getBranding(),
+      trainers: this.calendarApi.getTrainers().pipe(catchError(() => of([] as TrainerDto[]))),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ booking, branding }) => {
+        next: ({ booking, branding, trainers }) => {
           this.bookingForm.set({
             nextDayCutoffTime: booking.nextDayCutoffTime,
             defaultLocation: booking.defaultLocation,
           });
+          this.trainers.set(trainers);
+          this.capacityDrafts.set(
+            Object.fromEntries(trainers.map((trainer) => [trainer.id, `${trainer.concurrentCapacity}`])),
+          );
           this.applyBrandFields(branding);
           this.brandTheme.apply(branding);
           this.captureBrandSnapshot();
@@ -195,6 +213,14 @@ export class AdminSettingsComponent {
     return contrastOn(this.pickerHex(this.accentHex()));
   }
 
+  capacityDraft(trainer: TrainerDto): string {
+    return this.capacityDrafts()[trainer.id] ?? `${trainer.concurrentCapacity}`;
+  }
+
+  onCapacityDraftChange(trainerId: string, value: string): void {
+    this.capacityDrafts.update((drafts) => ({ ...drafts, [trainerId]: value }));
+  }
+
   onSaveBooking(value: BonaFormValue): void {
     const nextDayCutoffTime = (value['nextDayCutoffTime'] ?? '').trim();
     const defaultLocation = (value['defaultLocation'] ?? '').trim();
@@ -202,19 +228,42 @@ export class AdminSettingsComponent {
       this.toast.error(this.literals.errorRequired);
       return;
     }
-    this.calendarApi
-      .updateBookingSettings({ nextDayCutoffTime, defaultLocation })
+    const dirty: { id: string; payload: TrainerWriteDto }[] = [];
+    for (const trainer of this.trainers()) {
+      const parsed = Number(this.capacityDraft(trainer));
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        this.toast.error(this.literals.errorCapacity);
+        return;
+      }
+      if (parsed !== trainer.concurrentCapacity) {
+        dirty.push({ id: trainer.id, payload: { name: trainer.name, concurrentCapacity: parsed } });
+      }
+    }
+    const booking$ = this.calendarApi.updateBookingSettings({ nextDayCutoffTime, defaultLocation });
+    const trainers$ =
+      dirty.length > 0
+        ? forkJoin(dirty.map((item) => this.calendarApi.updateTrainer(item.id, item.payload)))
+        : of([] as TrainerDto[]);
+    forkJoin({ booking: booking$, trainers: trainers$ })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (settings) => {
-          this.bookingForm.set({
-            nextDayCutoffTime: settings.nextDayCutoffTime,
-            defaultLocation: settings.defaultLocation,
-          });
-          this.toast.success(this.literals.saved);
-        },
-        error: () => this.toast.error(this.literals.errorSave),
-      });
+      next: ({ booking, trainers }) => {
+        this.bookingForm.set({
+          nextDayCutoffTime: booking.nextDayCutoffTime,
+          defaultLocation: booking.defaultLocation,
+        });
+        if (trainers.length) {
+          const byId = new Map(trainers.map((row) => [row.id, row]));
+          const next = this.trainers().map((row) => byId.get(row.id) ?? row);
+          this.trainers.set(next);
+          this.capacityDrafts.set(
+            Object.fromEntries(next.map((trainer) => [trainer.id, `${trainer.concurrentCapacity}`])),
+          );
+        }
+        this.toast.success(this.literals.saved);
+      },
+      error: () => this.toast.error(this.literals.errorSave),
+    });
   }
 
   onSaveBrand(value: BonaFormValue): void {

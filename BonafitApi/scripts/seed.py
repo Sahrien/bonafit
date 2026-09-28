@@ -6,7 +6,7 @@ import argparse
 import json
 import sys
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from sqlalchemy import select
@@ -27,6 +27,8 @@ from app.models import (
     FormAssignment,
     FormQuestion,
     FormQuestionOption,
+    PublicHoliday,
+    ScheduleAbsence,
     Service,
     Trainer,
     TrainerSchedule,
@@ -291,6 +293,24 @@ def seed_if_empty(db: Session) -> None:
                 )
             )
     db.add_all(schedules)
+
+    db.add(
+        PublicHoliday(
+            id="holiday-1",
+            date=date(2026, 12, 25),
+            name="Navidad",
+        )
+    )
+    db.add(
+        ScheduleAbsence(
+            id="absence-1",
+            trainer_id="trainer-2",
+            starts_on=date(2026, 10, 5),
+            ends_on=date(2026, 10, 9),
+            reason="vacation",
+            note="Semana de descanso",
+        )
+    )
 
     db.add(
         BookingSettings(

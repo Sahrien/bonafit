@@ -1,0 +1,52 @@
+<app-bona-dialog-layout [title]="title()">
+  <p class="schedule-action__range">{{ rangeLabel() }}</p>
+
+  @if (data.kind === 'editWindow' && inherited()) {
+    <p class="schedule-action__hint">{{ literals.inheritedHint }}</p>
+  }
+
+  @if (showForm()) {
+    <app-bona-form
+      [fields]="fields()"
+      [value]="formValue()"
+      [showSubmit]="false"
+      (valueChange)="onFormChange($event)"
+      (submitted)="onSave()" />
+  }
+
+  @if (data.kind === 'editWindow') {
+    <div class="schedule-action__menu">
+      <app-bona-button [text]="literals.markAbsence" variant="secondary" (action)="onRequestAbsence()" />
+      @if (data.source === 'override') {
+        <app-bona-button [text]="literals.revertToTemplate" variant="secondary" (action)="onRevertDay()" />
+      }
+      <app-bona-button [text]="literals.deleteThisDay" variant="secondary" (action)="onDeleteWindow('thisDay')" />
+      @if (data.templateId) {
+        <app-bona-button [text]="deleteEveryLabel()" variant="secondary" (action)="onDeleteWindow('everyWeekday')" />
+      }
+    </div>
+  }
+
+  @if (data.kind === 'editAbsence') {
+    <div class="schedule-action__menu">
+      <app-bona-button [text]="literals.delete" variant="secondary" (action)="onDeleteAbsence()" />
+    </div>
+  }
+
+  @if (data.kind === 'moveTemplate') {
+    <div class="schedule-action__menu">
+      <app-bona-button [text]="literals.applyThisDay" (action)="onApplyMove('thisDay')" />
+      <app-bona-button [text]="applyEveryLabel()" (action)="onApplyMove('everyWeekday')" />
+    </div>
+  }
+
+  <div bonaDialogActions>
+    <app-bona-button [text]="literals.closeEditor" variant="secondary" (action)="onCancel()" />
+    @if (data.kind === 'editHoliday' && data.canEditHoliday) {
+      <app-bona-button [text]="literals.delete" variant="secondary" (action)="onDeleteHoliday()" />
+    }
+    @if (showForm() && data.kind !== 'editWindow') {
+      <app-bona-button [text]="literals.save" (action)="onSave()" />
+    }
+  </div>
+</app-bona-dialog-layout>

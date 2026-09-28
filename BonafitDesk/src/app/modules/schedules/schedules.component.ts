@@ -1,349 +1,804 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  WritableSignal,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatIcon } from '@angular/material/icon';
-import { filter, forkJoin, switchMap } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
-import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
-import { BonaFieldComponent } from '../../components/bona-field/bona-field.component';
-import { BonaFieldDefinition, BonaFieldOption } from '../../components/bona-field/bona-field.definition';
-import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
+import {
+  BonaCalendarComponent,
+  BonaCalendarEvent,
+  BonaCalendarEventDrop,
+  BonaCalendarSlotSelect,
+  BonaCalendarView,
+} from '../../components/bona-calendar/bona-calendar.component';
+import { BonaFilterMenuComponent, BonaFilterMenuItem } from '../../components/bona-filter-menu/bona-filter-menu.component';
+import { BonaIconButtonComponent } from '../../components/bona-icon-button/bona-icon-button.component';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
+import { BonaSummaryCardComponent } from '../../components/bona-summary-card/bona-summary-card.component';
+import { BonaTabItem, BonaTabsComponent } from '../../components/bona-tabs/bona-tabs.component';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { ApiBusinessError } from '../../core/api-business.error';
-import { TrainerScheduleDto, TrainerScheduleWriteDto } from '../../models/trainer-schedule.dto';
-import { TrainerDto, TrainerWriteDto } from '../../models/trainer.dto';
-import { CalendarApiService } from '../../services/calendar-api.service';
+import { isoWeekday, localDateKey, parseLocalDateKey } from '../../core/booking';
+import { periodRange } from '../calendar/calendar-range';
 import { injectI18n } from '../../core/i18n/inject-i18n';
+import { LanguageService } from '../../core/i18n/language.service';
+import { AuthUserDto } from '../../models/auth-session.dto';
+import {
+  PublicHolidayDto,
+  ResolvedDayDto,
+  ScheduleAbsenceDto,
+  ScheduleDateWindowDto,
+  ScheduleHoursDto,
+} from '../../models/schedule.dto';
+import { TrainerScheduleDto } from '../../models/trainer-schedule.dto';
+import { TrainerDto } from '../../models/trainer.dto';
+import { AuthApiService } from '../../services/auth-api.service';
+import { CalendarApiService } from '../../services/calendar-api.service';
+import { ScheduleActionDialogData, ScheduleActionResult, ScheduleScope } from './schedule-action.model';
+import { ScheduleAction } from './schedule-action.service';
+import {
+  TRAINER_EVENT_COLORS,
+  TRAINER_EVENT_TEXT_COLORS,
+  addDays,
+  addMonths,
+  atDateTime,
+  formatHours,
+  hhmm,
+  inclusiveDateKey,
+  parseScheduleEventId,
+  rangeQueryForView,
+  scheduleEventId,
+} from './schedule-dates';
 
-const NEW_ID = 'new';
-const EMPTY_FORM: BonaFormValue = {
-  trainerId: '',
-  weekday: '1',
-  startTime: '08:00',
-  endTime: '18:00',
-};
-
-interface ScheduleSlotView {
-  id: string;
-  startTime: string;
-  endTime: string;
-}
-
-interface ScheduleDayView {
-  weekday: number;
-  weekdayLabel: string;
-  slots: ScheduleSlotView[];
-}
-
-interface TrainerScheduleGroup {
-  trainerId: string;
-  trainerName: string;
-  slotCount: number;
-  days: ScheduleDayView[];
-}
+export type SchedulesMode = 'yo' | 'estudio';
 
 @Component({
   selector: 'app-schedules',
   standalone: true,
-  imports: [BonaPageComponent, BonaButtonComponent, BonaFormComponent, BonaFieldComponent, MatIcon],
+  imports: [
+    BonaPageComponent,
+    BonaButtonComponent,
+    BonaTabsComponent,
+    BonaCalendarComponent,
+    BonaIconButtonComponent,
+    BonaFilterMenuComponent,
+    BonaSummaryCardComponent,
+  ],
   templateUrl: './schedules.component.html',
   styleUrl: './schedules.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SchedulesComponent {
   private readonly calendarApi = inject(CalendarApiService);
-  private readonly confirm = inject(BonaConfirm);
+  private readonly authApi = inject(AuthApiService);
+  private readonly scheduleAction = inject(ScheduleAction);
   private readonly toast = inject(BonaToast);
   private readonly destroyRef = inject(DestroyRef);
-
+  readonly language = inject(LanguageService);
   private readonly i18n = injectI18n('schedules');
+
   get literals() {
     return this.i18n();
   }
+
   readonly loading = signal(true);
   readonly error = signal('');
-  readonly formOpen = signal(false);
-  readonly capacityOpen = signal(false);
-  readonly formValue = signal<BonaFormValue>({ ...EMPTY_FORM });
-  private readonly editingId = signal<string | null>(null);
   private readonly trainers = signal<TrainerDto[]>([]);
-  private readonly schedules = signal<TrainerScheduleDto[]>([]);
-  private readonly openTrainerIds = signal<ReadonlySet<string>>(new Set());
-  private readonly openScheduleTrainerIds = signal<ReadonlySet<string>>(new Set());
-  private readonly capacityDrafts = signal<Record<string, string>>({});
+  private readonly templates = signal<TrainerScheduleDto[]>([]);
+  private readonly resolved = signal<ResolvedDayDto[]>([]);
+  private readonly dateWindows = signal<ScheduleDateWindowDto[]>([]);
+  private readonly absences = signal<ScheduleAbsenceDto[]>([]);
+  readonly holidays = signal<PublicHolidayDto[]>([]);
+  readonly hours = signal<ScheduleHoursDto>({
+    days: [],
+    totals: [],
+    totalMinutes: 0,
+    averageMinutesPerDay: 0,
+  });
+  readonly modeOverride = signal<SchedulesMode | null>(null);
+  readonly focusDate = signal(new Date());
+  readonly view = signal<BonaCalendarView>('week');
+  readonly selectedTrainerIds = signal<string[]>([]);
+  private readonly sessionUser = signal<AuthUserDto | null>(null);
 
+  readonly ownTrainerId = computed(() => this.sessionUser()?.trainerId ?? '');
+  readonly activeMode = computed<SchedulesMode>(
+    () => this.modeOverride() ?? (this.ownTrainerId() ? 'yo' : 'estudio'),
+  );
   readonly catalogTrainers = computed(() => this.trainers());
 
-  readonly scheduleFormTitle = computed(() => {
-    const id = this.editingId();
-    return !id || id === NEW_ID ? this.literals.newSchedule : this.literals.editSchedule;
-  });
-
-  readonly weekdayOptions = computed<BonaFieldOption[]>(() =>
-    [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
-      value: String(weekday),
-      label: this.weekdayLabel(weekday),
-    })),
-  );
-
-  readonly formFields = computed((): BonaFieldDefinition[] => [
-    {
-      key: 'trainerId',
-      label: this.literals.trainer,
-      type: 'select',
-      required: true,
-      options: this.trainers().map((trainer) => ({ value: trainer.id, label: trainer.name })),
-    },
-    {
-      key: 'weekday',
-      label: this.literals.weekday,
-      type: 'select',
-      required: true,
-      options: this.weekdayOptions(),
-    },
-    { key: 'startTime', label: this.literals.startTime, type: 'time', required: true },
-    { key: 'endTime', label: this.literals.endTime, type: 'time', required: true },
+  readonly modeTabs = computed<BonaTabItem[]>(() => [
+    { id: 'yo', label: this.literals.tabYo },
+    { id: 'estudio', label: this.literals.tabEstudio },
   ]);
 
-  readonly capacityField = computed<BonaFieldDefinition>(() => ({
-    key: 'concurrentCapacity',
-    label: this.literals.concurrentCapacity,
-    type: 'number',
-    required: true,
-  }));
+  readonly viewTabs = computed<BonaTabItem[]>(() => [
+    { id: 'week', label: this.literals.periodWeek },
+    { id: 'day', label: this.literals.periodDay },
+    { id: 'month', label: this.literals.periodMonth },
+  ]);
 
-  readonly trainerGroups = computed<TrainerScheduleGroup[]>(() => {
-    const trainers = this.trainers();
-    const byTrainer = new Map<string, TrainerScheduleDto[]>();
-    for (const row of this.schedules()) {
-      const list = byTrainer.get(row.trainerId) ?? [];
-      list.push(row);
-      byTrainer.set(row.trainerId, list);
+  readonly trainerFilterItems = computed<BonaFilterMenuItem[]>(() =>
+    this.trainers().map((row) => ({ id: row.id, label: row.name })),
+  );
+
+  readonly periodTitle = computed(() => {
+    const locale = this.language.locale();
+    const focus = this.focusDate();
+    if (this.view() === 'day') {
+      return focus.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+    if (this.view() === 'month') {
+      return focus.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+    }
+    const { start, end } = periodRange('week', focus);
+    const last = new Date(end);
+    last.setDate(last.getDate() - 1);
+    const startLabel = start.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+    const endLabel = last.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${startLabel} – ${endLabel}`;
+  });
+
+  readonly events = computed<BonaCalendarEvent[]>(() => {
+    const selected = this.selectedTrainerIds();
+    const visible = (trainerId: string) => !selected.length || selected.includes(trainerId);
+    const events: BonaCalendarEvent[] = [];
+    const canEditHoliday = this.activeMode() === 'estudio';
+
+    for (const holiday of this.holidays()) {
+      events.push({
+        id: scheduleEventId({ kind: 'holiday', holidayId: holiday.id }),
+        title: holiday.name,
+        start: parseLocalDateKey(holiday.date),
+        allDay: true,
+        interactive: canEditHoliday,
+        startEditable: false,
+        textColor: 'var(--bona-color-text)',
+        classNames: ['schedule-window--closed'],
+      });
     }
 
-    const orderedIds = [
-      ...trainers.map((trainer) => trainer.id).filter((id) => byTrainer.has(id)),
-      ...[...byTrainer.keys()].filter((id) => !trainers.some((trainer) => trainer.id === id)),
-    ];
-
-    return orderedIds.map((id) => {
-      const trainer = trainers.find((item) => item.id === id);
-      const slots = byTrainer.get(id) ?? [];
-      const daysMap = new Map<number, TrainerScheduleDto[]>();
-      for (const slot of slots) {
-        const list = daysMap.get(slot.weekday) ?? [];
-        list.push(slot);
-        daysMap.set(slot.weekday, list);
+    for (const absence of this.absences()) {
+      if (!visible(absence.trainerId)) {
+        continue;
       }
-      const days = [...daysMap.keys()]
-        .sort((a, b) => a - b)
-        .map((weekday) => ({
-          weekday,
-          weekdayLabel: this.weekdayLabel(weekday),
-          slots: (daysMap.get(weekday) ?? [])
-            .slice()
-            .sort((a, b) => a.startTime.localeCompare(b.startTime))
-            .map((slot) => ({ id: slot.id, startTime: slot.startTime, endTime: slot.endTime })),
-        }));
-      return {
-        trainerId: id,
-        trainerName: trainer?.name ?? id,
-        slotCount: slots.length,
-        days,
-      };
-    });
+      events.push({
+        id: scheduleEventId({ kind: 'absence', absenceId: absence.id, trainerId: absence.trainerId }),
+        title: `${this.trainerName(absence.trainerId)} · ${this.reasonLabel(absence.reason)}`,
+        start: parseLocalDateKey(absence.startsOn),
+        end: addDays(parseLocalDateKey(absence.endsOn), 1),
+        allDay: true,
+        color: this.colorForTrainer(absence.trainerId),
+        textColor: this.textColorForTrainer(absence.trainerId),
+        resourceId: absence.trainerId,
+        classNames: ['schedule-window--closed'],
+      });
+    }
+
+    for (const day of this.resolved()) {
+      if (!visible(day.trainerId) || day.source === 'holiday' || day.source === 'absence') {
+        continue;
+      }
+      for (const window of day.windows) {
+        const dated = this.dateWindows().find(
+          (row) =>
+            row.trainerId === day.trainerId &&
+            row.date === day.date &&
+            row.startTime === window.startTime &&
+            row.endTime === window.endTime,
+        );
+        const weekday = isoWeekday(parseLocalDateKey(day.date));
+        const template = this.templates().find(
+          (row) =>
+            row.trainerId === day.trainerId &&
+            row.weekday === weekday &&
+            row.startTime === window.startTime &&
+            row.endTime === window.endTime,
+        );
+        const inherited = day.source === 'template';
+        const id = dated
+          ? scheduleEventId({ kind: 'window', windowId: dated.id, trainerId: day.trainerId })
+          : scheduleEventId({
+              kind: 'inherited',
+              templateId: template?.id ?? '',
+              trainerId: day.trainerId,
+              date: day.date,
+              startTime: window.startTime,
+              endTime: window.endTime,
+            });
+        events.push({
+          id,
+          title: this.activeMode() === 'estudio' ? this.trainerName(day.trainerId) : `${window.startTime}–${window.endTime}`,
+          start: atDateTime(day.date, window.startTime),
+          end: atDateTime(day.date, window.endTime),
+          color: this.colorForTrainer(day.trainerId),
+          textColor: this.textColorForTrainer(day.trainerId),
+          resourceId: day.trainerId,
+          classNames: inherited ? ['schedule-window--inherited'] : ['schedule-window--override'],
+        });
+      }
+    }
+    return events;
   });
 
   constructor() {
+    this.authApi
+      .getSession()
+      .pipe(takeUntilDestroyed())
+      .subscribe((session) => {
+        this.sessionUser.set(session?.user ?? null);
+        this.load();
+      });
+  }
+
+  onMode(id: string): void {
+    this.modeOverride.set(id === 'yo' ? 'yo' : 'estudio');
+    this.selectedTrainerIds.set([]);
     this.load();
   }
 
-  onCreate(): void {
-    this.editingId.set(NEW_ID);
-    this.formValue.set({
-      ...EMPTY_FORM,
-      trainerId: this.trainers()[0]?.id || '',
-    });
-    this.error.set('');
-    this.formOpen.set(true);
+  onView(id: string): void {
+    this.view.set(id === 'day' || id === 'month' ? id : 'week');
+    this.load();
   }
 
-  onFormChange(value: BonaFormValue): void {
-    this.formValue.set(value);
+  onFocusToday(): void {
+    this.focusDate.set(new Date());
+    this.load();
   }
 
-  onSave(value: BonaFormValue): void {
-    const payload = this.toWriteDto(value);
-    if (!payload) {
+  onPrevPeriod(): void {
+    this.shiftFocus(-1);
+  }
+
+  onNextPeriod(): void {
+    this.shiftFocus(1);
+  }
+
+  onTrainerFilter(ids: string[]): void {
+    this.selectedTrainerIds.set(ids);
+  }
+
+  hoursLabel(minutes: number): string {
+    return formatHours(minutes);
+  }
+
+  onSlotSelect(slot: BonaCalendarSlotSelect): void {
+    const date = localDateKey(slot.start);
+    if (this.holidays().some((row) => row.date === date) && !slot.allDay) {
       return;
     }
-    const id = this.editingId();
-    const request =
-      !id || id === NEW_ID
-        ? this.calendarApi.createTrainerSchedule(payload)
-        : this.calendarApi.updateTrainerSchedule(id, payload);
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.error.set('');
-        this.toast.success(this.literals.saved);
-        this.formOpen.set(false);
-        this.editingId.set(null);
-        this.loadSchedules();
-      },
-      error: (error) => this.toast.error(this.messageFor(error)),
+    if (slot.allDay) {
+      const range = inclusiveDateKey(slot.start, slot.end, true);
+      this.openAction({
+        kind: 'createClosed',
+        mode: this.activeMode(),
+        trainers: this.dialogTrainers(),
+        trainerId: this.defaultTrainerId(),
+        date: range.startsOn,
+        endsOn: range.endsOn,
+        weekday: isoWeekday(slot.start),
+        canEditHoliday: this.activeMode() === 'estudio',
+      });
+      return;
+    }
+    const startTime = hhmm(slot.start);
+    const endTime = hhmm(slot.end);
+    if (startTime >= endTime) {
+      return;
+    }
+    this.openAction({
+      kind: 'createHours',
+      mode: this.activeMode(),
+      trainers: this.dialogTrainers(),
+      trainerId: this.defaultTrainerId(),
+      date,
+      startTime,
+      endTime,
+      weekday: isoWeekday(slot.start),
     });
   }
 
-  onCancel(): void {
-    this.formOpen.set(false);
-    this.editingId.set(null);
-    this.error.set('');
-  }
-
-  onToggleCapacity(): void {
-    this.capacityOpen.update((open) => !open);
-  }
-
-  onCloseCapacity(): void {
-    this.capacityOpen.set(false);
-  }
-
-  isTrainerOpen(trainerId: string): boolean {
-    return this.openTrainerIds().has(trainerId);
-  }
-
-  onToggleTrainer(trainerId: string): void {
-    this.toggleId(this.openTrainerIds, trainerId);
-  }
-
-  isScheduleTrainerOpen(trainerId: string): boolean {
-    return this.openScheduleTrainerIds().has(trainerId);
-  }
-
-  onToggleScheduleTrainer(trainerId: string): void {
-    this.toggleId(this.openScheduleTrainerIds, trainerId);
-  }
-
-  slotCountLabel(count: number): string {
-    return count === 1
-      ? this.literals.slotCountOne
-      : this.literals.slotCountOther.replace('{{count}}', String(count));
-  }
-
-  capacityDraft(trainer: TrainerDto): string {
-    return this.capacityDrafts()[trainer.id] ?? `${trainer.concurrentCapacity}`;
-  }
-
-  onCapacityDraftChange(trainerId: string, value: string): void {
-    this.capacityDrafts.update((drafts) => ({ ...drafts, [trainerId]: value }));
-  }
-
-  onSaveCapacities(): void {
-    const dirty: { id: string; payload: TrainerWriteDto }[] = [];
-    for (const trainer of this.trainers()) {
-      const payload = this.toTrainerWrite(trainer, this.capacityDraft(trainer));
-      if (!payload) {
+  onEventClick(event: BonaCalendarEvent): void {
+    const parsed = parseScheduleEventId(event.id);
+    if (!parsed) {
+      return;
+    }
+    if (parsed.kind === 'holiday') {
+      if (this.activeMode() !== 'estudio') {
         return;
       }
-      if (payload.concurrentCapacity !== trainer.concurrentCapacity) {
-        dirty.push({ id: trainer.id, payload });
+      const holiday = this.holidays().find((row) => row.id === parsed.holidayId);
+      if (!holiday) {
+        return;
       }
-    }
-    this.error.set('');
-    if (dirty.length === 0) {
-      this.toast.success(this.literals.capacitySaved);
+      this.openAction({
+        kind: 'editHoliday',
+        mode: 'estudio',
+        trainers: this.trainers(),
+        trainerId: this.defaultTrainerId(),
+        date: holiday.date,
+        weekday: isoWeekday(parseLocalDateKey(holiday.date)),
+        holidayName: holiday.name,
+        canEditHoliday: true,
+      });
       return;
     }
-    forkJoin(dirty.map((item) => this.calendarApi.updateTrainer(item.id, item.payload)))
+    if (parsed.kind === 'absence') {
+      const absence = this.absences().find((row) => row.id === parsed.absenceId);
+      if (!absence) {
+        return;
+      }
+      this.openAction({
+        kind: 'editAbsence',
+        mode: this.activeMode(),
+        trainers: this.trainers(),
+        trainerId: absence.trainerId,
+        date: absence.startsOn,
+        endsOn: absence.endsOn,
+        weekday: isoWeekday(parseLocalDateKey(absence.startsOn)),
+      });
+      return;
+    }
+    if (parsed.kind === 'window') {
+      const window = this.dateWindows().find((row) => row.id === parsed.windowId);
+      if (!window) {
+        return;
+      }
+      const weekday = isoWeekday(parseLocalDateKey(window.date));
+      const template = this.templates().find(
+        (row) =>
+          row.trainerId === window.trainerId &&
+          row.weekday === weekday &&
+          row.startTime === window.startTime &&
+          row.endTime === window.endTime,
+      );
+      this.openAction({
+        kind: 'editWindow',
+        mode: this.activeMode(),
+        trainers: this.trainers(),
+        trainerId: window.trainerId,
+        date: window.date,
+        startTime: window.startTime,
+        endTime: window.endTime,
+        weekday,
+        source: 'override',
+        templateId: template?.id,
+      });
+      return;
+    }
+    const weekday = isoWeekday(parseLocalDateKey(parsed.date));
+    this.openAction({
+      kind: 'editWindow',
+      mode: this.activeMode(),
+      trainers: this.trainers(),
+      trainerId: parsed.trainerId,
+      date: parsed.date,
+      startTime: parsed.startTime,
+      endTime: parsed.endTime,
+      weekday,
+      source: 'template',
+      templateId: parsed.templateId || undefined,
+    });
+  }
+
+  onEventDrop(drop: BonaCalendarEventDrop): void {
+    const parsed = parseScheduleEventId(drop.event.id);
+    if (!parsed || parsed.kind === 'holiday' || parsed.kind === 'absence') {
+      drop.revert();
+      return;
+    }
+    const startTime = hhmm(drop.start);
+    const end = drop.end ?? drop.start;
+    const endTime = hhmm(end);
+    const date = localDateKey(drop.start);
+    if (startTime >= endTime) {
+      drop.revert();
+      return;
+    }
+    if (parsed.kind === 'window') {
+      const current = this.dateWindows().find((row) => row.id === parsed.windowId);
+      this.run(
+        this.calendarApi.updateScheduleDateWindow(parsed.windowId, {
+          trainerId: parsed.trainerId,
+          date,
+          startTime,
+          endTime,
+          note: current?.note ?? '',
+        }),
+        this.literals.saved,
+        drop.revert,
+      );
+      return;
+    }
+    this.openAction(
+      {
+        kind: 'moveTemplate',
+        mode: this.activeMode(),
+        trainers: this.trainers(),
+        trainerId: parsed.trainerId,
+        date,
+        startTime,
+        endTime,
+        weekday: isoWeekday(drop.start),
+        source: 'template',
+        templateId: parsed.templateId || undefined,
+      },
+      drop,
+      parsed,
+    );
+  }
+
+  private openAction(
+    data: ScheduleActionDialogData,
+    drop?: BonaCalendarEventDrop,
+    parsed?: ReturnType<typeof parseScheduleEventId>,
+  ): void {
+    this.scheduleAction
+      .open(data)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (updated) => {
-          const byId = new Map(updated.map((row) => [row.id, row]));
-          const trainers = this.trainers().map((row) => byId.get(row.id) ?? row);
-          this.trainers.set(trainers);
-          this.capacityDrafts.set(this.draftsFromTrainers(trainers));
-          this.toast.success(this.literals.capacitySaved);
-        },
-        error: () => this.toast.error(this.literals.errorSave),
+      .subscribe((result) => {
+        if (!result) {
+          drop?.revert();
+          return;
+        }
+        this.applyResult(result, data, drop, parsed ?? null);
       });
   }
 
-  onEdit(id: string): void {
-    const row = this.schedules().find((item) => item.id === id);
-    if (!row) {
+  private applyResult(
+    result: ScheduleActionResult,
+    data: ScheduleActionDialogData,
+    drop?: BonaCalendarEventDrop,
+    parsed?: ReturnType<typeof parseScheduleEventId> | null,
+  ): void {
+    if (result.action === 'createHours') {
+      if (result.scope === 'everyWeekday') {
+        this.run(
+          this.calendarApi.createTrainerSchedule({
+            trainerId: result.trainerId,
+            weekday: isoWeekday(parseLocalDateKey(result.date)),
+            startTime: result.startTime,
+            endTime: result.endTime,
+          }),
+          this.literals.saved,
+        );
+        return;
+      }
+      this.run(
+        this.ensureOverride(result.trainerId, result.date).pipe(
+          switchMap(() =>
+            this.calendarApi.createScheduleDateWindow({
+              trainerId: result.trainerId,
+              date: result.date,
+              startTime: result.startTime,
+              endTime: result.endTime,
+              note: '',
+            }),
+          ),
+        ),
+        this.literals.saved,
+      );
       return;
     }
-    this.editingId.set(row.id);
-    this.formValue.set({
-      trainerId: row.trainerId,
-      weekday: String(row.weekday),
-      startTime: row.startTime,
-      endTime: row.endTime,
-    });
-    this.error.set('');
-    this.formOpen.set(true);
-  }
-
-  onDelete(id: string): void {
-    this.deleteSchedule(id);
-  }
-
-  private toggleId(store: WritableSignal<ReadonlySet<string>>, trainerId: string): void {
-    store.update((ids) => {
-      const next = new Set(ids);
-      if (next.has(trainerId)) {
-        next.delete(trainerId);
-      } else {
-        next.add(trainerId);
+    if (result.action === 'createAbsence') {
+      this.run(
+        this.clearDateWindows(result.trainerId, result.startsOn).pipe(
+          switchMap(() =>
+            this.calendarApi.createScheduleAbsence({
+              trainerId: result.trainerId,
+              startsOn: result.startsOn,
+              endsOn: result.endsOn,
+              reason: result.reason,
+              note: '',
+            }),
+          ),
+        ),
+        this.literals.absenceSaved,
+      );
+      return;
+    }
+    if (result.action === 'createHoliday') {
+      this.run(
+        this.calendarApi.createPublicHoliday({ date: result.date, name: result.name }),
+        this.literals.holidaySaved,
+      );
+      return;
+    }
+    if (result.action === 'saveHoliday') {
+      const holiday = this.holidays().find((row) => row.date === data.date);
+      if (!holiday) {
+        return;
       }
-      return next;
-    });
+      this.run(
+        this.calendarApi.updatePublicHoliday(holiday.id, { date: holiday.date, name: result.name }),
+        this.literals.holidaySaved,
+      );
+      return;
+    }
+    if (result.action === 'deleteHoliday') {
+      const holiday = this.holidays().find((row) => row.date === data.date);
+      if (!holiday) {
+        return;
+      }
+      this.run(this.calendarApi.deletePublicHoliday(holiday.id), this.literals.holidayDeleted);
+      return;
+    }
+    if (result.action === 'deleteAbsence') {
+      const absence = this.absences().find(
+        (row) => row.trainerId === data.trainerId && row.startsOn === data.date,
+      );
+      if (!absence) {
+        return;
+      }
+      this.run(this.calendarApi.deleteScheduleAbsence(absence.id), this.literals.absenceDeleted);
+      return;
+    }
+    if (result.action === 'requestAbsence') {
+      this.openAction({
+        kind: 'createClosed',
+        mode: this.activeMode(),
+        trainers: this.dialogTrainers(data.trainerId),
+        trainerId: data.trainerId,
+        date: data.date,
+        endsOn: data.date,
+        weekday: data.weekday,
+        canEditHoliday: this.activeMode() === 'estudio',
+      });
+      return;
+    }
+    if (result.action === 'revertDay') {
+      this.run(this.clearDateWindows(data.trainerId, data.date), this.literals.reverted);
+      return;
+    }
+    if (result.action === 'deleteWindow') {
+      this.deleteWindow(result.scope, data);
+      return;
+    }
+    if (result.action === 'applyMove') {
+      this.applyMove(result.scope, data, drop, parsed ?? null);
+    }
   }
 
-  private deleteSchedule(id: string): void {
-    this.confirm
-      .open({
-        title: this.literals.confirmDeleteTitle,
-        message: this.literals.confirmDeleteMessage,
-        confirmLabel: this.literals.delete,
-      })
-      .pipe(
-        filter((ok) => ok),
-        switchMap(() => this.calendarApi.deleteTrainerSchedule(id)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: () => {
-          if (this.editingId() === id) {
-            this.formOpen.set(false);
-            this.editingId.set(null);
+  private deleteWindow(scope: ScheduleScope, data: ScheduleActionDialogData): void {
+    if (scope === 'everyWeekday' && data.templateId) {
+      this.run(this.calendarApi.deleteTrainerSchedule(data.templateId), this.literals.deleted);
+      return;
+    }
+    this.run(
+      this.ensureOverride(data.trainerId, data.date).pipe(
+        switchMap((windows) => {
+          const match = windows.find(
+            (row) => row.startTime === data.startTime && row.endTime === data.endTime,
+          );
+          const remaining = windows.filter((row) => row.id !== match?.id);
+          const deleteOne = match ? this.calendarApi.deleteScheduleDateWindow(match.id) : of(void 0);
+          if (remaining.length > 0 || !match) {
+            return deleteOne;
           }
-          this.toast.success(this.literals.deleted);
-          this.loadSchedules();
-        },
-        error: () => this.toast.error(this.literals.errorSave),
-      });
+          return deleteOne.pipe(
+            switchMap(() =>
+              this.calendarApi.createScheduleAbsence({
+                trainerId: data.trainerId,
+                startsOn: data.date,
+                endsOn: data.date,
+                reason: 'unknown',
+                note: '',
+              }),
+            ),
+          );
+        }),
+      ),
+      this.literals.deleted,
+    );
+  }
+
+  private applyMove(
+    scope: ScheduleScope,
+    data: ScheduleActionDialogData,
+    drop?: BonaCalendarEventDrop,
+    parsed?: ReturnType<typeof parseScheduleEventId> | null,
+  ): void {
+    if (!data.startTime || !data.endTime) {
+      drop?.revert();
+      return;
+    }
+    if (scope === 'everyWeekday' && data.templateId) {
+      this.run(
+        this.calendarApi.updateTrainerSchedule(data.templateId, {
+          trainerId: data.trainerId,
+          weekday: data.weekday,
+          startTime: data.startTime,
+          endTime: data.endTime,
+        }),
+        this.literals.saved,
+        drop?.revert,
+      );
+      return;
+    }
+    const originalDate = parsed?.kind === 'inherited' ? parsed.date : data.date;
+    this.run(
+      this.ensureOverride(data.trainerId, originalDate).pipe(
+        switchMap((windows) => {
+          const start = parsed?.kind === 'inherited' ? parsed.startTime : data.startTime;
+          const end = parsed?.kind === 'inherited' ? parsed.endTime : data.endTime;
+          const match = windows.find((row) => row.startTime === start && row.endTime === end);
+          if (!match) {
+            return this.calendarApi.createScheduleDateWindow({
+              trainerId: data.trainerId,
+              date: data.date,
+              startTime: data.startTime ?? '',
+              endTime: data.endTime ?? '',
+              note: '',
+            });
+          }
+          return this.calendarApi.updateScheduleDateWindow(match.id, {
+            trainerId: data.trainerId,
+            date: data.date,
+            startTime: data.startTime ?? '',
+            endTime: data.endTime ?? '',
+            note: match.note,
+          });
+        }),
+      ),
+      this.literals.saved,
+      drop?.revert,
+    );
+  }
+
+  private dialogTrainers(lockedId?: string): TrainerDto[] {
+    if (lockedId) {
+      return this.trainers().filter((row) => row.id === lockedId);
+    }
+    const selected = this.selectedTrainerIds();
+    if (selected.length === 1) {
+      return this.trainers().filter((row) => row.id === selected[0]);
+    }
+    return this.trainers();
+  }
+
+  private defaultTrainerId(): string {
+    const selected = this.selectedTrainerIds();
+    if (selected.length === 1) {
+      return selected[0];
+    }
+    return this.activeMode() === 'yo' ? this.ownTrainerId() : (this.trainers()[0]?.id ?? '');
+  }
+
+  private trainerName(trainerId: string): string {
+    return this.trainers().find((row) => row.id === trainerId)?.name ?? trainerId;
+  }
+
+  private reasonLabel(reason: string): string {
+    const labels: Record<string, string> = {
+      vacation: this.literals.reasonVacation,
+      personal: this.literals.reasonPersonal,
+      sick: this.literals.reasonSick,
+      unknown: this.literals.reasonUnknown,
+      publicHoliday: this.literals.reasonHoliday,
+    };
+    return labels[reason] ?? this.literals.closedDay;
+  }
+
+  private colorForTrainer(trainerId: string): string {
+    return TRAINER_EVENT_COLORS[this.trainerColorIndex(trainerId)];
+  }
+
+  private textColorForTrainer(trainerId: string): string {
+    return TRAINER_EVENT_TEXT_COLORS[this.trainerColorIndex(trainerId)];
+  }
+
+  private trainerColorIndex(trainerId: string): number {
+    const index = this.trainers().findIndex((row) => row.id === trainerId);
+    return Math.max(0, index) % TRAINER_EVENT_COLORS.length;
+  }
+
+  private shiftFocus(direction: number): void {
+    if (this.view() === 'day') {
+      this.focusDate.set(addDays(this.focusDate(), direction));
+    } else if (this.view() === 'month') {
+      this.focusDate.set(addMonths(this.focusDate(), direction));
+    } else {
+      this.focusDate.set(addDays(this.focusDate(), direction * 7));
+    }
+    this.load();
+  }
+
+  private ensureOverride(trainerId: string, dateKey: string): Observable<ScheduleDateWindowDto[]> {
+    const existing = this.dateWindows().filter((row) => row.trainerId === trainerId && row.date === dateKey);
+    if (existing.length > 0) {
+      return of(existing);
+    }
+    const weekday = isoWeekday(parseLocalDateKey(dateKey));
+    const templates = this.templates().filter((row) => row.trainerId === trainerId && row.weekday === weekday);
+    if (templates.length === 0) {
+      return of([]);
+    }
+    return forkJoin(
+      templates.map((row) =>
+        this.calendarApi.createScheduleDateWindow({
+          trainerId,
+          date: dateKey,
+          startTime: row.startTime,
+          endTime: row.endTime,
+          note: '',
+        }),
+      ),
+    );
+  }
+
+  private clearDateWindows(trainerId: string, dateKey: string): Observable<unknown> {
+    const windows = this.dateWindows().filter((row) => row.trainerId === trainerId && row.date === dateKey);
+    if (windows.length === 0) {
+      return of(void 0);
+    }
+    return forkJoin(windows.map((row) => this.calendarApi.deleteScheduleDateWindow(row.id)));
+  }
+
+  private run<T>(request: Observable<T>, success: string, revert?: () => void): void {
+    this.error.set('');
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.toast.success(success);
+        this.load();
+      },
+      error: (error) => {
+        revert?.();
+        this.toast.error(this.messageFor(error));
+      },
+    });
   }
 
   private load(): void {
+    const trainerId = this.activeMode() === 'yo' ? this.ownTrainerId() : undefined;
+    if (this.activeMode() === 'yo' && !trainerId) {
+      this.loading.set(false);
+      return;
+    }
+    const range = rangeQueryForView(this.focusDate(), this.view() === 'month' ? 'month' : this.view());
+    this.loading.set(true);
+    const trainers$ = trainerId ? this.calendarApi.getTrainer(trainerId) : this.calendarApi.getTrainers();
     forkJoin({
-      trainers: this.calendarApi.getTrainers(),
-      schedules: this.calendarApi.getTrainerSchedules(),
+      trainers: trainers$,
+      templates: this.calendarApi.getTrainerSchedules(trainerId).pipe(catchError(() => of([] as TrainerScheduleDto[]))),
+      resolved: this.calendarApi
+        .getResolvedSchedules({ ...range, trainerId })
+        .pipe(catchError(() => of([] as ResolvedDayDto[]))),
+      dateWindows: this.calendarApi
+        .getScheduleDateWindows({ ...range, trainerId })
+        .pipe(catchError(() => of([] as ScheduleDateWindowDto[]))),
+      absences: this.calendarApi
+        .getScheduleAbsences({ ...range, trainerId })
+        .pipe(catchError(() => of([] as ScheduleAbsenceDto[]))),
+      holidays: this.calendarApi.getPublicHolidays(range).pipe(catchError(() => of([] as PublicHolidayDto[]))),
+      hours:
+        this.activeMode() === 'estudio'
+          ? this.calendarApi.getScheduleHours(range).pipe(
+              catchError(() =>
+                of({
+                  days: [],
+                  totals: [],
+                  totalMinutes: 0,
+                  averageMinutesPerDay: 0,
+                } satisfies ScheduleHoursDto),
+              ),
+            )
+          : of({
+              days: [],
+              totals: [],
+              totalMinutes: 0,
+              averageMinutesPerDay: 0,
+            } satisfies ScheduleHoursDto),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ trainers, schedules }) => {
-          this.trainers.set(trainers);
-          this.capacityDrafts.set(this.draftsFromTrainers(trainers));
-          this.schedules.set(schedules);
+        next: (bundle) => {
+          this.trainers.set(Array.isArray(bundle.trainers) ? bundle.trainers : [bundle.trainers]);
+          this.templates.set(bundle.templates);
+          this.resolved.set(bundle.resolved);
+          this.dateWindows.set(bundle.dateWindows);
+          this.absences.set(bundle.absences);
+          this.holidays.set(bundle.holidays);
+          this.hours.set(bundle.hours);
           this.loading.set(false);
         },
         error: () => {
@@ -353,55 +808,6 @@ export class SchedulesComponent {
       });
   }
 
-  private loadSchedules(): void {
-    this.calendarApi
-      .getTrainerSchedules()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((rows) => this.schedules.set(rows));
-  }
-
-  private toWriteDto(value: BonaFormValue): TrainerScheduleWriteDto | null {
-    const trainerId = value['trainerId'] ?? '';
-    const weekday = Number(value['weekday']);
-    const startTime = value['startTime'] ?? '';
-    const endTime = value['endTime'] ?? '';
-    if (!trainerId || !weekday || !startTime || !endTime) {
-      this.error.set(this.literals.errorRequired);
-      return null;
-    }
-    if (startTime >= endTime) {
-      this.error.set(this.literals.errorInvalid);
-      return null;
-    }
-    return { trainerId, weekday, startTime, endTime };
-  }
-
-  private toTrainerWrite(trainer: TrainerDto, value: string): TrainerWriteDto | null {
-    const parsed = Number(value);
-    if (!Number.isInteger(parsed) || parsed < 1) {
-      this.error.set(this.literals.errorCapacity);
-      return null;
-    }
-    return { name: trainer.name, concurrentCapacity: parsed };
-  }
-
-  private draftsFromTrainers(trainers: TrainerDto[]): Record<string, string> {
-    return Object.fromEntries(trainers.map((trainer) => [trainer.id, `${trainer.concurrentCapacity}`]));
-  }
-
-  private weekdayLabel(weekday: number): string {
-    const labels: Record<number, string> = {
-      1: this.literals.weekday1,
-      2: this.literals.weekday2,
-      3: this.literals.weekday3,
-      4: this.literals.weekday4,
-      5: this.literals.weekday5,
-      6: this.literals.weekday6,
-      7: this.literals.weekday7,
-    };
-    return labels[weekday] ?? String(weekday);
-  }
-
   private messageFor(error: unknown): string {
     if (error instanceof ApiBusinessError) {
       if (error.code === 'booking.invalidSchedule') {
@@ -409,6 +815,12 @@ export class SchedulesComponent {
       }
       if (error.code === 'booking.scheduleTaken') {
         return this.literals.errorTaken;
+      }
+      if (error.code === 'booking.scheduleConflict') {
+        return this.literals.errorConflict;
+      }
+      if (error.code === 'booking.scheduleHasAppointments') {
+        return this.literals.errorHasAppointments;
       }
     }
     return this.literals.errorSave;

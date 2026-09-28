@@ -184,6 +184,23 @@ export const MOCK_TRAINER_SCHEDULES: TrainerScheduleDto[] = [
   ...weekdaySchedules('trainer-2', 'sch-2'),
 ];
 
+export const MOCK_PUBLIC_HOLIDAYS = [
+  { id: 'holiday-1', date: '2026-09-11', name: 'Fiesta local' },
+];
+
+export const MOCK_SCHEDULE_HOURS = {
+  days: [
+    { trainerId: 'trainer-1', date: '2026-09-09', minutes: 600 },
+    { trainerId: 'trainer-2', date: '2026-09-09', minutes: 600 },
+  ],
+  totals: [
+    { trainerId: 'trainer-1', totalMinutes: 600, averageMinutesPerDay: 600 },
+    { trainerId: 'trainer-2', totalMinutes: 600, averageMinutesPerDay: 600 },
+  ],
+  totalMinutes: 1200,
+  averageMinutesPerDay: 1200,
+};
+
 export const MOCK_BOOKING_SETTINGS: BookingSettingsDto = {
   id: 'booking-settings',
   nextDayCutoffTime: '18:00',

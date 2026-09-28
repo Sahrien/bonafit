@@ -12,6 +12,9 @@ from app.models import (
     Form,
     FormAssignment,
     FormQuestion,
+    PublicHoliday,
+    ScheduleAbsence,
+    ScheduleDateWindow,
     Service,
     Trainer,
     TrainerSchedule,
@@ -32,6 +35,11 @@ from app.schemas import (
     FormOut,
     FormQuestionOptionOut,
     FormQuestionOut,
+    PublicHolidayOut,
+    ResolvedDayOut,
+    ResolvedWindowOut,
+    ScheduleAbsenceOut,
+    ScheduleDateWindowOut,
     ServiceOut,
     TrainerOut,
     TrainerScheduleOut,
@@ -188,6 +196,42 @@ def schedule_out(row: TrainerSchedule) -> TrainerScheduleOut:
         weekday=row.weekday,
         startTime=row.start_time,
         endTime=row.end_time,
+    )
+
+
+def date_window_out(row: ScheduleDateWindow) -> ScheduleDateWindowOut:
+    return ScheduleDateWindowOut(
+        id=row.id,
+        trainerId=row.trainer_id,
+        date=row.date,
+        startTime=row.start_time,
+        endTime=row.end_time,
+        note=row.note or "",
+    )
+
+
+def absence_out(row: ScheduleAbsence) -> ScheduleAbsenceOut:
+    return ScheduleAbsenceOut(
+        id=row.id,
+        trainerId=row.trainer_id,
+        startsOn=row.starts_on,
+        endsOn=row.ends_on,
+        reason=row.reason,  # type: ignore[arg-type]
+        note=row.note or "",
+    )
+
+
+def holiday_out(row: PublicHoliday) -> PublicHolidayOut:
+    return PublicHolidayOut(id=row.id, date=row.date, name=row.name)
+
+
+def resolved_day_out(row) -> ResolvedDayOut:
+    return ResolvedDayOut(
+        trainerId=row.trainer_id,
+        date=row.date,
+        windows=[ResolvedWindowOut(startTime=window.start_time, endTime=window.end_time) for window in row.windows],
+        source=row.source,
+        reason=row.reason,
     )
 
 

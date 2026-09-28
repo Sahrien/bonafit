@@ -1,7 +1,9 @@
 import pytest
 
+from sqlalchemy import select
+
 from app.database import Database
-from app.models import Form, FormAssignment, User
+from app.models import Form, FormAssignment, PublicHoliday, ScheduleAbsence, TrainerSchedule, User
 from app.roles import UserRole
 from scripts.seed import CONFIRM_PHRASE, main, prompt_force_confirmation, seed_database
 
@@ -89,3 +91,17 @@ def test_force_clears_and_reseeds() -> None:
         lucia = db.get(User, "user-trainer-1")
         assert lucia is not None
         assert lucia.email == "lucia@bonafit.com"
+
+
+def test_seed_includes_holiday_and_absence() -> None:
+    database = _database()
+    seed_database(database)
+    with database.session() as db:
+        holiday = db.get(PublicHoliday, "holiday-1")
+        absence = db.get(ScheduleAbsence, "absence-1")
+        templates = db.scalars(select(TrainerSchedule)).all()
+        assert holiday is not None
+        assert holiday.name == "Navidad"
+        assert absence is not None
+        assert absence.reason == "vacation"
+        assert len(templates) == 10

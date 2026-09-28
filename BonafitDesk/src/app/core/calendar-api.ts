@@ -7,6 +7,18 @@ import {
   AvailabilitySlotDto,
 } from '../models/appointment.dto';
 import { BookingSettingsDto, BookingSettingsWriteDto } from '../models/booking-settings.dto';
+import {
+  PublicHolidayDto,
+  PublicHolidayWriteDto,
+  ResolvedDayDto,
+  ScheduleAbsenceDto,
+  ScheduleAbsenceWriteDto,
+  ScheduleDateWindowDto,
+  ScheduleDateWindowWriteDto,
+  ScheduleHoursDto,
+  ScheduleRangeQuery,
+  ScheduleResolvedQuery,
+} from '../models/schedule.dto';
 import { TrainerScheduleDto, TrainerScheduleWriteDto } from '../models/trainer-schedule.dto';
 import { TrainerDto, TrainerWriteDto } from '../models/trainer.dto';
 
@@ -31,4 +43,21 @@ export interface CalendarApi {
     payload: TrainerScheduleWriteDto,
   ): Observable<TrainerScheduleDto>;
   deleteTrainerSchedule(id: string): Observable<void>;
+  getScheduleDateWindows(query?: ScheduleRangeQuery): Observable<ScheduleDateWindowDto[]>;
+  createScheduleDateWindow(payload: ScheduleDateWindowWriteDto): Observable<ScheduleDateWindowDto>;
+  updateScheduleDateWindow(
+    id: string,
+    payload: ScheduleDateWindowWriteDto,
+  ): Observable<ScheduleDateWindowDto>;
+  deleteScheduleDateWindow(id: string): Observable<void>;
+  getScheduleAbsences(query?: ScheduleRangeQuery): Observable<ScheduleAbsenceDto[]>;
+  createScheduleAbsence(payload: ScheduleAbsenceWriteDto): Observable<ScheduleAbsenceDto>;
+  updateScheduleAbsence(id: string, payload: ScheduleAbsenceWriteDto): Observable<ScheduleAbsenceDto>;
+  deleteScheduleAbsence(id: string): Observable<void>;
+  getPublicHolidays(query?: ScheduleRangeQuery): Observable<PublicHolidayDto[]>;
+  createPublicHoliday(payload: PublicHolidayWriteDto): Observable<PublicHolidayDto>;
+  updatePublicHoliday(id: string, payload: PublicHolidayWriteDto): Observable<PublicHolidayDto>;
+  deletePublicHoliday(id: string): Observable<void>;
+  getResolvedSchedules(query: ScheduleResolvedQuery): Observable<ResolvedDayDto[]>;
+  getScheduleHours(query: ScheduleResolvedQuery): Observable<ScheduleHoursDto>;
 }

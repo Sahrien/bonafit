@@ -8,7 +8,7 @@ import { BonaCalendarEventDrop } from '../../components/bona-calendar/bona-calen
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { ApiBusinessError } from '../../core/api-business.error';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
-import { MOCK_APPOINTMENTS, MOCK_BOOKING_SETTINGS, MOCK_CLIENTS, MOCK_SERVICES, MOCK_TRAINERS } from '../../testing/fixtures';
+import { MOCK_APPOINTMENTS, MOCK_BOOKING_SETTINGS, MOCK_CLIENTS, MOCK_PUBLIC_HOLIDAYS, MOCK_SERVICES, MOCK_TRAINERS } from '../../testing/fixtures';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { ClientsApiService } from '../../services/clients-api.service';
 import { ServicesApiService } from '../../services/services-api.service';
@@ -31,6 +31,8 @@ describe('CalendarComponent', () => {
       'updateAppointment',
       'getBookingSettings',
       'getTrainerSchedules',
+      'getResolvedSchedules',
+      'getPublicHolidays',
     ]);
     clientsApi = jasmine.createSpyObj('ClientsApiService', ['getClients', 'getClientBonos']);
     servicesApi = jasmine.createSpyObj('ServicesApiService', ['getServices', 'getBonos']);
@@ -39,6 +41,8 @@ describe('CalendarComponent', () => {
     calendarApi.getTrainers.and.returnValue(of(MOCK_TRAINERS));
     calendarApi.getAppointments.and.returnValue(of(MOCK_APPOINTMENTS));
     calendarApi.getBookingSettings.and.returnValue(of(MOCK_BOOKING_SETTINGS));
+    calendarApi.getResolvedSchedules.and.returnValue(of([]));
+    calendarApi.getPublicHolidays.and.returnValue(of([]));
     calendarApi.createAppointment.and.returnValue(of(MOCK_APPOINTMENTS[0]));
     calendarApi.updateAppointment.and.returnValue(of(MOCK_APPOINTMENTS[0]));
     clientsApi.getClients.and.returnValue(of(MOCK_CLIENTS));
@@ -72,6 +76,8 @@ describe('CalendarComponent', () => {
     expect(servicesApi.getServices).toHaveBeenCalled();
     expect(calendarApi.getBookingSettings).toHaveBeenCalled();
     expect(calendarApi.getTrainerSchedules).not.toHaveBeenCalled();
+    expect(calendarApi.getResolvedSchedules).toHaveBeenCalled();
+    expect(calendarApi.getPublicHolidays).toHaveBeenCalled();
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain(CALENDAR_LITERALS.title);
@@ -85,7 +91,7 @@ describe('CalendarComponent', () => {
     expect(text).toContain(CALENDAR_LITERALS.serviceFilter);
     expect(text).toContain(CALENDAR_LITERALS.trainerFilter);
     expect(text).not.toContain('Bonafit hoy');
-    expect(fixture.componentInstance.events().length).toBe(MOCK_APPOINTMENTS.length);
+    expect(fixture.componentInstance.appointmentEvents().length).toBe(MOCK_APPOINTMENTS.length);
   });
 
   it('keeps the view switcher apart from the new appointment action', () => {
@@ -139,7 +145,7 @@ describe('CalendarComponent', () => {
     fixture.componentInstance.onView('week');
     fixture.detectChanges();
 
-    const title = fixture.componentInstance.events()[0].title;
+    const title = fixture.componentInstance.appointmentEvents()[0].title;
     expect(title).toBe('Marina Lopez · Entrenamiento personal · Alex Martin');
     expect(title).not.toContain(CALENDAR_LITERALS.gift);
     fixture.destroy();
@@ -148,18 +154,18 @@ describe('CalendarComponent', () => {
   it('omits trainer from day calendar titles', () => {
     fixture.componentInstance.onView('day');
     fixture.detectChanges();
-    expect(fixture.componentInstance.events()[0].title).toBe('Marina Lopez · Entrenamiento personal');
+    expect(fixture.componentInstance.appointmentEvents()[0].title).toBe('Marina Lopez · Entrenamiento personal');
   });
 
   it('filters events by trainer and service menus', () => {
     fixture.componentInstance.onTrainerFilter(['trainer-2']);
     fixture.detectChanges();
-    expect(fixture.componentInstance.events().every((event) => event.resourceId === 'trainer-2')).toBeTrue();
+    expect(fixture.componentInstance.appointmentEvents().every((event) => event.resourceId === 'trainer-2')).toBeTrue();
 
     fixture.componentInstance.onTrainerFilter([]);
     fixture.componentInstance.onServiceFilter(['svc-masaje']);
     fixture.detectChanges();
-    expect(fixture.componentInstance.events().map((event) => event.id)).toEqual(['apt-3']);
+    expect(fixture.componentInstance.appointmentEvents().map((event) => event.id)).toEqual(['apt-3']);
   });
 
   it('stacks one day calendar per trainer', () => {
@@ -189,6 +195,7 @@ describe('CalendarComponent', () => {
     fixture.componentInstance.onSlotSelect({
       start: new Date('2026-09-09T10:00:00'),
       end: new Date('2026-09-09T11:00:00'),
+      allDay: false,
     });
     const slotCall = appointmentEditor.open.calls.mostRecent().args[0];
     expect(slotCall.preset?.['startsAt']).toContain('2026-09-09T10:00');
@@ -277,5 +284,50 @@ describe('CalendarComponent', () => {
     });
     expect(calendarApi.updateAppointment).not.toHaveBeenCalled();
     expect(revert).toHaveBeenCalled();
+  });
+
+  it('paints union availability as a background event and holidays all day', () => {
+    calendarApi.getResolvedSchedules.and.returnValue(
+      of([
+        {
+          trainerId: 'trainer-1',
+          date: '2026-09-09',
+          windows: [{ startTime: '08:00', endTime: '12:00' }],
+          source: 'template',
+        },
+        {
+          trainerId: 'trainer-2',
+          date: '2026-09-09',
+          windows: [{ startTime: '10:00', endTime: '16:00' }],
+          source: 'template',
+        },
+      ]),
+    );
+    calendarApi.getPublicHolidays.and.returnValue(of(MOCK_PUBLIC_HOLIDAYS));
+    fixture = TestBed.createComponent(CalendarComponent);
+    fixture.detectChanges();
+
+    const events = fixture.componentInstance.events();
+    const availability = events.filter((event) => event.display === 'background');
+    expect(availability.length).toBe(1);
+    expect((availability[0].start as Date).getHours()).toBe(8);
+    expect((availability[0].end as Date).getHours()).toBe(16);
+    expect(events.some((event) => event.allDay && event.title === 'Fiesta local')).toBeTrue();
+
+    appointmentEditor.open.calls.reset();
+    fixture.componentInstance.onEventClick(availability[0]);
+    fixture.componentInstance.onEventClick(events.find((event) => event.allDay)!);
+    fixture.componentInstance.onSlotSelect({
+      start: new Date(2026, 8, 11),
+      end: new Date(2026, 8, 12),
+      allDay: true,
+    });
+    expect(appointmentEditor.open).not.toHaveBeenCalled();
+
+    fixture.componentInstance.onTrainerFilter(['trainer-1']);
+    fixture.detectChanges();
+    const filtered = fixture.componentInstance.events().filter((event) => event.display === 'background');
+    expect((filtered[0].end as Date).getHours()).toBe(12);
+    fixture.destroy();
   });
 });

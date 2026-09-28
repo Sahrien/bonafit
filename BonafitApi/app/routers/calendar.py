@@ -7,6 +7,14 @@ from app.schemas import (
     AvailabilitySlotOut,
     BookingSettingsOut,
     BookingSettingsWrite,
+    PublicHolidayOut,
+    PublicHolidayWrite,
+    ResolvedDayOut,
+    ScheduleAbsenceOut,
+    ScheduleAbsenceWrite,
+    ScheduleDateWindowOut,
+    ScheduleDateWindowWrite,
+    ScheduleHoursOut,
     TrainerOut,
     TrainerScheduleOut,
     TrainerScheduleWrite,
@@ -124,6 +132,189 @@ def delete_trainer_schedule(
     auth_service.require_admin(authorization)
     calendar_service.delete_trainer_schedule(schedule_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/schedule-date-windows", response_model=list[ScheduleDateWindowOut])
+@inject
+def list_date_windows(
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    trainerId: str | None = None,
+    from_: str | None = Query(default=None, alias="from"),
+    to: str | None = None,
+    authorization: AuthorizationHeader = None,
+) -> list[ScheduleDateWindowOut]:
+    auth_service.require_not_must_change(authorization)
+    return calendar_service.list_date_windows(trainerId, from_, to)
+
+
+@router.post("/schedule-date-windows", response_model=ScheduleDateWindowOut)
+@inject
+def create_date_window(
+    payload: ScheduleDateWindowWrite,
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> ScheduleDateWindowOut:
+    auth_service.require_admin(authorization)
+    return calendar_service.create_date_window(payload)
+
+
+@router.put("/schedule-date-windows/{window_id}", response_model=ScheduleDateWindowOut)
+@inject
+def update_date_window(
+    window_id: str,
+    payload: ScheduleDateWindowWrite,
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> ScheduleDateWindowOut:
+    auth_service.require_admin(authorization)
+    return calendar_service.update_date_window(window_id, payload)
+
+
+@router.delete("/schedule-date-windows/{window_id}", status_code=status.HTTP_204_NO_CONTENT)
+@inject
+def delete_date_window(
+    window_id: str,
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> Response:
+    auth_service.require_admin(authorization)
+    calendar_service.delete_date_window(window_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/schedule-absences", response_model=list[ScheduleAbsenceOut])
+@inject
+def list_absences(
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    trainerId: str | None = None,
+    from_: str | None = Query(default=None, alias="from"),
+    to: str | None = None,
+    authorization: AuthorizationHeader = None,
+) -> list[ScheduleAbsenceOut]:
+    auth_service.require_not_must_change(authorization)
+    return calendar_service.list_absences(trainerId, from_, to)
+
+
+@router.post("/schedule-absences", response_model=ScheduleAbsenceOut)
+@inject
+def create_absence(
+    payload: ScheduleAbsenceWrite,
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> ScheduleAbsenceOut:
+    auth_service.require_admin(authorization)
+    return calendar_service.create_absence(payload)
+
+
+@router.put("/schedule-absences/{absence_id}", response_model=ScheduleAbsenceOut)
+@inject
+def update_absence(
+    absence_id: str,
+    payload: ScheduleAbsenceWrite,
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> ScheduleAbsenceOut:
+    auth_service.require_admin(authorization)
+    return calendar_service.update_absence(absence_id, payload)
+
+
+@router.delete("/schedule-absences/{absence_id}", status_code=status.HTTP_204_NO_CONTENT)
+@inject
+def delete_absence(
+    absence_id: str,
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> Response:
+    auth_service.require_admin(authorization)
+    calendar_service.delete_absence(absence_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/public-holidays", response_model=list[PublicHolidayOut])
+@inject
+def list_public_holidays(
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    from_: str | None = Query(default=None, alias="from"),
+    to: str | None = None,
+    authorization: AuthorizationHeader = None,
+) -> list[PublicHolidayOut]:
+    auth_service.require_not_must_change(authorization)
+    return calendar_service.list_public_holidays(from_, to)
+
+
+@router.post("/public-holidays", response_model=PublicHolidayOut)
+@inject
+def create_public_holiday(
+    payload: PublicHolidayWrite,
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> PublicHolidayOut:
+    auth_service.require_admin(authorization)
+    return calendar_service.create_public_holiday(payload)
+
+
+@router.put("/public-holidays/{holiday_id}", response_model=PublicHolidayOut)
+@inject
+def update_public_holiday(
+    holiday_id: str,
+    payload: PublicHolidayWrite,
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> PublicHolidayOut:
+    auth_service.require_admin(authorization)
+    return calendar_service.update_public_holiday(holiday_id, payload)
+
+
+@router.delete("/public-holidays/{holiday_id}", status_code=status.HTTP_204_NO_CONTENT)
+@inject
+def delete_public_holiday(
+    holiday_id: str,
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> Response:
+    auth_service.require_admin(authorization)
+    calendar_service.delete_public_holiday(holiday_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/schedules/resolved", response_model=list[ResolvedDayOut])
+@inject
+def list_resolved_schedules(
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    from_: str = Query(alias="from"),
+    to: str = Query(),
+    trainerId: str | None = None,
+    authorization: AuthorizationHeader = None,
+) -> list[ResolvedDayOut]:
+    auth_service.require_not_must_change(authorization)
+    return calendar_service.list_resolved(from_, to, trainerId)
+
+
+@router.get("/schedules/hours", response_model=ScheduleHoursOut)
+@inject
+def list_schedule_hours(
+    calendar_service: CalendarSvc,
+    auth_service: AuthSvc,
+    from_: str = Query(alias="from"),
+    to: str = Query(),
+    trainerId: str | None = None,
+    authorization: AuthorizationHeader = None,
+) -> ScheduleHoursOut:
+    auth_service.require_not_must_change(authorization)
+    return calendar_service.list_hours(from_, to, trainerId)
 
 
 @router.get("/appointments", response_model=list[AppointmentOut])

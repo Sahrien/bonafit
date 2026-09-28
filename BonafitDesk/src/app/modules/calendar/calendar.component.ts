@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { BonaBoardComponent, BonaBoardColumn, BonaBoardItem } from '../../components/bona-board/bona-board.component';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
 import {
@@ -8,7 +9,6 @@ import {
   BonaCalendarEvent,
   BonaCalendarEventDrop,
   BonaCalendarSlotSelect,
-  BonaCalendarView,
 } from '../../components/bona-calendar/bona-calendar.component';
 import { BonaFilterMenuComponent, BonaFilterMenuItem } from '../../components/bona-filter-menu/bona-filter-menu.component';
 import { BonaIconButtonComponent } from '../../components/bona-icon-button/bona-icon-button.component';
@@ -17,6 +17,7 @@ import { BonaTabItem, BonaTabsComponent } from '../../components/bona-tabs/bona-
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { ApiBusinessError } from '../../core/api-business.error';
+import { atLocalTime, parseLocalDateKey } from '../../core/booking';
 import { injectI18n } from '../../core/i18n/inject-i18n';
 import { LanguageService } from '../../core/i18n/language.service';
 import { AppointmentDto, AppointmentStatus, AppointmentWriteDto } from '../../models/appointment.dto';
@@ -24,6 +25,7 @@ import { BonoDto } from '../../models/bono.dto';
 import { BookingSettingsDto } from '../../models/booking-settings.dto';
 import { ClientDto } from '../../models/client.dto';
 import { ServiceDto } from '../../models/service.dto';
+import { PublicHolidayDto, ResolvedDayDto } from '../../models/schedule.dto';
 import { TrainerDto } from '../../models/trainer.dto';
 import { TranslateService } from '@ngx-translate/core';
 import { CalendarApiService } from '../../services/calendar-api.service';
@@ -32,7 +34,7 @@ import { ServicesApiService } from '../../services/services-api.service';
 import { EMPTY_APPOINTMENT_FORM } from './appointment-editor/appointment-editor.component';
 import { AppointmentEditor } from './appointment-editor/appointment-editor.service';
 import { toDatetimeLocalValue } from './calendar-datetime';
-import { isInstantInRange, periodRange } from './calendar-range';
+import { isInstantInRange, mergeTimeWindows, paddedDateRange, periodRange } from './calendar-range';
 
 export type CalendarDisplayMode = 'calendar' | 'board';
 
@@ -41,6 +43,13 @@ const STATUS_COLORS: Record<AppointmentStatus, string> = {
   confirmed: 'var(--bona-color-success)',
   completed: 'color-mix(in srgb, var(--bona-color-text-muted) 55%, var(--bona-color-surface))',
   cancelled: 'color-mix(in srgb, var(--bona-color-text-muted) 40%, var(--bona-color-surface))',
+};
+
+const STATUS_TEXT_COLORS: Record<AppointmentStatus, string> = {
+  pending: 'var(--bona-color-warning-contrast)',
+  confirmed: 'var(--bona-color-success-contrast)',
+  completed: 'var(--bona-color-text)',
+  cancelled: 'var(--bona-color-text-muted)',
 };
 
 @Component({
@@ -88,7 +97,7 @@ export class CalendarComponent {
     { id: 'completed', label: this.literals.statusCompleted },
   ]);
 
-  readonly view = signal<BonaCalendarView>('week');
+  readonly view = signal<'week' | 'day'>('week');
   readonly display = signal<CalendarDisplayMode>('calendar');
   readonly selectedTrainerIds = signal<string[]>([]);
   readonly selectedServiceIds = signal<string[]>([]);
@@ -101,6 +110,8 @@ export class CalendarComponent {
   private readonly bonos = signal<BonoDto[]>([]);
   private readonly appointments = signal<AppointmentDto[]>([]);
   private readonly settings = signal<BookingSettingsDto | null>(null);
+  private readonly resolved = signal<ResolvedDayDto[]>([]);
+  private readonly holidays = signal<PublicHolidayDto[]>([]);
 
   readonly catalogTrainers = computed(() => this.trainers());
   readonly trainerFilterItems = computed<BonaFilterMenuItem[]>(() =>
@@ -154,7 +165,15 @@ export class CalendarComponent {
     });
   });
 
-  readonly events = computed(() => this.filteredAppointments().map((appointment) => this.toCalendarEvent(appointment)));
+  readonly appointmentEvents = computed(() =>
+    this.filteredAppointments().map((appointment) => this.toCalendarEvent(appointment)),
+  );
+
+  readonly events = computed(() => [
+    ...this.holidayEvents(),
+    ...this.availabilityEvents(),
+    ...this.appointmentEvents(),
+  ]);
 
   readonly boardItems = computed<BonaBoardItem[]>(() => {
     const { start, end } = periodRange(this.view(), this.focusDate());
@@ -178,6 +197,7 @@ export class CalendarComponent {
   onView(view: string): void {
     if (view === 'week' || view === 'day') {
       this.view.set(view);
+      this.loadBackdrop();
     }
   }
 
@@ -196,7 +216,11 @@ export class CalendarComponent {
   }
 
   eventsForTrainer(trainerId: string): BonaCalendarEvent[] {
-    return this.events().filter((event) => event.resourceId === trainerId);
+    return [
+      ...this.holidayEvents(),
+      ...this.availabilityEvents(trainerId),
+      ...this.appointmentEvents().filter((event) => event.resourceId === trainerId),
+    ];
   }
 
   onPrevPeriod(): void {
@@ -209,6 +233,7 @@ export class CalendarComponent {
 
   onFocusToday(): void {
     this.focusDate.set(new Date());
+    this.loadBackdrop();
   }
 
   onCreate(): void {
@@ -221,14 +246,23 @@ export class CalendarComponent {
   }
 
   onSlotSelect(slot: BonaCalendarSlotSelect): void {
+    if (slot.allDay) {
+      return;
+    }
     this.openEditor(null, this.presetFromSlot(this.visibleTrainers()[0]?.id ?? this.defaultTrainerId(), slot));
   }
 
   onSlotSelectForTrainer(trainerId: string, slot: BonaCalendarSlotSelect): void {
+    if (slot.allDay) {
+      return;
+    }
     this.openEditor(null, this.presetFromSlot(trainerId, slot));
   }
 
   onEventClick(event: BonaCalendarEvent): void {
+    if (this.isBackdropEvent(event.id)) {
+      return;
+    }
     this.openAppointment(event.id);
   }
 
@@ -298,7 +332,79 @@ export class CalendarComponent {
     };
   }
 
+  private isBackdropEvent(id: string): boolean {
+    return id.startsWith('avail:') || id.startsWith('hol:');
+  }
+
+  private holidayEvents(): BonaCalendarEvent[] {
+    return this.holidays().map((holiday) => ({
+      id: `hol:${holiday.id}`,
+      title: holiday.name,
+      start: parseLocalDateKey(holiday.date),
+      allDay: true,
+      interactive: false,
+      startEditable: false,
+      color: 'color-mix(in srgb, var(--bona-color-text-muted) 28%, var(--bona-color-surface))',
+      textColor: 'var(--bona-color-text)',
+      classNames: ['calendar-holiday'],
+    }));
+  }
+
+  private availabilityEvents(trainerId?: string): BonaCalendarEvent[] {
+    const visible = new Set(
+      trainerId ? [trainerId] : this.visibleTrainers().map((trainer) => trainer.id),
+    );
+    const byDate = new Map<string, { startTime: string; endTime: string }[]>();
+    for (const day of this.resolved()) {
+      if (!visible.has(day.trainerId) || day.source === 'holiday' || day.source === 'absence' || !day.windows.length) {
+        continue;
+      }
+      const windows = byDate.get(day.date) ?? [];
+      windows.push(...day.windows);
+      byDate.set(day.date, windows);
+    }
+    const events: BonaCalendarEvent[] = [];
+    for (const [date, windows] of byDate) {
+      for (const window of mergeTimeWindows(windows)) {
+        events.push({
+          id: trainerId
+            ? `avail:${trainerId}:${date}:${window.startTime}:${window.endTime}`
+            : `avail:${date}:${window.startTime}:${window.endTime}`,
+          title: this.literals.availability,
+          start: atLocalTime(parseLocalDateKey(date), window.startTime),
+          end: atLocalTime(parseLocalDateKey(date), window.endTime),
+          display: 'background',
+          interactive: false,
+          startEditable: false,
+          color: 'color-mix(in srgb, var(--bona-color-primary) 16%, transparent)',
+          classNames: ['calendar-availability'],
+        });
+      }
+    }
+    return events;
+  }
+
+  private backdropQuery(): { from: string; to: string } {
+    return paddedDateRange(this.view(), this.focusDate());
+  }
+
+  private loadBackdrop(): void {
+    const range = this.backdropQuery();
+    forkJoin({
+      resolved: this.calendarApi.getResolvedSchedules(range).pipe(catchError(() => of([]))),
+      holidays: this.calendarApi.getPublicHolidays(range).pipe(catchError(() => of([]))),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ resolved, holidays }) => {
+          this.resolved.set(resolved);
+          this.holidays.set(holidays);
+        },
+      });
+  }
+
   private loadCatalog(): void {
+    const range = this.backdropQuery();
     forkJoin({
       trainers: this.calendarApi.getTrainers(),
       appointments: this.calendarApi.getAppointments(),
@@ -306,16 +412,20 @@ export class CalendarComponent {
       services: this.servicesApi.getServices(),
       bonos: this.servicesApi.getBonos(),
       settings: this.calendarApi.getBookingSettings(),
+      resolved: this.calendarApi.getResolvedSchedules(range).pipe(catchError(() => of([]))),
+      holidays: this.calendarApi.getPublicHolidays(range).pipe(catchError(() => of([]))),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ trainers, appointments, clients, services, bonos, settings }) => {
+        next: ({ trainers, appointments, clients, services, bonos, settings, resolved, holidays }) => {
           this.trainers.set(trainers);
           this.appointments.set(appointments);
           this.clients.set(clients);
           this.services.set(services);
           this.bonos.set(bonos);
           this.settings.set(settings);
+          this.resolved.set(resolved);
+          this.holidays.set(holidays);
           this.loading.set(false);
         },
         error: () => {
@@ -350,6 +460,7 @@ export class CalendarComponent {
       location: appointment.location,
       resourceId: appointment.trainerId,
       color: STATUS_COLORS[appointment.status],
+      textColor: STATUS_TEXT_COLORS[appointment.status],
       classNames: [`bona-cal-status-${appointment.status}`],
       interactive: true,
       startEditable: draggable,
@@ -394,6 +505,7 @@ export class CalendarComponent {
     const next = new Date(this.focusDate());
     next.setDate(next.getDate() + days);
     this.focusDate.set(next);
+    this.loadBackdrop();
   }
 
   private toWriteFromAppointment(

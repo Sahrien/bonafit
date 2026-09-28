@@ -122,6 +122,64 @@ def test_list_availability_slots_keeps_seat_until_capacity() -> None:
     assert not any(slot["startsAt"] == "2026-09-09T06:00:00.000Z" for slot in hidden_for_client)
 
 
+def test_list_availability_slots_skips_holiday_and_absence() -> None:
+    schedule = SimpleNamespace(trainer_id="trainer-1", weekday=3, start_time="08:00", end_time="10:00")
+    kwargs = {
+        "duration_minutes": 60,
+        "schedules": [schedule],
+        "appointments": [],
+        "cutoff_time": "18:00",
+        "now": datetime(2026, 9, 9, 6, 0, tzinfo=UTC),
+        "from_dt": datetime(2026, 9, 9, 0, 0, tzinfo=UTC),
+        "to_dt": datetime(2026, 9, 9, 23, 0, tzinfo=UTC),
+        "actor": "admin",
+    }
+    open_slots = list_availability_slots(**kwargs)
+    assert any(slot["startsAt"] == "2026-09-09T06:00:00.000Z" for slot in open_slots)
+    holiday = list_availability_slots(
+        **kwargs,
+        holidays=[SimpleNamespace(date=datetime(2026, 9, 9).date())],
+    )
+    assert holiday == []
+    closed = list_availability_slots(
+        **kwargs,
+        absences=[
+            SimpleNamespace(
+                trainer_id="trainer-1",
+                starts_on=datetime(2026, 9, 9).date(),
+                ends_on=datetime(2026, 9, 9).date(),
+                reason="sick",
+            )
+        ],
+    )
+    assert closed == []
+
+
+def test_list_availability_slots_custom_hours_replace_template() -> None:
+    schedule = SimpleNamespace(trainer_id="trainer-1", weekday=3, start_time="08:00", end_time="10:00")
+    slots = list_availability_slots(
+        duration_minutes=60,
+        schedules=[schedule],
+        appointments=[],
+        cutoff_time="18:00",
+        now=datetime(2026, 9, 9, 6, 0, tzinfo=UTC),
+        from_dt=datetime(2026, 9, 9, 0, 0, tzinfo=UTC),
+        to_dt=datetime(2026, 9, 9, 23, 0, tzinfo=UTC),
+        actor="admin",
+        date_windows=[
+            SimpleNamespace(
+                trainer_id="trainer-1",
+                date=datetime(2026, 9, 9).date(),
+                start_time="11:00",
+                end_time="12:00",
+            )
+        ],
+    )
+    starts = [slot["startsAt"] for slot in slots]
+    assert "2026-09-09T06:00:00.000Z" not in starts
+    assert "2026-09-09T09:00:00.000Z" in starts
+
+
 def test_has_active_client_appointment_for_service() -> None:
     rows = [
         _busy(id="ep", service_id="svc-ep", status="confirmed"),
