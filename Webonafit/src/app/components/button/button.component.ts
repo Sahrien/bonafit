@@ -9,7 +9,9 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 })
 export class ButtonComponent {
   text = input<string>('');
-  variant = input<'primary' | 'outline' | 'ghost'>('primary');
+  variant = input<'primary' | 'outline' | 'ghost' | 'cream'>('primary');
+  /** Compact size for header chrome; default keeps marketing CTAs. */
+  size = input<'sm' | 'md'>('md');
   type = input<'button' | 'submit'>('button');
   disabled = input(false);
   clicked = output<void>();

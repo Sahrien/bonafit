@@ -1,26 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Outfit:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500&family=Lato:ital,wght@0,400;0,700;1,400&display=swap');
 
 :root {
-  --color-forest: #1b3528;
-  --color-pine: #3e5f52;
-  --color-sage: #95a58d;
+  /* Brand manual — exact HEX */
+  --color-forest: #264233; /* Verde inglés (primary) */
+  --color-pine: #426456; /* Verde medio */
+  --color-sage: #8F9F87; /* Verde salvia */
   --color-sage-soft: #c5d0c0;
-  --color-cream: #f5f3f0;
+  --color-cream: #F3F0EB; /* Blanco cálido */
   --color-card: #faf8f5;
   --color-white: #ffffff;
-  --color-ink: #1b3528;
-  --color-muted: #4d6358;
-  --color-line: rgba(27, 53, 40, 0.12);
+  --color-ink: #264233;
+  --color-muted: #426456;
+  --color-line: rgba(38, 66, 51, 0.12);
 
-  --font-display: 'Cormorant Garamond', 'Times New Roman', serif;
-  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-display: 'Jost', system-ui, sans-serif;
+  --font-body: 'Lato', system-ui, sans-serif;
 
   --radius: 0.5rem;
   --radius-lg: 0.85rem;
-  --shadow: 0 12px 40px rgba(27, 53, 40, 0.07);
-  --header-h: 5.5rem;
-  --page-pad: clamp(1.25rem, 4vw, 5rem);
+  --shadow: 0 12px 40px rgba(38, 66, 51, 0.07);
+  --header-h: 4.75rem;
+  --page-pad: clamp(1rem, 4vw, 5rem);
   --content: 72rem;
+  --logo-min: 160px;
 }
 
 *,
@@ -41,11 +43,13 @@ body {
 
 body {
   font-family: var(--font-body);
-  font-size: 1.125rem;
-  line-height: 1.7;
+  font-size: 1rem; /* 16px — Lato body */
+  font-weight: 400;
+  line-height: 1.6;
   color: var(--color-ink);
   background: var(--color-cream);
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
 }
 
 img,
@@ -69,8 +73,8 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 1.15;
+  font-weight: 300;
+  line-height: 1.2;
   color: var(--color-forest);
   margin: 0;
 }
@@ -87,16 +91,16 @@ textarea {
 
 .eyebrow {
   margin: 0 0 0.85rem;
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.28em;
+  font-family: var(--font-display);
+  font-size: 0.6875rem; /* ~11px */
+  font-weight: 400;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
   color: var(--color-pine);
 }
 
 .section {
-  padding: clamp(4.5rem, 8vw, 7.5rem) var(--page-pad);
+  padding: clamp(3.25rem, 7vw, 7.5rem) var(--page-pad);
   scroll-margin-top: calc(var(--header-h) + 0.75rem);
 }
 
@@ -126,7 +130,7 @@ textarea {
 
 .lede {
   max-width: 40rem;
-  font-size: 1.2rem;
+  font-size: 1.0625rem;
   color: var(--color-muted);
 }
 
@@ -143,4 +147,20 @@ textarea {
 
 .skip-link:focus {
   top: 1rem;
+}
+
+@media (max-width: 480px) {
+  :root {
+    --header-h: 4.25rem;
+  }
+
+  .section {
+    padding-block: clamp(2.75rem, 10vw, 4rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

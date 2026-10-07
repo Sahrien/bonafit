@@ -15,11 +15,11 @@ export interface BrandingDto {
 
 export const DEFAULT_BRANDING: BrandingDto = {
   id: 'branding',
-  studioName: 'Bonafit',
+  studioName: 'BonaFIT',
   slogan: 'Wellness & Longevity',
-  primaryHex: '#1b3528',
-  accentHex: '#3e5f52',
-  surfaceHex: '#f5f3f0',
+  primaryHex: '#264233',
+  accentHex: '#426456',
+  surfaceHex: '#F3F0EB',
   colorScheme: 'light',
   logoUrl: null,
   faviconUrl: null,

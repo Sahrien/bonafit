@@ -1,5 +1,11 @@
 <section class="hero">
-  <div class="hero__glow" aria-hidden="true"></div>
+  <div class="hero__waves" aria-hidden="true">
+    <svg class="hero__waves-svg" viewBox="0 0 1440 590" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M 0,600 L 0,300 C 96.32,271.13 192.64,242.25 308,237 C 423.36,231.75 557.75,250.13 679,237 C 800.25,223.87 908.36,179.25 1033,147 C 1157.64,114.75 1298.82,94.88 1440,75 L 1440,600 L 0,600 Z" fill="#8F9F87" fill-opacity="0.28"/>
+      <path d="M 0,600 L 0,300 C 96.32,271.13 192.64,242.25 308,237 C 423.36,231.75 557.75,250.13 679,237 C 800.25,223.87 908.36,179.25 1033,147 C 1157.64,114.75 1298.82,94.88 1440,75 L 1440,600 L 0,600 Z" fill="#426456" fill-opacity="0.22"/>
+      <path d="M 0,600 L 0,500 C 129.07,491.27 258.14,482.54 359,452 C 459.86,421.46 532.5,369.13 667,357 C 801.5,344.88 997.86,372.96 1137,366 C 1276.14,359.04 1358.07,317.02 1440,275 L 1440,600 L 0,600 Z" fill="#264233"/>
+    </svg>
+  </div>
   <div class="wrap hero__inner">
     <app-logo
       size="lg"
@@ -8,11 +14,11 @@
       [imageUrl]="branding.logoHref()" />
     <h1>{{ 'home.heroTitle' | translate }}</h1>
     <p class="hero__claim">{{ 'home.heroClaim' | translate }}</p>
-    <app-button [text]="'home.heroCta' | translate" (clicked)="goToContact()" />
+    <app-button variant="cream" [text]="'home.heroCta' | translate" (clicked)="goToContact()" />
   </div>
 </section>
 
-<section class="section section--sage" id="quienes-somos">
+<section class="section section--forest" id="quienes-somos">
   <div class="wrap about">
     <div>
       <p class="eyebrow">{{ 'home.aboutEyebrow' | translate }}</p>

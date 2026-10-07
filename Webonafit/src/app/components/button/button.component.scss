@@ -1,5 +1,6 @@
 :host {
   display: inline-flex;
+  max-width: 100%;
 }
 
 .btn {
@@ -7,21 +8,29 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   min-height: 3rem;
   padding: 0.75rem 1.55rem;
   border: 1px solid transparent;
   border-radius: var(--radius);
-  font-family: var(--font-body);
-  font-size: 1rem;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   line-height: 1.2;
   cursor: pointer;
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
+    color 0.2s ease;
+}
+
+.btn--sm {
+  min-height: 2.5rem;
+  padding: 0.35rem 1.1rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
 }
 
 .btn:focus-visible {
@@ -58,8 +67,23 @@
   background: transparent;
   color: var(--color-forest);
   padding-inline: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: none;
 }
 
 .btn--ghost:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-sage) 22%, transparent);
+}
+
+.btn--cream {
+  background: var(--color-cream);
+  border-color: color-mix(in srgb, var(--color-cream) 55%, var(--color-sage));
+  color: var(--color-forest);
+  box-shadow: 0 8px 24px rgba(38, 66, 51, 0.18);
+}
+
+.btn--cream:hover:not(:disabled) {
+  background: var(--color-white);
+  border-color: var(--color-cream);
+  color: var(--color-forest);
 }

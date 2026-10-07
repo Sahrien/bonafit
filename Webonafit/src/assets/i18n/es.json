@@ -16,49 +16,54 @@
     "contact": "Contacto"
   },
   "footer": {
-    "claim": "Más fuerza. Más movilidad. Más vida.",
+    "claim": "Wellness & Longevity",
     "contact": "Contacto",
     "hours": "Lunes a viernes 8:00–20:00 · Sábados 9:00–13:00",
     "address": "Urbanización Bonalba Golf, 03110 Mutxamel, Alicante",
     "legal": "Todos los derechos reservados."
   },
   "home": {
-    "heroTitle": "Fuerza, movimiento y bienestar para vivir mejor",
-    "heroClaim": "Cumplir años no significa dejar de entrenar. Significa entrenar mejor.",
-    "heroCta": "Quiero entrenar mejor",
+    "heroTitle": "Entrena para la vida que quieres seguir viviendo",
+    "heroClaim": "Fuerza, movilidad y acompañamiento con calma, para que el día a día se sienta más ligero.",
+    "heroCta": "Empezar a hablar",
     "aboutEyebrow": "Quiénes somos",
-    "aboutTitle": "Especialistas en fuerza, movilidad y longevidad a partir de los 50",
-    "aboutP1": "BONAFIT no es un gimnasio convencional ni un entrenamiento genérico. Acompañamos a personas —sobre todo a partir de los 50— que quieren seguir activas, fuertes, ágiles e independientes.",
-    "aboutP2": "Entrenamos el movimiento y el bienestar con calma, precisión y respeto por tu cuerpo. El objetivo no es encajar en un molde: es que tu vida cotidiana se sienta más ligera.",
-    "quote": "«No entrenamos para que tengas 50 años. Entrenamos para que puedas vivir tus 70 con fuerza.»",
+    "aboutTitle": "Entrenamiento personal con mirada de longevidad",
+    "aboutP1": "BonaFIT es un acompañamiento cercano y sin prisas para quien quiere seguir fuerte, ágil e independiente.",
+    "aboutP2": "Trabajamos con precisión y respeto por tu cuerpo. El objetivo es sencillo: más facilidad en la vida que ya vives.",
+    "quote": "«No entrenamos un número. Entrenamos para que puedas seguir haciendo tu vida con fuerza.»",
     "slogan": "La edad no se entrena. La fuerza sí.",
     "offerEyebrow": "Qué ofrecemos",
-    "offerTitle": "BonaFit Personal, a tu medida",
-    "offerLede": "Un acompañamiento cercano, en casa en la zona de Bonalba y, más adelante, en un pequeño estudio privado.",
-    "complementsTitle": "Servicios complementarios",
-    "complementsText": "Para cuidar el tono, la recuperación y la sensación de bienestar entre sesiones.",
+    "offerTitle": "BonaFIT Personal, a tu medida",
+    "offerLede": "Sesiones individuales en casa en la zona de Bonalba.",
+    "complementsTitle": "Además del entrenamiento",
+    "complementsText": "Cuidados opcionales para la recuperación, el tono y cómo se siente el cuerpo entre sesiones.",
     "longevityEyebrow": "Longevidad",
-    "longevityTitle": "No vendemos horas. Cuidamos la vida que quieres seguir viviendo.",
-    "longevityText": "El valor de un programa BONAFIT no se mide en series ni en minutos. Se mide en autonomía, confianza y la libertad de moverte sin que la edad sea una barrera.",
-    "longevitySlogan": "Más fuerza. Más movilidad. Más vida.",
+    "longevityTitle": "Fuerza que acompaña una vida más larga y plena",
+    "longevityText": "Un programa BonaFIT se mide en cómo te sientes y te mueves: fuerza, confianza y facilidad en la vida que ya vives.",
+    "longevitySlogan": "Wellness & Longevity",
     "areaEyebrow": "Zona",
-    "areaTitle": "Cerca de ti, en un entorno que invita a cuidar el cuerpo",
-    "areaLede": "Trabajamos principalmente en la urbanización y alrededores de Bonalba, con posibilidad de desplazarnos a localidades próximas.",
+    "areaTitle": "Cerca de ti, en un entorno que invita a cuidarte",
+    "areaLede": "Trabajamos en Bonalba y Mutxamel, con desplazamiento a localidades próximas cuando encaja.",
     "primaryTitle": "Zona principal",
     "nearbyTitle": "También nos desplazamos",
-    "territories": ["Fuerza", "Movilidad", "Longevidad", "Bienestar"],
+    "territories": [
+      "Fuerza",
+      "Movilidad",
+      "Longevidad",
+      "Bienestar"
+    ],
     "offers": [
       {
-        "title": "Sesiones personalizadas",
-        "text": "Entrenamientos de unos 55–60 minutos, pensados para ti. Recomendamos dos sesiones por semana para avanzar con constancia y sin prisa."
+        "title": "Sesiones pensadas para ti",
+        "text": "Alrededor de una hora, adaptadas a tu cuerpo y tus objetivos. Dos sesiones por semana es un ritmo constante, sin prisas."
       },
       {
-        "title": "Valoración y programa",
-        "text": "Empezamos con una valoración inicial, escuchamos tus objetivos y diseñamos un programa individualizado que evoluciona contigo."
+        "title": "Un punto de partida claro",
+        "text": "Empezamos con una valoración tranquila, escuchamos con atención y diseñamos un programa que evoluciona contigo."
       },
       {
-        "title": "Cuerpo que te sostiene",
-        "text": "Trabajamos fuerza, movilidad, equilibrio y gesto funcional, con seguimiento cercano para que cada sesión tenga sentido."
+        "title": "Un cuerpo que te sostiene",
+        "text": "Fuerza, movilidad, equilibrio y gesto útil, con seguimiento para que cada sesión tenga sentido."
       }
     ],
     "complements": [
@@ -69,19 +74,28 @@
       "Drenaje linfático"
     ],
     "outcomes": [
-      "Más seguridad al caminar y al subir escaleras",
-      "Levantarte de una silla con autonomía",
-      "Viajar y moverte sin que la edad sea un límite",
-      "Jugar con nietos y disfrutar el día a día",
-      "Fuerza, movilidad y confianza para vivir mejor"
+      "La masa muscular tiende a disminuir con la edad (sarcopenia); el entrenamiento de fuerza progresivo ayuda a frenar esa pérdida.",
+      "Revisiones sistemáticas muestran que el entrenamiento de fuerza mejora la fuerza muscular y la función física en adultos.",
+      "El consenso internacional sobre sarcopenia (EWGSOP) sitúa el ejercicio de resistencia en el centro de la prevención y el cuidado.",
+      "Una musculatura más fuerte sostiene el equilibrio, la salud metabólica y la facilidad del movimiento cotidiano.",
+      "Sesiones breves y constantes suman: más capacidad para la vida que quieres seguir viviendo."
     ],
-    "primaryAreas": ["Bonalba Golf", "Cotoveta", "Mutxamel"],
-    "nearbyAreas": ["Sant Joan d'Alacant", "Playa de San Juan", "Busot", "El Campello"]
+    "primaryAreas": [
+      "Bonalba Golf",
+      "Cotoveta",
+      "Mutxamel"
+    ],
+    "nearbyAreas": [
+      "Sant Joan d'Alacant",
+      "Playa de San Juan",
+      "Busot",
+      "El Campello"
+    ]
   },
   "contact": {
     "eyebrow": "Hablemos",
     "title": "Solicita información",
-    "intro": "Cuéntanos cómo te sientes y qué te gustaría recuperar. Te responderemos para valorar una primera sesión en la zona de Bonalba.",
+    "intro": "Cuéntanos cómo te sientes y qué te gustaría trabajar. Te responderemos para ver si una primera sesión en la zona de Bonalba encaja contigo.",
     "phone": "Teléfono",
     "whatsapp": "WhatsApp",
     "email": "Email",
@@ -97,7 +111,7 @@
     "messagePlaceholder": "Qué te gustaría trabajar o cómo podemos ayudarte",
     "submit": "Enviar mensaje",
     "error": "Por favor, completa nombre, email y mensaje.",
-    "modalTitle": "Hemos recibido tu mensaje",
-    "modalBody": "Gracias por escribirnos. Te contactaremos en breve para hablar con calma y ver si BONAFIT encaja contigo."
+    "modalTitle": "Mensaje recibido",
+    "modalBody": "Gracias por escribirnos. Te contactaremos pronto para hablar con calma y ver si BonaFIT es para ti."
   }
 }

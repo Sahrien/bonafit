@@ -28,6 +28,7 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Bonafit');
+    expect(compiled.querySelector('app-logo')).toBeTruthy();
+    expect(compiled.textContent).toContain('BonaFIT');
   });
 });

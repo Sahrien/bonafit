@@ -21,75 +21,197 @@ main {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.75rem;
   min-height: var(--header-h);
-  gap: 1rem;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.lang {
-  display: inline-flex;
-  gap: 0.2rem;
-}
-
-.lang__btn {
-  min-width: 2.25rem;
-  min-height: 2.4rem;
-  padding: 0.25rem 0.45rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
-  background: var(--color-card);
-  color: var(--color-forest);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.lang__btn.is-active {
-  background: var(--color-forest);
-  color: var(--color-cream);
+  padding-block: 0.35rem;
+  padding-inline: var(--page-pad);
 }
 
 .brand {
   color: inherit;
   text-decoration: none;
-}
-
-.menu-toggle {
   display: inline-flex;
-  min-height: 2.75rem;
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
-  background: var(--color-card);
-  color: var(--color-forest);
-  cursor: pointer;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.35rem 0.25rem;
 }
 
 .nav {
   display: none;
   align-items: center;
   gap: 1.35rem;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 .nav a {
   color: var(--color-forest);
   text-decoration: none;
-  font-size: 1rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  padding: 0.35rem 0.15rem;
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .nav a:hover {
   color: var(--color-pine);
 }
 
+.nav app-button {
+  display: inline-flex;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.lang {
+  position: relative;
+  width: 2.75rem;
+  flex-shrink: 0;
+}
+
+.lang__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.25rem 0;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-card);
+  color: var(--color-forest);
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.lang__trigger:hover,
+.lang--open .lang__trigger,
+.lang:focus-within .lang__trigger {
+  background: var(--color-forest);
+  color: var(--color-cream);
+}
+
+.lang__trigger:focus-visible {
+  outline: 2px solid var(--color-pine);
+  outline-offset: 2px;
+}
+
+.lang__code {
+  display: block;
+}
+
+.lang__menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  z-index: 50;
+  display: grid;
+  gap: 0.15rem;
+  min-width: 100%;
+  width: max-content;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-0.2rem);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+}
+
+.lang:hover .lang__menu,
+.lang:focus-within .lang__menu,
+.lang--open .lang__menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+}
+
+.lang__option {
+  display: block;
+  width: 100%;
+  min-width: 2.75rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.75rem;
+  border: 0;
+  border-radius: calc(var(--radius) - 0.1rem);
+  background: transparent;
+  color: var(--color-forest);
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.lang__option:hover,
+.lang__option:focus-visible {
+  background: color-mix(in srgb, var(--color-sage) 28%, var(--color-cream));
+  outline: none;
+}
+
+.lang__option.is-active {
+  background: var(--color-forest);
+  color: var(--color-cream);
+}
+
+.menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  width: 5.75rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-card);
+  color: var(--color-forest);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.menu-toggle__label {
+  display: block;
+  width: 100%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .site-footer {
-  padding: 3rem var(--page-pad) 1.6rem;
+  padding: clamp(2.25rem, 5vw, 3rem) var(--page-pad) 1.6rem;
   background: var(--color-forest);
   color: color-mix(in srgb, var(--color-cream) 86%, var(--color-sage));
 }
@@ -118,9 +240,11 @@ main {
 .footer-claim {
   margin-top: 1rem;
   max-width: 18rem;
-  letter-spacing: 0.08em;
+  font-family: var(--font-display);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  font-weight: 400;
 }
 
 .site-footer .eyebrow {
@@ -132,22 +256,37 @@ main {
   margin: 2.4rem auto 0;
   padding-top: 1.2rem;
   border-top: 1px solid color-mix(in srgb, var(--color-cream) 16%, transparent);
-  font-size: 0.92rem;
+  font-size: 0.875rem;
 }
 
 @media (max-width: 899px) {
   .nav--open {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     position: absolute;
     left: 0;
     right: 0;
-    top: var(--header-h);
-    padding: 1rem var(--page-pad) 1.4rem;
+    top: 100%;
+    padding: 0.75rem var(--page-pad) 1.25rem;
     background: var(--color-cream);
     border-bottom: 1px solid var(--color-line);
     box-shadow: var(--shadow);
+    gap: 0.15rem;
+    flex: none;
+    justify-content: flex-start;
+  }
+
+  .nav--open a {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.65rem 0.25rem;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .nav--open app-button {
+    margin-top: 0.75rem;
+    width: 100%;
   }
 }
 
@@ -159,14 +298,24 @@ main {
   .nav {
     display: flex;
   }
+
+  .header-actions {
+    margin-left: 0.75rem;
+  }
 }
 
 @media (min-width: 900px) and (max-width: 1120px) {
   .nav {
-    gap: 0.85rem;
+    gap: 0.75rem;
   }
 
   .nav a {
-    font-size: 0.92rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .menu-toggle {
+    width: 5.25rem;
   }
 }

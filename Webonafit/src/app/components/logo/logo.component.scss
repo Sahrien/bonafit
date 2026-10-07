@@ -1,101 +1,57 @@
 :host {
   display: inline-flex;
   color: var(--color-forest);
+  max-width: 100%;
 }
 
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 0.85rem;
+  max-width: 100%;
   color: inherit;
 }
 
-.logo--inverted {
-  color: var(--color-cream);
-}
-
-.logo__mark {
-  flex-shrink: 0;
+.logo__img {
+  width: auto;
   height: auto;
-}
-
-.logo--sm .logo__mark {
-  width: 2.1rem;
-}
-
-.logo--md .logo__mark {
-  width: 2.75rem;
-}
-
-.logo--lg {
-  flex-direction: column;
-  text-align: center;
-  gap: 1.1rem;
-}
-
-.logo--lg .logo__mark {
-  width: 5.75rem;
-}
-
-.logo__photo {
+  max-width: 100%;
   object-fit: contain;
 }
 
-.logo__text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  min-width: 0;
+/* Commercial logo: respect digital min width with descriptor (160px). */
+.logo--sm:not(.logo--mark):not(.logo--photo) .logo__img {
+  width: clamp(var(--logo-min), 42vw, 11.5rem);
 }
 
-.logo--lg .logo__text {
-  align-items: center;
+.logo--md:not(.logo--mark):not(.logo--photo) .logo__img {
+  width: clamp(11.5rem, 48vw, 16rem);
 }
 
-.logo__wordmark {
-  font-family: var(--font-body);
-  font-weight: 500;
-  letter-spacing: 0.42em;
-  line-height: 1;
-  text-indent: 0.42em;
-  text-transform: uppercase;
+.logo--lg:not(.logo--mark):not(.logo--photo) .logo__img {
+  width: clamp(14rem, 72vw, 22rem);
 }
 
-.logo--sm .logo__wordmark {
-  font-size: 0.95rem;
+/* Icon-only mark */
+.logo--sm.logo--mark .logo__img {
+  width: 2.25rem;
 }
 
-.logo--md .logo__wordmark {
-  font-size: 1.15rem;
+.logo--md.logo--mark .logo__img {
+  width: 2.75rem;
 }
 
-.logo--lg .logo__wordmark {
-  font-size: clamp(2rem, 5vw, 3.1rem);
-  letter-spacing: 0.48em;
-  text-indent: 0.48em;
+.logo--lg.logo--mark .logo__img {
+  width: 5.5rem;
 }
 
-.logo__a {
-  font-weight: 400;
-  letter-spacing: 0.28em;
+/* API photo override — keep reasonable bounds */
+.logo--sm.logo--photo .logo__img {
+  width: clamp(2.5rem, 20vw, 3.25rem);
+  height: clamp(2.5rem, 20vw, 3.25rem);
 }
 
-.logo__tagline {
-  font-size: 0.62rem;
-  font-weight: 400;
-  letter-spacing: 0.34em;
-  text-indent: 0.34em;
-  text-transform: uppercase;
-  color: var(--color-pine);
-}
-
-.logo--lg .logo__tagline {
-  font-size: 0.78rem;
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
-  margin-top: 0.35rem;
-}
-
-.logo--inverted .logo__tagline {
-  color: color-mix(in srgb, var(--color-cream) 78%, var(--color-sage));
+.logo--md.logo--photo .logo__img,
+.logo--lg.logo--photo .logo__img {
+  width: clamp(3rem, 24vw, 5.5rem);
+  height: auto;
 }

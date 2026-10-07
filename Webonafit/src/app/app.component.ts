@@ -1,11 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { BrandingService } from './branding/branding.service';
 import { ButtonComponent } from './components/button/button.component';
 import { LogoComponent } from './components/logo/logo.component';
-import { LanguageService } from './i18n/language.service';
+import { LanguageService, UiLanguage } from './i18n/language.service';
 
 @Component({
   selector: 'app-root',
@@ -33,12 +33,69 @@ export class AppComponent {
     { label: this.navCopy()['contact'], fragment: 'contacto' },
   ]);
 
+  protected readonly langOpen = signal(false);
+
   toggleMenu() {
     this.menuOpen.update((open) => !open);
   }
 
   closeMenu() {
     this.menuOpen.set(false);
+  }
+
+  toggleLang(event?: Event) {
+    event?.stopPropagation();
+    this.langOpen.update((open) => !open);
+  }
+
+  closeLang() {
+    this.langOpen.set(false);
+  }
+
+  selectLanguage(language: UiLanguage, event?: Event) {
+    event?.stopPropagation();
+    this.language.setLanguage(language);
+    this.closeLang();
+  }
+
+  onLangTriggerKeydown(event: KeyboardEvent) {
+    if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.langOpen.set(true);
+      queueMicrotask(() => {
+        document.querySelector<HTMLButtonElement>('.lang__option')?.focus();
+      });
+    } else if (event.key === 'Escape') {
+      this.closeLang();
+    }
+  }
+
+  onLangFocusOut(event: FocusEvent) {
+    const root = event.currentTarget as HTMLElement | null;
+    const next = event.relatedTarget as Node | null;
+    if (!root || (next && root.contains(next))) {
+      return;
+    }
+    this.closeLang();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.langOpen()) {
+      this.closeLang();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    if (!this.langOpen()) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.lang')) {
+      return;
+    }
+    this.closeLang();
   }
 
   goToContact() {

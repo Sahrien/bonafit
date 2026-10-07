@@ -5,27 +5,11 @@
     <a routerLink="/" class="brand" [attr.aria-label]="branding.studioName() + ', ' + ('chrome.homeAria' | translate)" (click)="closeMenu()">
       <app-logo
         size="sm"
+        mark="mark"
         [showTagline]="false"
         [studioName]="branding.studioName()"
-        [slogan]="branding.slogan()"
-        [imageUrl]="branding.logoHref()" />
+        [slogan]="branding.slogan()" />
     </a>
-
-    <div class="header-actions">
-      <div class="lang" role="group" [attr.aria-label]="'chrome.language' | translate">
-        <button type="button" class="lang__btn" [class.is-active]="language.language() === 'es'" (click)="language.setLanguage('es')">ES</button>
-        <button type="button" class="lang__btn" [class.is-active]="language.language() === 'en'" (click)="language.setLanguage('en')">EN</button>
-      </div>
-      <button
-        class="menu-toggle"
-        type="button"
-        [attr.aria-expanded]="menuOpen()"
-        aria-controls="site-nav"
-        (click)="toggleMenu()"
-      >
-        {{ menuOpen() ? ('chrome.close' | translate) : ('chrome.menu' | translate) }}
-      </button>
-    </div>
 
     <nav
       id="site-nav"
@@ -42,8 +26,65 @@
           {{ item.label }}
         </a>
       }
-      <app-button [text]="'chrome.book' | translate" (clicked)="goToContact()" />
+      <app-button size="sm" [text]="'chrome.book' | translate" (clicked)="goToContact()" />
     </nav>
+
+    <div class="header-actions">
+      <div
+        class="lang"
+        [class.lang--open]="langOpen()"
+        (focusout)="onLangFocusOut($event)"
+      >
+        <button
+          type="button"
+          class="lang__trigger"
+          [attr.aria-expanded]="langOpen()"
+          aria-haspopup="listbox"
+          aria-controls="lang-menu"
+          [attr.aria-label]="'chrome.language' | translate"
+          (click)="toggleLang($event)"
+          (keydown)="onLangTriggerKeydown($event)"
+        >
+          <span class="lang__code" aria-hidden="true">{{ language.language() === 'en' ? 'EN' : 'ES' }}</span>
+        </button>
+        <ul
+          id="lang-menu"
+          class="lang__menu"
+          role="listbox"
+          [attr.aria-label]="'chrome.language' | translate"
+        >
+          <li role="presentation">
+            <button
+              type="button"
+              class="lang__option"
+              role="option"
+              [attr.aria-selected]="language.language() === 'es'"
+              [class.is-active]="language.language() === 'es'"
+              (click)="selectLanguage('es', $event)"
+            >ES</button>
+          </li>
+          <li role="presentation">
+            <button
+              type="button"
+              class="lang__option"
+              role="option"
+              [attr.aria-selected]="language.language() === 'en'"
+              [class.is-active]="language.language() === 'en'"
+              (click)="selectLanguage('en', $event)"
+            >EN</button>
+          </li>
+        </ul>
+      </div>
+      <button
+        class="menu-toggle"
+        type="button"
+        [attr.aria-expanded]="menuOpen()"
+        aria-controls="site-nav"
+        (click)="toggleMenu()"
+      >
+        <span class="menu-toggle__label">{{ menuOpen() ? ('chrome.close' | translate) : ('chrome.menu' | translate) }}</span>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -59,8 +100,7 @@
         [showTagline]="true"
         [inverted]="true"
         [studioName]="branding.studioName()"
-        [slogan]="branding.slogan()"
-        [imageUrl]="branding.logoHref()" />
+        [slogan]="branding.slogan()" />
       <p class="footer-claim">{{ 'footer.claim' | translate }}</p>
     </div>
     <div>

@@ -1,7 +1,7 @@
 <button
   [attr.type]="type()"
   [disabled]="disabled()"
-  [class]="'btn btn--' + variant()"
+  [class]="'btn btn--' + variant() + ' btn--' + size()"
   (click)="onClick()"
 >
   {{ text() }}

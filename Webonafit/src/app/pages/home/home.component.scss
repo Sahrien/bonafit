@@ -1,86 +1,126 @@
 .hero {
   position: relative;
   overflow: hidden;
-  padding: clamp(5.5rem, 10vw, 8.5rem) var(--page-pad) clamp(4.5rem, 8vw, 7rem);
+  padding: clamp(3.5rem, 9vw, 8.5rem) var(--page-pad) clamp(5.5rem, 12vw, 9.5rem);
   background: var(--color-cream);
 }
 
-.hero__glow {
+.hero__waves {
   position: absolute;
-  inset: 8% auto auto 50%;
-  width: min(42rem, 90vw);
-  height: 42rem;
-  translate: -50% 0;
-  border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--color-sage) 35%, transparent) 0%, transparent 68%);
+  inset: 0;
   pointer-events: none;
+  z-index: 0;
+}
+
+.hero__waves-svg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: min(48%, 20rem);
+  min-height: 14rem;
 }
 
 .hero__inner {
   position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 1.35rem;
+  gap: 1.15rem;
+}
+
+.hero__inner app-logo {
+  color: var(--color-forest);
+  filter: none;
 }
 
 .hero h1 {
   max-width: 18ch;
-  font-size: clamp(2.35rem, 6vw, 4.15rem);
-  font-weight: 600;
+  font-size: clamp(1.85rem, 5.5vw, 2.125rem);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: var(--color-forest);
 }
 
 .hero__claim {
   max-width: 32rem;
-  font-size: clamp(1.2rem, 2.2vw, 1.45rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 2.2vw, 1.5rem);
+  font-weight: 300;
+  line-height: 1.45;
   color: var(--color-muted);
 }
 
 .hero app-button {
-  margin-top: 0.6rem;
+  margin-top: 0.75rem;
+  position: relative;
+  z-index: 2;
+}
+
+.section--forest .about__copy > p {
+  color: color-mix(in srgb, var(--color-cream) 82%, var(--color-sage));
+}
+
+.section--forest .territories li {
+  border-color: color-mix(in srgb, var(--color-cream) 22%, transparent);
+  color: var(--color-cream);
+  background: color-mix(in srgb, var(--color-cream) 10%, transparent);
+}
+
+.section--forest blockquote {
+  border-top-color: color-mix(in srgb, var(--color-cream) 16%, transparent);
+  color: var(--color-cream);
+}
+
+.section--forest .slogan {
+  color: var(--color-sage);
 }
 
 .about {
   display: grid;
-  gap: 2rem;
+  gap: 1.75rem;
 }
 
 .about h2,
 #que-ofrecemos h2,
 .longevity h2,
 .area h2 {
-  font-size: clamp(2.1rem, 4.4vw, 3.15rem);
-  max-width: 18ch;
+  font-size: clamp(1.75rem, 4vw, 2.125rem);
+  font-weight: 300;
+  max-width: 20ch;
 }
 
 .about__copy {
   display: grid;
-  gap: 1.15rem;
+  gap: 1.1rem;
   max-width: 42rem;
 }
 
 .about__copy > p {
   color: var(--color-muted);
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .territories {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
-  margin: 0.4rem 0 0;
+  gap: 0.5rem;
+  margin: 0.35rem 0 0;
   padding: 0;
   list-style: none;
 }
 
 .territories li {
-  padding: 0.45rem 0.8rem;
+  padding: 0.5rem 0.85rem;
   border: 1px solid color-mix(in srgb, var(--color-forest) 18%, transparent);
   border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-forest);
   background: color-mix(in srgb, var(--color-white) 55%, transparent);
@@ -91,16 +131,18 @@ blockquote {
   padding: 1.25rem 0 0;
   border-top: 1px solid var(--color-line);
   font-family: var(--font-display);
-  font-size: clamp(1.45rem, 2.6vw, 1.85rem);
-  font-style: italic;
-  line-height: 1.35;
+  font-size: clamp(1.25rem, 2.6vw, 1.625rem);
+  font-weight: 300;
+  font-style: normal;
+  line-height: 1.4;
   color: var(--color-forest);
 }
 
 .slogan {
-  font-size: 0.82rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-pine);
 }
@@ -110,17 +152,17 @@ blockquote {
 }
 
 .lede {
-  margin: 1rem 0 2.4rem;
+  margin: 1rem 0 2rem;
 }
 
 .cards {
   display: grid;
-  gap: 1.15rem;
+  gap: 1rem;
 }
 
 .card,
 .complements {
-  padding: 1.6rem 1.45rem;
+  padding: clamp(1.25rem, 3vw, 1.6rem) clamp(1.1rem, 3vw, 1.45rem);
   background: var(--color-card);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
@@ -130,17 +172,19 @@ blockquote {
 .card h3,
 .complements h3,
 .area h3 {
-  font-size: 1.7rem;
-  margin-bottom: 0.65rem;
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  font-weight: 300;
+  margin-bottom: 0.55rem;
 }
 
 .card p,
 .complements p {
   color: var(--color-muted);
+  font-size: 0.975rem;
 }
 
 .complements {
-  margin-top: 1.15rem;
+  margin-top: 1rem;
 }
 
 .complements ul,
@@ -151,15 +195,16 @@ blockquote {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem 0.7rem;
+  gap: 0.5rem 0.65rem;
 }
 
 .complements li,
 .area li {
-  padding: 0.4rem 0.75rem;
+  padding: 0.45rem 0.75rem;
   background: color-mix(in srgb, var(--color-sage) 22%, var(--color-white));
   border-radius: var(--radius);
   color: var(--color-forest);
+  font-size: 0.9rem;
 }
 
 .longevity {
@@ -167,26 +212,26 @@ blockquote {
 }
 
 .longevity > p {
-  margin: 1.1rem 0 1.6rem;
-  font-size: 1.2rem;
+  margin: 1.1rem 0 1.5rem;
+  font-size: 1.05rem;
   color: color-mix(in srgb, var(--color-cream) 82%, var(--color-sage));
 }
 
 .outcomes {
   display: grid;
-  gap: 0.85rem;
-  margin-bottom: 1.8rem;
+  gap: 0.75rem;
+  margin-bottom: 1.6rem;
 }
 
 .outcomes li {
   padding-left: 1.4rem;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='3.2' fill='none' stroke='%2395A58D' stroke-width='1.2'/%3E%3C/svg%3E") 0 0.45rem / 0.85rem no-repeat;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='3.2' fill='none' stroke='%238F9F87' stroke-width='1.2'/%3E%3C/svg%3E") 0 0.4rem / 0.85rem no-repeat;
 }
 
 .area__groups {
   display: grid;
-  gap: 2rem;
-  margin-top: 2rem;
+  gap: 1.75rem;
+  margin-top: 1.75rem;
 }
 
 @media (min-width: 800px) {
@@ -202,5 +247,33 @@ blockquote {
 
   .area__groups {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 3.5vw, 2.35rem);
+  }
+
+  .hero__waves-svg {
+    height: min(52%, 24rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .hero__inner {
+    gap: 1rem;
+  }
+
+  .hero {
+    padding-bottom: clamp(4rem, 18vw, 6rem);
+  }
+
+  .hero__waves-svg {
+    height: min(42%, 14rem);
+    min-height: 11rem;
+  }
+
+  .card,
+  .complements {
+    box-shadow: none;
   }
 }
