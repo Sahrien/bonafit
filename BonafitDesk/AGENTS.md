@@ -50,6 +50,25 @@ HTTP helpers: `API_PATHS` + `apiUrl()` in `core/api-url.ts`, query params via `t
 - Spanish copy: `*.literals.ts` next to the module, or `i18n/es.ts` for shared chrome. Templates bind `literals`, they do not hardcode user-facing strings.
 - Styles: component SCSS + `--bona-*` tokens. Retune Material palettes and token aliases in `src/styles/_theme.scss`. Do not restyle screens with one-off hex, and do not copy Webonafit’s forest/cream tokens.
 
+## Responsive
+
+One breakpoint pair, used app-wide: `@media (max-width: 48rem)` = phone, `@media (min-width: 48.01rem)` = desktop.
+Do not add further breakpoints; tune the phone block of the component you are changing instead. Style with
+`--bona-*` tokens only (no one-off hex).
+
+- `src/index.html` carries `viewport-fit=cover`; the app bar and full-screen dialogs honour `env(safe-area-inset-*)`.
+- `bona-shell-app` drops the top nav below 48rem and shows a fixed bottom bar (`--bona-bottom-nav-height`);
+  screen content reserves that height plus the bottom inset.
+- `bona-grid` renders a card list instead of the `mat-table` below 48rem — pass `titleColumn` / `metaColumns`
+  so each card is readable on its own.
+- Dialog overlays (`bona-dialog`, `.cdk-overlay-pane.bona-dialog`) go full-screen below 48rem and size with
+  `100dvh` (plus a `100vh` fallback) so mobile browser chrome does not clip them.
+- `bona-tabs` is one horizontally scrollable row on phones; `bona-board` columns snap while swiping.
+- `bona-calendar` opens in day view on phones and sets `dayMinWidth` so a 7-day grid scrolls instead of
+  squashing; the calendar and schedules toolbars stick under the app bar.
+- Phone touch targets are at least 2.75rem high (`bona-button`, tab rows, grid cards) and text inputs render
+  at 16px so Mobile Safari does not zoom on focus.
+
 ## Tests
 
 Colocate `*.spec.ts`. Patterns already in the repo:

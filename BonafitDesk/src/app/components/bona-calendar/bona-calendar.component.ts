@@ -165,6 +165,9 @@ export class BonaCalendarComponent {
         }
       : false,
     events: this.events().map(toFullCalendarEvent),
+    // Below this width per day column FullCalendar scrolls horizontally instead
+    // of squashing a 7-day grid into a phone-width viewport.
+    dayMinWidth: 110,
     selectable: this.selectable(),
     editable: this.editable(),
     eventDurationEditable: this.eventDurationEditable(),

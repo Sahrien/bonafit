@@ -107,3 +107,33 @@
     color: var(--bona-color-text) !important;
   }
 }
+
+@media (max-width: 48rem) {
+  // Phone: shorter box to start with, and the FullCalendar typography has to
+  // shrink or week/month cells overflow their columns.
+  .bona-calendar {
+    min-height: 24rem;
+
+    ::ng-deep .fc-toolbar-title {
+      font-size: 1rem;
+      text-transform: capitalize;
+    }
+
+    ::ng-deep .fc-col-header-cell-cushion,
+    ::ng-deep .fc-timegrid-slot-label-cushion,
+    ::ng-deep .fc-daygrid-day-number {
+      padding: 0.15rem 0;
+      font-size: 0.7rem;
+    }
+
+    ::ng-deep .fc-event-time,
+    ::ng-deep .fc-event-title {
+      font-size: 0.72rem;
+    }
+
+    ::ng-deep .fc-button {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+    }
+  }
+}

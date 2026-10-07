@@ -241,3 +241,25 @@
   }
 }
 
+@media (max-width: 48rem) {
+  // Phone: label/value pairs stack, colour rows go full width and the hex field
+  // renders at 16px so Mobile Safari does not zoom on focus.
+  .settings-account {
+    grid-template-columns: 1fr;
+    gap: var(--bona-space-1);
+
+    dd {
+      margin-bottom: var(--bona-space-2);
+    }
+  }
+
+  .settings-color {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .settings-color__hex {
+    font-size: 1rem;
+  }
+}
+

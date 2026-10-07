@@ -48,3 +48,39 @@
     font-size: 1rem;
   }
 }
+
+@media (max-width: 48rem) {
+  // Phone: the toolbar sticks under the app bar so the period/date and the
+  // view switcher stay reachable while scrolling a long day.
+  .calendar-toolbar {
+    position: sticky;
+    top: calc(var(--bona-header-height) + env(safe-area-inset-top));
+    z-index: 5;
+    gap: var(--bona-space-2);
+    margin-bottom: var(--bona-space-2);
+    padding: var(--bona-space-2) 0;
+    background: var(--bona-color-bg);
+    box-shadow: 0 0.75rem 0.75rem -0.75rem var(--bona-color-bg);
+  }
+
+  .calendar-toolbar__when {
+    gap: var(--bona-space-1);
+
+    strong {
+      font-size: 1rem;
+    }
+  }
+
+  .calendar-toolbar__filters,
+  .calendar-toolbar__views {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .calendar-toolbar__views {
+    margin-left: 0;
+    width: 100%;
+  }
+}

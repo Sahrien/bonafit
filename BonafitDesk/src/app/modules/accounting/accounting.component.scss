@@ -340,6 +340,17 @@ h3 {
     width: 100%;
     align-items: stretch;
   }
+
+  // Phone: 16px fields stop Mobile Safari zooming on focus, and the tab row
+  // scrolls horizontally instead of wrapping under the period selector.
+  .acc-period__select {
+    font-size: 1rem;
+  }
+
+  .acc-tabs__item {
+    min-height: 2.75rem;
+    padding: 0.7rem var(--bona-space-3) 0.8rem;
+  }
 }
 
 @media (min-width: 48.01rem) {

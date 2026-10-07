@@ -68,3 +68,16 @@
     color: var(--bona-color-text-muted);
   }
 }
+
+@media (max-width: 48rem) {
+  // Phone: columns keep their 16rem width and snap while the row is swiped.
+  .bona-board {
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--bona-space-3);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bona-board__column {
+    scroll-snap-align: start;
+  }
+}

@@ -94,7 +94,14 @@
       100vh - var(--bona-header-height) - var(--bona-bottom-nav-height) - env(safe-area-inset-top) -
         env(safe-area-inset-bottom)
     );
+    // Dynamic viewport units keep the full-screen sheet inside the visible area
+    // while the mobile browser chrome (URL bar) is on screen.
+    height: calc(
+      100dvh - var(--bona-header-height) - var(--bona-bottom-nav-height) -
+        env(safe-area-inset-top) - env(safe-area-inset-bottom)
+    );
     max-height: 100vh;
+    max-height: 100dvh;
   }
 
   .cdk-overlay-pane.bona-dialog .mat-mdc-dialog-container {
@@ -151,4 +158,11 @@
   padding: 0.4rem 0.6rem;
   color: var(--bona-color-text-muted);
   font-size: 0.8125rem;
+}
+
+@media (max-width: 48rem) {
+  // Mobile Safari zooms the viewport when the focused field renders below 16px.
+  .bona-filter-menu-panel .bona-filter-menu__search input {
+    font-size: 1rem;
+  }
 }

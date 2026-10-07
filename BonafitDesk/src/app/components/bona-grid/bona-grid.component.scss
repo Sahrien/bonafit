@@ -292,4 +292,18 @@
     display: flex;
     flex-direction: column;
   }
+
+  // Mobile Safari zooms the viewport when the focused field renders below 16px.
+  .bona-grid__filter {
+    font-size: 1rem;
+  }
+
+  .bona-grid__card {
+    min-height: 3rem;
+    padding: var(--bona-space-3) var(--bona-space-2);
+  }
+
+  .bona-grid__pager {
+    justify-content: space-between;
+  }
 }

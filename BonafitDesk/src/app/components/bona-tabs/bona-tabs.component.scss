@@ -46,3 +46,25 @@
 .bona-tabs--segmented .bona-tabs__tab--active {
   color: var(--bona-color-primary);
 }
+
+@media (max-width: 48rem) {
+  // Phone: one scrollable row instead of tabs wrapping onto several lines.
+  .bona-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .bona-tabs__tab {
+    flex: 0 0 auto;
+    min-height: 2.75rem;
+    padding: var(--bona-space-3);
+    white-space: nowrap;
+  }
+
+  .bona-tabs--segmented {
+    width: auto;
+    max-width: 100%;
+  }
+}

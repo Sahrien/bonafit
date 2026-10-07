@@ -7,6 +7,7 @@
   flex-direction: column;
   min-width: min(32rem, 100%);
   max-height: min(40rem, calc(100vh - 4rem));
+  max-height: min(40rem, calc(100dvh - 4rem));
 }
 
 .bona-dialog-layout__header {

@@ -56,3 +56,39 @@
   border-color: var(--bona-color-border) !important;
   color: var(--bona-color-text) !important;
 }
+
+@media (max-width: 48rem) {
+  // Phone: same sticky, compact toolbar as the calendar screen.
+  .calendar-toolbar {
+    position: sticky;
+    top: calc(var(--bona-header-height) + env(safe-area-inset-top));
+    z-index: 5;
+    gap: var(--bona-space-2);
+    margin-bottom: var(--bona-space-2);
+    padding: var(--bona-space-2) 0;
+    background: var(--bona-color-bg);
+    box-shadow: 0 0.75rem 0.75rem -0.75rem var(--bona-color-bg);
+  }
+
+  .calendar-toolbar__when {
+    gap: var(--bona-space-1);
+
+    strong {
+      font-size: 1rem;
+    }
+  }
+
+  .calendar-toolbar__views {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .schedules-hours app-bona-summary-card {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
