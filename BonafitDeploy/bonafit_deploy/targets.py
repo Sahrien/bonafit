@@ -5,14 +5,14 @@ import tempfile
 from pathlib import Path
 from shlex import quote
 
-from bonafit_deploy import ftp, ssh
+from bonafit_deploy import rsync, ssh
 from bonafit_deploy.paths import API_ROOT, DESK_ROOT, WEB_ROOT
 from bonafit_deploy.process import run
 from bonafit_deploy.settings import DeployEnv
 
 BACKEND_SKIP_DIRS = {".venv", "tests", "__pycache__", ".pytest_cache", "dist", ".git"}
 BACKEND_SKIP_FILES = {".env"}
-BACKEND_ROOT_FILES = ("pyproject.toml", "uv.lock", ".python-version")
+BACKEND_ROOT_FILES = ("pyproject.toml", "uv.lock", ".python-version", "README.md")
 BACKEND_ROOT_DIRS = ("app", "scripts")
 
 
@@ -42,15 +42,17 @@ def deploy_backend(env: DeployEnv, *, skip_tests: bool) -> None:
     with tempfile.TemporaryDirectory(prefix="bonafit-api-") as staging_dir:
         staging = Path(staging_dir)
         _stage_backend(API_ROOT, staging)
-        print(f"FTP upload -> {env.remote_backend} as {env.ftp_user}", flush=True)
-        with ftp.connect(
-            host=env.ftp_host,
-            port=env.ftp_port,
-            user=env.ftp_user,
-            password=env.ftp_password,
-            tls=env.ftp_tls,
-        ) as session:
-            ftp.upload_directory(session, staging, env.remote_backend)
+        rsync.upload_directory(
+            local=staging,
+            remote=env.remote_backend,
+            host=env.ssh_host,
+            port=env.ssh_port,
+            user=env.ssh_user,
+            private_key=env.ssh_private_key,
+            delete=True,
+            excludes=(".env", ".venv", "__pycache__"),
+            remote_owner=env.app_user,
+        )
     _restart_backend(env)
 
 
@@ -76,15 +78,16 @@ def _deploy_angular(
         )
     run(["npx", "ng", "build", "--configuration", "production"], cwd=project)
     local = _angular_browser_dir(project, output_path)
-    print(f"FTP upload {local} -> {remote} as {env.ftp_user}", flush=True)
-    with ftp.connect(
-        host=env.ftp_host,
-        port=env.ftp_port,
-        user=env.ftp_user,
-        password=env.ftp_password,
-        tls=env.ftp_tls,
-    ) as session:
-        ftp.upload_directory(session, local, remote)
+    rsync.upload_directory(
+        local=local,
+        remote=remote,
+        host=env.ssh_host,
+        port=env.ssh_port,
+        user=env.ssh_user,
+        private_key=env.ssh_private_key,
+        delete=True,
+        remote_owner=env.app_user,
+    )
 
 
 def _angular_browser_dir(project: Path, output_path: str) -> Path:
@@ -123,16 +126,19 @@ def _copytree_filtered(source: Path, dest: Path) -> None:
 
 def _restart_backend(env: DeployEnv) -> None:
     remote = env.remote_backend.rstrip("/")
+    app_user = quote(env.app_user)
+    unit = quote(env.api_unit)
+    # deploy cannot cd into bonafit-owned dirs; run sync as app_user via sudo
     command = (
-        f"cd {quote(remote)} && uv sync --frozen && "
-        "(pkill -f 'uvicorn app.main:app' || true) && "
-        "nohup uv run start >> deploy.log 2>&1 &"
+        f"sudo -u {app_user} bash -lc {quote(f'cd {remote} && uv sync --frozen')} && "
+        f"sudo systemctl enable --now {unit} && "
+        f"sudo systemctl restart {unit}"
     )
     ssh.run_remote(
         host=env.ssh_host,
         port=env.ssh_port,
         user=env.ssh_user,
-        password=env.ssh_password,
+        password="",
         private_key=env.ssh_private_key,
         command=command,
     )

@@ -14,13 +14,13 @@ TARGETS = ("frontend", "backend", "web", "all")
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Build a Bonafit app locally and upload it over FTP.",
+        description="Build a Bonafit app locally and rsync it to the OVH VPS over SSH.",
     )
     parser.add_argument("target", choices=TARGETS)
     parser.add_argument(
         "--dev",
         action="store_true",
-        help="use the development FTP/SSH user (same remote paths)",
+        help="deploy to /srv/dev.bonafit and restart bonafit-api-bonafit_dev",
     )
     parser.add_argument(
         "--skip-tests",
@@ -48,7 +48,7 @@ def _deploy(target: str, *, dev: bool, skip_tests: bool) -> None:
     label = "development" if dev else "production"
     names = ("backend", "frontend", "web") if target == "all" else (target,)
     for name in names:
-        print(f"Deploying {name} ({label})", flush=True)
+        print(f"Deploying {name} ({label}) -> {env.ssh_user}@{env.ssh_host}", flush=True)
         if name == "frontend":
             deploy_frontend(env, skip_tests=skip_tests)
         elif name == "backend":

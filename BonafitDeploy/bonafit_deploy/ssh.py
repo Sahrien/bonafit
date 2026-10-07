@@ -49,16 +49,18 @@ def _load_private_key(path: Path, *, password: str) -> paramiko.PKey:
     if not path.is_file():
         raise FileNotFoundError(f"SSH private key not found: {path}")
     passphrase = password or None
+    key_classes = [paramiko.Ed25519Key, paramiko.RSAKey, paramiko.ECDSAKey]
+    # DSSKey was removed in newer Paramiko
+    dss = getattr(paramiko, "DSSKey", None)
+    if dss is not None:
+        key_classes.append(dss)
     last_error: Exception | None = None
-    for key_class in (
-        paramiko.Ed25519Key,
-        paramiko.RSAKey,
-        paramiko.ECDSAKey,
-        paramiko.DSSKey,
-    ):
+    for key_class in key_classes:
         try:
             return key_class.from_private_key_file(str(path), password=passphrase)
-        except paramiko.SSHException as exc:
+        except Exception as exc:
             last_error = exc
             continue
+    if passphrase:
+        return _load_private_key(path, password="")
     raise RuntimeError(f"could not load SSH private key {path}: {last_error}")

@@ -13,40 +13,32 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    ftp_host: str
-    ftp_port: int = 21
-    ftp_tls: bool = False
-    ftp_user: str
-    ftp_password: str
-    ftp_user_dev: str
-    ftp_password_dev: str
-    ftp_remote_frontend: str
-    ftp_remote_backend: str
-    ftp_remote_web: str
-    ssh_host: str = ""
+    ssh_host: str
     ssh_port: int = 22
-    ssh_user: str = ""
-    ssh_password: str = ""
-    ssh_user_dev: str = ""
-    ssh_password_dev: str = ""
-    ssh_private_key: str = "id_rsa"
+    ssh_user: str = "deploy"
+    ssh_private_key: str = "~/.ssh/id_ed25519_ovh"
+
+    # Prod remotes (OVH). --dev swaps the /srv/bonafit prefix for /srv/dev.bonafit.
+    remote_web: str = "/srv/bonafit/public"
+    remote_frontend: str = "/srv/bonafit/app"
+    remote_backend: str = "/srv/bonafit/api"
+
+    api_unit: str = "bonafit-api-bonafit"
+    api_unit_dev: str = "bonafit-api-bonafit_dev"
+    app_user: str = "bonafit"
 
 
 @dataclass(frozen=True)
 class DeployEnv:
-    ftp_host: str
-    ftp_port: int
-    ftp_tls: bool
-    ftp_user: str
-    ftp_password: str
     ssh_host: str
     ssh_port: int
     ssh_user: str
-    ssh_password: str
     ssh_private_key: Path
     remote_frontend: str
     remote_backend: str
     remote_web: str
+    api_unit: str
+    app_user: str
 
 
 def _resolve_private_key(value: str) -> Path:
@@ -56,26 +48,33 @@ def _resolve_private_key(value: str) -> Path:
     return path.resolve()
 
 
+def _dev_remote(path: str) -> str:
+    """Map /srv/bonafit/... -> /srv/dev.bonafit/..."""
+    if path.startswith("/srv/bonafit"):
+        return "/srv/dev.bonafit" + path[len("/srv/bonafit") :]
+    raise ValueError(f"cannot derive --dev remote from {path!r}; expected /srv/bonafit/...")
+
+
 def load_env(*, dev: bool) -> DeployEnv:
     settings = Settings()
-    ftp_user = settings.ftp_user_dev if dev else settings.ftp_user
-    ftp_password = settings.ftp_password_dev if dev else settings.ftp_password
-    ssh_user = (settings.ssh_user_dev if dev else settings.ssh_user) or ftp_user
-    ssh_password = (
-        (settings.ssh_password_dev if dev else settings.ssh_password) or ftp_password
-    )
+    if dev:
+        remote_web = _dev_remote(settings.remote_web)
+        remote_frontend = _dev_remote(settings.remote_frontend)
+        remote_backend = _dev_remote(settings.remote_backend)
+        api_unit = settings.api_unit_dev
+    else:
+        remote_web = settings.remote_web
+        remote_frontend = settings.remote_frontend
+        remote_backend = settings.remote_backend
+        api_unit = settings.api_unit
     return DeployEnv(
-        ftp_host=settings.ftp_host,
-        ftp_port=settings.ftp_port,
-        ftp_tls=settings.ftp_tls,
-        ftp_user=ftp_user,
-        ftp_password=ftp_password,
-        ssh_host=settings.ssh_host or settings.ftp_host,
+        ssh_host=settings.ssh_host,
         ssh_port=settings.ssh_port,
-        ssh_user=ssh_user,
-        ssh_password=ssh_password,
+        ssh_user=settings.ssh_user,
         ssh_private_key=_resolve_private_key(settings.ssh_private_key),
-        remote_frontend=settings.ftp_remote_frontend,
-        remote_backend=settings.ftp_remote_backend,
-        remote_web=settings.ftp_remote_web,
+        remote_frontend=remote_frontend,
+        remote_backend=remote_backend,
+        remote_web=remote_web,
+        api_unit=api_unit,
+        app_user=settings.app_user,
     )
