@@ -78,3 +78,53 @@ def load_env(*, dev: bool) -> DeployEnv:
         api_unit=api_unit,
         app_user=settings.app_user,
     )
+
+
+# ---------------------------------------------------------------- Estalvia
+# Estalvia lives in its own repo (GitLab), so its settings are separate from
+# the Bonafit FTP/SSH block above.
+
+
+class EstalviaSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=PACKAGE_ROOT / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    estalvia_repo_url: str = "git@gitlab.com:madriguera1/sagar.git"
+    estalvia_remote_api: str = "/srv/estalvia/api"
+    estalvia_remote_public: str = "/srv/estalvia/public"
+    estalvia_api_unit: str = "estalvia-api"
+    estalvia_app_user: str = "estalvia"
+
+
+@dataclass(frozen=True)
+class EstalviaEnv:
+    ssh_host: str
+    ssh_port: int
+    ssh_user: str
+    ssh_private_key: Path
+    repo_url: str
+    remote_api: str
+    remote_public: str
+    api_unit: str
+    app_user: str
+
+
+def load_estalvia_env() -> EstalviaEnv:
+    """Estalvia reuses the same SSH block as Bonafit, with its own remotes."""
+    settings = Settings()
+    est = EstalviaSettings()
+    return EstalviaEnv(
+        ssh_host=settings.ssh_host or settings.ftp_host,
+        ssh_port=settings.ssh_port,
+        ssh_user=settings.ssh_user or settings.ftp_user,
+        ssh_private_key=_resolve_private_key(settings.ssh_private_key),
+        repo_url=est.estalvia_repo_url,
+        remote_api=est.estalvia_remote_api,
+        remote_public=est.estalvia_remote_public,
+        api_unit=est.estalvia_api_unit,
+        app_user=est.estalvia_app_user,
+    )
+
