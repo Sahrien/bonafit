@@ -97,6 +97,8 @@ class EstalviaSettings(BaseSettings):
     estalvia_remote_public: str = "/srv/estalvia/public"
     estalvia_api_unit: str = "estalvia-api"
     estalvia_app_user: str = "estalvia"
+    estalvia_public_api_health: str = "https://bona-fit.es/estalvia/api/health"
+    estalvia_public_web_url: str = "https://bona-fit.es/estalvia/"
 
 
 @dataclass(frozen=True)
@@ -110,6 +112,8 @@ class EstalviaEnv:
     remote_public: str
     api_unit: str
     app_user: str
+    public_api_health: str
+    public_web_url: str
 
 
 def load_estalvia_env() -> EstalviaEnv:
@@ -126,5 +130,7 @@ def load_estalvia_env() -> EstalviaEnv:
         remote_public=est.estalvia_remote_public,
         api_unit=est.estalvia_api_unit,
         app_user=est.estalvia_app_user,
+        public_api_health=est.estalvia_public_api_health,
+        public_web_url=est.estalvia_public_web_url,
     )
 

@@ -15,6 +15,7 @@ from pathlib import Path
 
 from bonafit_deploy import rsync as rsync_mod
 from bonafit_deploy import ssh as ssh_mod
+from bonafit_deploy.estalvia import verify as verify_mod
 from bonafit_deploy.process import run
 from bonafit_deploy.settings import EstalviaEnv
 
@@ -62,6 +63,23 @@ def deploy_estalvia(
 
         if target in ("all", "api"):
             _restart_and_migrate(env)
+
+        # Record what shipped, then prove the live surface serves it. A
+        # deploy that cannot prove itself is a failed deploy: the worst
+        # historical outcome was a green exit that served 403 or left a
+        # dead unit behind.
+        verify_mod.write_marker(env, commit=commit)
+        verify_mod.verify_deployed(
+            env,
+            commit=commit,
+            expect_api=target in ("all", "api"),
+            expect_web=target in ("all", "web"),
+            web_assets=(
+                verify_mod.web_asset_names(built["web"])
+                if target in ("all", "web")
+                else ()
+            ),
+        )
 
     print(f"Deployed estalvia {commit[:12]} ({target})", flush=True)
 
