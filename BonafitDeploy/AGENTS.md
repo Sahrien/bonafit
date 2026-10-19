@@ -55,5 +55,25 @@ backend (never `.env`/`.venv`) to `/srv/estalvia/api` and `dist/browser` to
 Because it runs `alembic upgrade head` on the server, **a deploy is a schema
 decision**: confirm migrations before shipping.
 
+### A deploy is not done until it proves itself
+
+`bonafit_deploy/estalvia/verify.py` runs before the success line and raises
+`DeployVerificationError` (non-zero exit) if any assertion fails:
+
+- the public API health URL reports `ok`;
+- `index.html` sits at the web root (not nested one level down — that 403s);
+- the public SPA index serves the app shell AND references a `main-*.js` that
+  exists in the bundle just uploaded (a stale index pointing at a deleted chunk
+  is a blank page behind a 200);
+- `DEPLOYED_COMMIT` on the server equals the commit that was built.
+
+HTTP checks retry, because requests right after `systemctl restart` hit a 502.
+This exists because a green exit shipped a 403 once and a broken migration step
+once — never report a deploy as live on the exit code alone.
+
+The tool writes `/srv/estalvia/api/DEPLOYED_COMMIT` (`<sha> <timestamp>`) on
+every deploy and it is the one to read. The old infra `deploy.sh` marker under
+`/var/lib/infra-deploy` goes stale the moment this tool deploys.
+
 Settings are pydantic-settings from `.env`. Never log secrets or commit private
 keys / `.env`.
