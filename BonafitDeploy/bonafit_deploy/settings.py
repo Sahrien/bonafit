@@ -134,3 +134,75 @@ def load_estalvia_env() -> EstalviaEnv:
         public_web_url=est.estalvia_public_web_url,
     )
 
+
+# ---------------------------------------------------------------- Horoscope
+# Horoscope is its own GitLab repo with four deploy surfaces: API, editor SPA,
+# customer app SPA, and the marketing landing at the product domain root.
+
+
+class HoroscopeSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=PACKAGE_ROOT / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    horoscope_repo_url: str = "git@gitlab.com:madriguera1/horoscope.git"
+    horoscope_remote_api: str = "/srv/horoscope/api"
+    horoscope_remote_web: str = "/srv/horoscope/public"
+    horoscope_remote_app: str = "/srv/tucartalaser/app"
+    horoscope_remote_landing: str = "/srv/tucartalaser/public"
+    horoscope_api_unit: str = "horoscope-api"
+    horoscope_app_user: str = "horoscope"
+    horoscope_tcl_owner: str = "bonafit"
+    horoscope_public_api_health: str = (
+        "https://bona-fit.es/horoscope/api/health"
+    )
+    horoscope_public_web_url: str = "https://bona-fit.es/horoscope/"
+    horoscope_public_app_url: str = "https://tucartalaser.com/app/"
+    horoscope_public_landing_url: str = "https://tucartalaser.com/"
+
+
+@dataclass(frozen=True)
+class HoroscopeEnv:
+    ssh_host: str
+    ssh_port: int
+    ssh_user: str
+    ssh_private_key: Path
+    repo_url: str
+    remote_api: str
+    remote_web: str
+    remote_app: str
+    remote_landing: str
+    api_unit: str
+    app_user: str
+    tcl_owner: str
+    public_api_health: str
+    public_web_url: str
+    public_app_url: str
+    public_landing_url: str
+
+
+def load_horoscope_env() -> HoroscopeEnv:
+    """Horoscope reuses the shared SSH block with its own remote layout."""
+    settings = Settings()
+    h = HoroscopeSettings()
+    return HoroscopeEnv(
+        ssh_host=settings.ssh_host,
+        ssh_port=settings.ssh_port,
+        ssh_user=settings.ssh_user,
+        ssh_private_key=_resolve_private_key(settings.ssh_private_key),
+        repo_url=h.horoscope_repo_url,
+        remote_api=h.horoscope_remote_api,
+        remote_web=h.horoscope_remote_web,
+        remote_app=h.horoscope_remote_app,
+        remote_landing=h.horoscope_remote_landing,
+        api_unit=h.horoscope_api_unit,
+        app_user=h.horoscope_app_user,
+        tcl_owner=h.horoscope_tcl_owner,
+        public_api_health=h.horoscope_public_api_health,
+        public_web_url=h.horoscope_public_web_url,
+        public_app_url=h.horoscope_public_app_url,
+        public_landing_url=h.horoscope_public_landing_url,
+    )
+

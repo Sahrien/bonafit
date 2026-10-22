@@ -75,5 +75,34 @@ The tool writes `/srv/estalvia/api/DEPLOYED_COMMIT` (`<sha> <timestamp>`) on
 every deploy and it is the one to read. The old infra `deploy.sh` marker under
 `/var/lib/infra-deploy` goes stale the moment this tool deploys.
 
+## Horoscope
+
+Horoscope is its own GitLab repo (`gitlab.com/madriguera1/horoscope`) with four
+surfaces. Like Estalvia it always builds a **clean clone at the exact pushed
+commit**, never the working tree (landing photos can be work in progress).
+
+```bash
+uv run deploy horoscope <commit>             # api + web + app + landing
+uv run deploy horoscope <commit> api         # FastAPI / renderer only
+uv run deploy horoscope <commit> web         # editor SPA /horoscope/
+uv run deploy horoscope <commit> app         # customer SPA /app/
+uv run deploy horoscope <commit> landing     # tucartalaser.com root
+uv run deploy horoscope <commit> --skip-tests
+```
+
+Build: `uv pip compile pyproject.toml` for the remote venv; backend unittest
+suite unless skipped; two Angular builds with baseHrefs `/horoscope/` and
+`/app/`; landing `pnpm build` with baseHref `/`.
+
+Ship: API to `/srv/horoscope/api` (never `.env`/`.venv`), editor to
+`/srv/horoscope/public`, app to `/srv/tucartalaser/app`, landing to
+`/srv/tucartalaser/public`. The API owns and exposes the editor/app endpoints
+through nginx; the tucartalaser static trees are owned by `bonafit`.
+
+Remote after API upload: `uv pip install -r requirements.txt`,
+`alembic upgrade head`, then `systemctl enable --now horoscope-api` and
+restart. Verification checks API health, each SPA's root `index.html`, app shell
+and uploaded `main-*.js`, plus `/srv/horoscope/api/DEPLOYED_COMMIT`.
+
 Settings are pydantic-settings from `.env`. Never log secrets or commit private
 keys / `.env`.
