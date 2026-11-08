@@ -53,6 +53,9 @@ describe('SchedulesComponent', () => {
     calendarApi.getTrainer.and.callFake((id: string) =>
       of(MOCK_TRAINERS.find((row) => row.id === id) ?? MOCK_TRAINERS[0]),
     );
+    calendarApi.updateTrainer.and.callFake((id: string, payload) =>
+      of({ id, name: payload.name, concurrentCapacity: payload.concurrentCapacity }),
+    );
     calendarApi.getTrainerSchedules.and.callFake((trainerId?: string) =>
       of(
         trainerId
@@ -89,7 +92,8 @@ describe('SchedulesComponent', () => {
     expect(text).toContain(SCHEDULES_LITERALS.tabYo);
     expect(text).not.toContain(SCHEDULES_LITERALS.typicalWeek);
     expect(text).not.toContain(SCHEDULES_LITERALS.hoursTotal);
-    expect(text).not.toContain(SCHEDULES_LITERALS.capacitySettings);
+    expect(text).toContain(SCHEDULES_LITERALS.capacityTitle);
+    expect(text).toContain('Alex Martin');
     expect(fixture.nativeElement.querySelectorAll('app-bona-calendar').length).toBe(1);
     expect(calendarApi.getTrainer).toHaveBeenCalledWith('trainer-1');
     expect(calendarApi.getTrainers).not.toHaveBeenCalled();
@@ -110,7 +114,9 @@ describe('SchedulesComponent', () => {
     expect(text).toContain(SCHEDULES_LITERALS.tabEstudio);
     expect(text).toContain(SCHEDULES_LITERALS.hoursTotal);
     expect(text).not.toContain(SCHEDULES_LITERALS.holidaysTitle);
-    expect(text).not.toContain(SCHEDULES_LITERALS.capacitySettings);
+    expect(text).toContain(SCHEDULES_LITERALS.capacityTitle);
+    expect(text).toContain('Alex Martin');
+    expect(text).toContain('Sam Ortega');
     expect(fixture.nativeElement.querySelectorAll('app-bona-calendar').length).toBe(1);
     expect(fixture.nativeElement.querySelector('app-bona-chip-filter')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-bona-filter-menu')).toBeTruthy();
@@ -123,5 +129,19 @@ describe('SchedulesComponent', () => {
     expect(scheduleAction.open).toHaveBeenCalled();
     const data = scheduleAction.open.calls.mostRecent().args[0];
     expect(data.kind).toBe('createHours');
+  });
+
+  it('saves concurrent capacity from the schedules screen', () => {
+    const fixture = TestBed.createComponent(SchedulesComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.onCapacityDraftChange('trainer-1', '3');
+    fixture.componentInstance.onSaveCapacity();
+    fixture.detectChanges();
+
+    expect(calendarApi.updateTrainer).toHaveBeenCalledWith('trainer-1', {
+      name: 'Alex Martin',
+      concurrentCapacity: 3,
+    });
   });
 });

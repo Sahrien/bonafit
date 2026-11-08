@@ -78,6 +78,14 @@ describe('AuthApiService', () => {
     expect(await pending).toEqual(session);
   });
 
+  it('POST /auth/forgot-password', async () => {
+    const pending = firstValueFrom(api.requestPasswordReset({ email: 'lucia@bonafit.com' }));
+    const req = http.expectOne({ method: 'POST', url: apiUrl(API_PATHS.authForgotPassword) });
+    expect(req.request.body).toEqual({ email: 'lucia@bonafit.com' });
+    req.flush({ ok: true });
+    expect(await pending).toEqual({ ok: true });
+  });
+
   it('POST /auth/change-password', async () => {
     const pending = firstValueFrom(
       api.changePassword({ currentPassword: 'old-pass1', newPassword: 'new-pass1' }),

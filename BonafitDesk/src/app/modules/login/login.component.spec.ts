@@ -3,21 +3,26 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
+import { BonaDialog } from '../../components/bona-dialog/bona-dialog.service';
 import { AUTH_PATHS } from '../../core/auth/auth.paths';
 import { LanguageService } from '../../core/i18n/language.service';
 import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { LOGIN_LITERALS } from '../../i18n/es';
 import { AuthApiService } from '../../services/auth-api.service';
 import { MOCK_ACCOUNTS, createMockSession } from '../../testing/fixtures';
+import { ForgotPasswordDialogComponent } from './forgot-password-dialog.component';
 import { LoginComponent } from './login.component';
 
 describe('LoginComponent', () => {
   let fixture: ComponentFixture<LoginComponent>;
   let auth: jasmine.SpyObj<AuthApiService>;
+  let dialog: jasmine.SpyObj<BonaDialog>;
   let router: Router;
 
   beforeEach(async () => {
-    auth = jasmine.createSpyObj('AuthApiService', ['login']);
+    auth = jasmine.createSpyObj('AuthApiService', ['login', 'requestPasswordReset']);
+    dialog = jasmine.createSpyObj<BonaDialog>('BonaDialog', ['open']);
+    dialog.open.and.returnValue({ afterClosed: () => of(null) } as never);
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
@@ -26,6 +31,7 @@ describe('LoginComponent', () => {
         provideDeskTranslate(),
         provideRouter([]),
         { provide: AuthApiService, useValue: auth },
+        { provide: BonaDialog, useValue: dialog },
       ],
     }).compileComponents();
 
@@ -106,6 +112,35 @@ describe('LoginComponent', () => {
     });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain(LOGIN_LITERALS.invalidCredentials);
+  });
+
+  it('shows the forgot password action and requests a reset', () => {
+    dialog.open.and.returnValue({
+      afterClosed: () => of({ email: 'lucia@bonafit.com' }),
+    } as never);
+    auth.requestPasswordReset.and.returnValue(of({ ok: true }));
+    fixture.componentInstance.formValue.set({ email: 'lucia@bonafit.com', password: '' });
+
+    fixture.componentInstance.onForgotPassword();
+    fixture.detectChanges();
+
+    expect(dialog.open.calls.mostRecent().args[0]).toBe(ForgotPasswordDialogComponent);
+    const config = dialog.open.calls.mostRecent().args[1] as { data?: { email?: string } };
+    expect(config.data?.email).toBe('lucia@bonafit.com');
+    expect(auth.requestPasswordReset).toHaveBeenCalledWith({ email: 'lucia@bonafit.com' });
+    expect(fixture.nativeElement.textContent).toContain(LOGIN_LITERALS.forgotSent);
+  });
+
+  it('shows an error when the reset request fails', () => {
+    dialog.open.and.returnValue({
+      afterClosed: () => of({ email: 'lucia@bonafit.com' }),
+    } as never);
+    auth.requestPasswordReset.and.returnValue(throwError(() => new Error('offline')));
+
+    fixture.componentInstance.onForgotPassword();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(LOGIN_LITERALS.forgotError);
   });
 
   it('shows the brand tagline above the sign-in title', () => {

@@ -1,0 +1,13 @@
+<app-bona-page [title]="literals.title" [subtitle]="literals.subtitle" [loading]="loading()">
+  <app-bona-button bonaPageActions [text]="literals.newTask" (action)="onCreate()" />
+
+  <p class="tasks-hint">{{ literals.boardHint }}</p>
+
+  <app-bona-board
+    [columns]="boardColumns()"
+    [items]="boardItems()"
+    [emptyLabel]="literals.emptyColumn"
+    [movable]="true"
+    (itemClick)="onItemClick($event)"
+    (move)="onMove($event)" />
+</app-bona-page>

@@ -4,19 +4,32 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import SessionFactory
+from app.emailer import Emailer, generate_password
 from app.errors import BOOKING_ERROR_CODES, BusinessError, ForbiddenError, UnauthorizedError
 from app.identity import CurrentUser
 from app.models import User
 from app.roles import UserRole
-from app.schemas import AuthMePatch, AuthSessionOut, ChangePasswordRequest, LoginRequest
+from app.schemas import (
+    AuthMePatch,
+    AuthSessionOut,
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    LoginRequest,
+)
 from app.security import Security
 from app.serializers import user_out
 
 
 class AuthService:
-    def __init__(self, session_factory: SessionFactory, security: Security) -> None:
+    def __init__(
+        self,
+        session_factory: SessionFactory,
+        security: Security,
+        emailer: Emailer | None = None,
+    ) -> None:
         self._session_factory = session_factory
         self._security = security
+        self._emailer = emailer
 
     def login(self, payload: LoginRequest) -> AuthSessionOut:
         with self._session_factory() as db:
@@ -40,6 +53,31 @@ class AuthService:
             user.language = payload.language
             db.add(user)
             return AuthSessionOut(user=user_out(user), token="")
+
+    def request_password_reset(self, payload: ForgotPasswordRequest) -> dict:
+        email = str(payload.email).strip().lower()
+        with self._session_factory() as db:
+            user = db.scalar(select(User).where(User.email == email))
+            if user is None:
+                return {"ok": True}
+            password = self._emailer.generate_password() if self._emailer else generate_password()
+            sent = False
+            if self._emailer is not None:
+                try:
+                    sent = self._emailer.send_password_reset(
+                        user.email,
+                        user.display_name,
+                        password,
+                        getattr(user, "language", None) or "es",
+                    )
+                except Exception:
+                    sent = False
+            if not sent:
+                return {"ok": True}
+            user.password_hash = self._security.hash_password(password)
+            user.must_change_password = True
+            db.add(user)
+            return {"ok": True}
 
     def change_password(self, authorization: str | None, payload: ChangePasswordRequest) -> dict:
         with self._session_factory() as db:

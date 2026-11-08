@@ -31,6 +31,7 @@ FORM_OPTION_TYPES: frozenset[str] = frozenset(
     {"dropdown", "singleChoice", "multipleChoice", "ranking"}
 )
 FormAssignmentStatus = Literal["pending", "completed"]
+TaskStatus = Literal["pending", "inProgress", "done"]
 
 
 IsoDateTime = Annotated[
@@ -100,6 +101,11 @@ class LoginRequest(BaseModel):
     model_config = camel_config()
     email: EmailStr
     password: str = Field(min_length=1)
+
+
+class ForgotPasswordRequest(BaseModel):
+    model_config = camel_config()
+    email: EmailStr
 
 
 class ChangePasswordRequest(BaseModel):
@@ -531,6 +537,33 @@ class AssignFormIn(BaseModel):
 class SubmitFormIn(BaseModel):
     model_config = camel_config()
     answers: list[FormAnswerIn]
+
+
+class TaskOut(BaseModel):
+    model_config = camel_config()
+    id: str
+    title: str
+    description: str = ""
+    status: TaskStatus
+    createdById: str
+    createdByName: str
+    createdAt: IsoDateTime
+    updatedAt: IsoDateTime
+    completedAt: IsoDateTime | None = None
+
+
+class TaskWrite(BaseModel):
+    model_config = camel_config()
+    title: str = Field(min_length=1, max_length=200)
+    description: str = ""
+    status: TaskStatus = "pending"
+
+
+class TaskPatch(BaseModel):
+    model_config = camel_config()
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = None
+    status: TaskStatus | None = None
 
 
 AccountingPreset = Literal["7d", "30d", "month", "quarter", "90d", "year"]

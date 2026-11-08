@@ -10,6 +10,8 @@ import {
   BonaCalendarSlotSelect,
   BonaCalendarView,
 } from '../../components/bona-calendar/bona-calendar.component';
+import { BonaFieldComponent } from '../../components/bona-field/bona-field.component';
+import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
 import { BonaFilterMenuComponent, BonaFilterMenuItem } from '../../components/bona-filter-menu/bona-filter-menu.component';
 import { BonaIconButtonComponent } from '../../components/bona-icon-button/bona-icon-button.component';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
@@ -61,6 +63,7 @@ export type SchedulesMode = 'yo' | 'estudio';
     BonaCalendarComponent,
     BonaIconButtonComponent,
     BonaFilterMenuComponent,
+    BonaFieldComponent,
     BonaSummaryCardComponent,
   ],
   templateUrl: './schedules.component.html',
@@ -98,6 +101,7 @@ export class SchedulesComponent {
   readonly focusDate = signal(new Date());
   readonly view = signal<BonaCalendarView>('week');
   readonly selectedTrainerIds = signal<string[]>([]);
+  private readonly capacityDrafts = signal<Record<string, string>>({});
   private readonly sessionUser = signal<AuthUserDto | null>(null);
 
   readonly ownTrainerId = computed(() => this.sessionUser()?.trainerId ?? '');
@@ -120,6 +124,20 @@ export class SchedulesComponent {
   readonly trainerFilterItems = computed<BonaFilterMenuItem[]>(() =>
     this.trainers().map((row) => ({ id: row.id, label: row.name })),
   );
+
+  readonly capacityTrainers = computed(() => {
+    const selected = this.selectedTrainerIds();
+    return selected.length
+      ? this.trainers().filter((row) => selected.includes(row.id))
+      : this.trainers();
+  });
+
+  readonly capacityField = computed<BonaFieldDefinition>(() => ({
+    key: 'concurrentCapacity',
+    label: this.literals.concurrentCapacity,
+    type: 'number',
+    required: true,
+  }));
 
   readonly periodTitle = computed(() => {
     const locale = this.language.locale();
@@ -260,6 +278,55 @@ export class SchedulesComponent {
 
   hoursLabel(minutes: number): string {
     return formatHours(minutes);
+  }
+
+  capacityDraft(trainer: TrainerDto): string {
+    return this.capacityDrafts()[trainer.id] ?? `${trainer.concurrentCapacity}`;
+  }
+
+  onCapacityDraftChange(trainerId: string, value: string): void {
+    this.capacityDrafts.update((drafts) => ({ ...drafts, [trainerId]: value }));
+  }
+
+  onSaveCapacity(): void {
+    const updates: Array<{ trainer: TrainerDto; capacity: number }> = [];
+    for (const trainer of this.capacityTrainers()) {
+      const parsed = Number(this.capacityDraft(trainer));
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        this.toast.error(this.literals.errorCapacity);
+        return;
+      }
+      if (parsed !== trainer.concurrentCapacity) {
+        updates.push({ trainer, capacity: parsed });
+      }
+    }
+    if (!updates.length) {
+      return;
+    }
+    forkJoin(
+      updates.map((item) =>
+        this.calendarApi.updateTrainer(item.trainer.id, {
+          name: item.trainer.name,
+          concurrentCapacity: item.capacity,
+        }),
+      ),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (saved) => {
+          const byId = new Map(saved.map((row) => [row.id, row]));
+          this.trainers.update((rows) => rows.map((row) => byId.get(row.id) ?? row));
+          this.capacityDrafts.update((drafts) => {
+            const next = { ...drafts };
+            for (const row of saved) {
+              delete next[row.id];
+            }
+            return next;
+          });
+          this.toast.success(this.literals.capacitySaved);
+        },
+        error: () => this.toast.error(this.literals.errorSave),
+      });
   }
 
   onSlotSelect(slot: BonaCalendarSlotSelect): void {

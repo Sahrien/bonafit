@@ -7,6 +7,7 @@ import { ClientBonoDto } from '../models/client-bono.dto';
 import { ClientDto } from '../models/client.dto';
 import { FormAssignmentDto, FormDto, FormQuestionDto } from '../models/form.dto';
 import { ServiceDto } from '../models/service.dto';
+import { TaskDto } from '../models/task.dto';
 import { TrainerScheduleDto } from '../models/trainer-schedule.dto';
 import { TrainerDto } from '../models/trainer.dto';
 
@@ -293,6 +294,42 @@ export const MOCK_FORM_ASSIGNMENTS: FormAssignmentDto[] = [
       { questionId: 'q-2', value: 'Molestia de rodilla' },
       { questionId: 'q-3', value: 'opt-health' },
     ],
+  },
+];
+
+export const MOCK_TASKS: TaskDto[] = [
+  {
+    id: 'task-1',
+    title: 'Revisar bonos caducados',
+    description: 'Avisar a los clientes con sesiones pendientes.',
+    status: 'pending',
+    createdById: 'user-trainer-1',
+    createdByName: 'Alex Martin',
+    createdAt: '2026-11-08T09:00:00.000Z',
+    updatedAt: '2026-11-08T09:00:00.000Z',
+    completedAt: null,
+  },
+  {
+    id: 'task-2',
+    title: 'Pedir material nuevo',
+    description: '',
+    status: 'inProgress',
+    createdById: 'user-trainer-2',
+    createdByName: 'Sam Ortega',
+    createdAt: '2026-11-07T15:30:00.000Z',
+    updatedAt: '2026-11-08T08:15:00.000Z',
+    completedAt: null,
+  },
+  {
+    id: 'task-3',
+    title: 'Publicar horario de diciembre',
+    description: '',
+    status: 'done',
+    createdById: 'user-trainer-1',
+    createdByName: 'Alex Martin',
+    createdAt: '2026-11-05T10:00:00.000Z',
+    updatedAt: '2026-11-06T11:00:00.000Z',
+    completedAt: '2026-11-06T11:00:00.000Z',
   },
 ];
 

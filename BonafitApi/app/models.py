@@ -85,6 +85,20 @@ class User(Base):
     client: Mapped[Client | None] = relationship(back_populates="user")
 
 
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    created_by_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_by_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class Service(Base):
     __tablename__ = "services"
 

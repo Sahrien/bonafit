@@ -15,6 +15,58 @@
   }
 }
 
+.schedules-capacity {
+  margin: 0 0 var(--bona-space-4);
+  padding: var(--bona-space-3);
+  border: 1px solid var(--bona-color-border);
+  border-radius: var(--bona-radius-md);
+  background: var(--bona-color-nested);
+}
+
+.schedules-capacity__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--bona-space-3);
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: var(--bona-space-1) 0 0;
+    color: var(--bona-color-text-muted);
+    font-size: 0.875rem;
+  }
+}
+
+.schedules-capacity__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bona-space-3);
+  margin: var(--bona-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.schedules-capacity__trainer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bona-space-2);
+
+  span {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  app-bona-field {
+    min-width: 8rem;
+  }
+}
+
 .calendar-toolbar {
   display: flex;
   flex-wrap: wrap;

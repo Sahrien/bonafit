@@ -10,6 +10,8 @@ import {
   AuthMePatchDto,
   AuthSessionDto,
   ChangePasswordRequestDto,
+  ForgotPasswordRequestDto,
+  ForgotPasswordResponseDto,
   LoginRequestDto,
 } from '../models/auth-session.dto';
 
@@ -59,6 +61,15 @@ export class AuthApiService implements AuthApi {
 
   changePassword(payload: ChangePasswordRequestDto): Observable<void> {
     return this.http.post<void>(apiUrl(API_PATHS.authChangePassword), payload);
+  }
+
+  requestPasswordReset(
+    payload: ForgotPasswordRequestDto,
+  ): Observable<ForgotPasswordResponseDto> {
+    return this.http.post<ForgotPasswordResponseDto>(
+      apiUrl(API_PATHS.authForgotPassword),
+      payload,
+    );
   }
 
   updateMe(payload: AuthMePatchDto): Observable<AuthSessionDto> {

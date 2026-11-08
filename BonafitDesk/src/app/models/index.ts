@@ -17,6 +17,7 @@ export type {
   AvailabilitySlotDto,
 } from './appointment.dto';
 export type { BookingSettingsDto, BookingSettingsWriteDto } from './booking-settings.dto';
+export type { TaskDto, TaskPatchDto, TaskStatus, TaskWriteDto } from './task.dto';
 export type { TrainerScheduleDto, TrainerScheduleWriteDto } from './trainer-schedule.dto';
 export type {
   AbsenceReason,
@@ -42,4 +43,6 @@ export type {
   AuthSessionDto,
   LoginRequestDto,
   ChangePasswordRequestDto,
+  ForgotPasswordRequestDto,
+  ForgotPasswordResponseDto,
 } from './auth-session.dto';

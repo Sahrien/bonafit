@@ -1,0 +1,20 @@
+<app-bona-dialog-layout [title]="title()">
+  @if (openedBy()) {
+    <p class="task-dialog__meta">{{ openedBy() }}</p>
+  }
+
+  <app-bona-form
+    [fields]="fields()"
+    [value]="formValue()"
+    [showSubmit]="false"
+    (valueChange)="onFormChange($event)"
+    (submitted)="onSave()" />
+
+  <div bonaDialogActions>
+    @if (data.task) {
+      <app-bona-button [text]="literals.delete" variant="secondary" (action)="onDelete()" />
+    }
+    <app-bona-button [text]="literals.cancel" variant="secondary" (action)="onCancel()" />
+    <app-bona-button [text]="literals.save" (action)="onSave()" />
+  </div>
+</app-bona-dialog-layout>

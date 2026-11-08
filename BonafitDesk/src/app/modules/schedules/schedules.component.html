@@ -18,6 +18,29 @@
     </div>
   }
 
+  @if (capacityTrainers().length) {
+    <section class="schedules-capacity">
+      <div class="schedules-capacity__header">
+        <div>
+          <h2>{{ literals.capacityTitle }}</h2>
+          <p>{{ literals.capacityHint }}</p>
+        </div>
+        <app-bona-button [text]="literals.save" variant="secondary" (action)="onSaveCapacity()" />
+      </div>
+      <ul class="schedules-capacity__list">
+        @for (trainer of capacityTrainers(); track trainer.id) {
+          <li class="schedules-capacity__trainer">
+            <span>{{ trainer.name }}</span>
+            <app-bona-field
+              [definition]="capacityField()"
+              [value]="capacityDraft(trainer)"
+              (valueChange)="onCapacityDraftChange(trainer.id, $event)" />
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
   <div class="calendar-toolbar">
     <div class="calendar-toolbar__when">
       <app-bona-button [text]="literals.periodToday" variant="ghost" (action)="onFocusToday()" />

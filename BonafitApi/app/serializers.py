@@ -16,6 +16,7 @@ from app.models import (
     ScheduleAbsence,
     ScheduleDateWindow,
     Service,
+    Task,
     Trainer,
     TrainerSchedule,
     User,
@@ -41,6 +42,7 @@ from app.schemas import (
     ScheduleAbsenceOut,
     ScheduleDateWindowOut,
     ServiceOut,
+    TaskOut,
     TrainerOut,
     TrainerScheduleOut,
 )
@@ -345,6 +347,20 @@ def assignment_out(row: FormAssignment, language: str = DEFAULT_LANGUAGE) -> For
         submittedAt=row.submitted_at,
         answers=answers,
         i18n=bundled if isinstance(bundled, dict) else {},
+    )
+
+
+def task_out(row: Task) -> TaskOut:
+    return TaskOut(
+        id=row.id,
+        title=row.title,
+        description=row.description or "",
+        status=row.status,  # type: ignore[arg-type]
+        createdById=row.created_by_id,
+        createdByName=row.created_by_name,
+        createdAt=row.created_at,
+        updatedAt=row.updated_at,
+        completedAt=row.completed_at,
     )
 
 

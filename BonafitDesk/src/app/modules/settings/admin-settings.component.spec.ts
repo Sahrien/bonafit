@@ -3,13 +3,14 @@ import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
-import { MOCK_BOOKING_SETTINGS, MOCK_BRANDING, MOCK_ACCOUNTS, MOCK_TRAINERS, createMockSession } from '../../testing/fixtures';
+import { MOCK_BOOKING_SETTINGS, MOCK_BRANDING, MOCK_ACCOUNTS, createMockSession } from '../../testing/fixtures';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import { AuthApiService } from '../../services/auth-api.service';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { BrandingApiService } from '../../services/branding-api.service';
 import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
+import { SCHEDULES_LITERALS } from '../schedules/schedules.literals';
 import { AdminSettingsComponent } from './admin-settings.component';
 import { SETTINGS_LITERALS } from './settings.literals';
 
@@ -22,7 +23,6 @@ describe('AdminSettingsComponent', () => {
     calendarApi = jasmine.createSpyObj('CalendarApiService', [
       'getBookingSettings',
       'updateBookingSettings',
-      'getTrainers',
       'updateTrainer',
     ]);
     brandingApi = jasmine.createSpyObj('BrandingApiService', [
@@ -35,10 +35,6 @@ describe('AdminSettingsComponent', () => {
     ]);
     authApi = jasmine.createSpyObj('AuthApiService', ['getSession', 'changePassword']);
     calendarApi.getBookingSettings.and.returnValue(of(MOCK_BOOKING_SETTINGS));
-    calendarApi.getTrainers.and.returnValue(of(MOCK_TRAINERS));
-    calendarApi.updateTrainer.and.callFake((id: string, payload) =>
-      of({ id, name: payload.name, concurrentCapacity: payload.concurrentCapacity }),
-    );
     brandingApi.getBranding.and.returnValue(of(MOCK_BRANDING));
     brandingApi.updateBranding.and.returnValue(of(MOCK_BRANDING));
     authApi.getSession.and.returnValue(of(createMockSession(MOCK_ACCOUNTS[0])));
@@ -67,8 +63,7 @@ describe('AdminSettingsComponent', () => {
     expect(text).toContain(SETTINGS_LITERALS.bookingTitle);
     expect(text).toContain(SETTINGS_LITERALS.brandTitle);
     expect(text).toContain(SETTINGS_LITERALS.cutoffTime);
-    expect(text).toContain(SETTINGS_LITERALS.capacityTitle);
-    expect(text).toContain('Alex Martin');
+    expect(text).not.toContain(SCHEDULES_LITERALS.capacityTitle);
     expect(text).toContain(SETTINGS_LITERALS.passwordTitle);
     expect(text).toContain(SETTINGS_LITERALS.saveBrand);
     expect(fixture.nativeElement.querySelectorAll('app-bona-language-switcher').length).toBe(1);
@@ -211,23 +206,22 @@ describe('AdminSettingsComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain(SETTINGS_LITERALS.errorRequired);
   });
 
-  it('saves concurrent capacity with booking settings', () => {
+  it('saves booking settings without touching trainer capacity', () => {
     calendarApi.updateBookingSettings.and.returnValue(of(MOCK_BOOKING_SETTINGS));
     const fixture = TestBed.createComponent(AdminSettingsComponent);
     fixture.detectChanges();
 
-    fixture.componentInstance.onCapacityDraftChange('trainer-1', '3');
     fixture.componentInstance.onSaveBooking({
       nextDayCutoffTime: MOCK_BOOKING_SETTINGS.nextDayCutoffTime,
       defaultLocation: MOCK_BOOKING_SETTINGS.defaultLocation,
     });
     fixture.detectChanges();
 
-    expect(calendarApi.updateBookingSettings).toHaveBeenCalled();
-    expect(calendarApi.updateTrainer).toHaveBeenCalledWith('trainer-1', {
-      name: 'Alex Martin',
-      concurrentCapacity: 3,
+    expect(calendarApi.updateBookingSettings).toHaveBeenCalledWith({
+      nextDayCutoffTime: MOCK_BOOKING_SETTINGS.nextDayCutoffTime,
+      defaultLocation: MOCK_BOOKING_SETTINGS.defaultLocation,
     });
+    expect(calendarApi.updateTrainer).not.toHaveBeenCalled();
   });
 });
 

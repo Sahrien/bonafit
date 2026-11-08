@@ -30,6 +30,7 @@ from app.models import (
     PublicHoliday,
     ScheduleAbsence,
     Service,
+    Task,
     Trainer,
     TrainerSchedule,
     User,
@@ -346,6 +347,42 @@ def seed_if_empty(db: Session) -> None:
     )
     completed.answers.extend(_demo_intake_answers(form))
     db.add_all([pending, completed])
+
+    db.add_all(
+        [
+            Task(
+                id="task-1",
+                title="Revisar bonos caducados",
+                description="Avisar a los clientes con sesiones pendientes.",
+                status="pending",
+                created_by_id="user-trainer-1",
+                created_by_name="Alex Martin",
+                created_at=datetime(2026, 11, 8, 9, 0, tzinfo=UTC),
+                updated_at=datetime(2026, 11, 8, 9, 0, tzinfo=UTC),
+            ),
+            Task(
+                id="task-2",
+                title="Pedir material nuevo",
+                description="",
+                status="inProgress",
+                created_by_id="user-trainer-2",
+                created_by_name="Sam Ortega",
+                created_at=datetime(2026, 11, 7, 15, 30, tzinfo=UTC),
+                updated_at=datetime(2026, 11, 8, 8, 15, tzinfo=UTC),
+            ),
+            Task(
+                id="task-3",
+                title="Publicar horario de diciembre",
+                description="",
+                status="done",
+                created_by_id="user-trainer-1",
+                created_by_name="Alex Martin",
+                created_at=datetime(2026, 11, 5, 10, 0, tzinfo=UTC),
+                updated_at=datetime(2026, 11, 6, 11, 0, tzinfo=UTC),
+                completed_at=datetime(2026, 11, 6, 11, 0, tzinfo=UTC),
+            ),
+        ]
+    )
 
 
 def _seed_intake_form(db: Session) -> Form:

@@ -56,6 +56,7 @@ describe('AdminShellComponent', () => {
     expect(text).toContain(ADMIN_LITERALS.schedules);
     expect(text).toContain(ADMIN_LITERALS.clients);
     expect(text).toContain(ADMIN_LITERALS.forms);
+    expect(text).toContain(ADMIN_LITERALS.tasks);
     expect(text).toContain(ADMIN_LITERALS.stats);
     expect(text).toContain(ADMIN_LITERALS.accounting);
     expect(router.url).toBe('/admin/calendar');
@@ -77,10 +78,11 @@ describe('AdminShellComponent', () => {
     );
     expect(labels).toContain(ADMIN_LITERALS.settings);
     expect(labels).not.toContain(ADMIN_LITERALS.schedules);
+    expect(labels).not.toContain(ADMIN_LITERALS.tasks);
     expect(labels).not.toContain(ADMIN_LITERALS.stats);
   });
 
-  it('places statistics after forms in the main nav', async () => {
+  it('places tasks and statistics after forms in the main nav', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/admin/calendar');
 
@@ -88,7 +90,8 @@ describe('AdminShellComponent', () => {
     const labels = Array.from(nav.querySelectorAll('a')).map((item) => item.textContent?.trim());
     const forms = labels.indexOf(ADMIN_LITERALS.forms);
     expect(forms).toBeGreaterThan(-1);
-    expect(labels[forms + 1]).toBe(ADMIN_LITERALS.stats);
-    expect(labels[forms + 2]).toBe(ADMIN_LITERALS.accounting);
+    expect(labels[forms + 1]).toBe(ADMIN_LITERALS.tasks);
+    expect(labels[forms + 2]).toBe(ADMIN_LITERALS.stats);
+    expect(labels[forms + 3]).toBe(ADMIN_LITERALS.accounting);
   });
 });

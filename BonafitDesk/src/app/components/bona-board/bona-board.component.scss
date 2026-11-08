@@ -67,4 +67,27 @@
     font-size: 0.8125rem;
     color: var(--bona-color-text-muted);
   }
+
+  &[draggable='true'] {
+    cursor: grab;
+  }
+
+  &[draggable='true']:active {
+    cursor: grabbing;
+  }
+}
+
+.bona-board__meta {
+  font-size: 0.75rem;
+}
+
+.bona-board__badge {
+  align-self: flex-start;
+  margin-top: var(--bona-space-1);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--bona-color-header);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--bona-color-text-muted);
 }

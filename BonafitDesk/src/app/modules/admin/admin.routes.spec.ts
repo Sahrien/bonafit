@@ -12,6 +12,7 @@ import { CalendarApiService } from '../../services/calendar-api.service';
 import { provideBonaFeedbackTesting } from '../../testing/bona-feedback';
 import {
   MOCK_ACCOUNTS,
+  MOCK_TASKS,
   MOCK_TRAINERS,
   MOCK_TRAINER_SCHEDULES,
   createMockSession,
@@ -19,8 +20,10 @@ import {
 import { SCHEDULES_LITERALS } from '../schedules/schedules.literals';
 import { AccountingApiService } from '../../services/accounting-api.service';
 import { StatsApiService } from '../../services/stats-api.service';
+import { TasksApiService } from '../../services/tasks-api.service';
 import { ACCOUNTING_LITERALS } from '../accounting/accounting.literals';
 import { STATS_LITERALS } from '../stats/stats.literals';
+import { TASKS_LITERALS } from '../tasks/tasks.literals';
 
 describe('ADMIN_ROUTES horarios', () => {
   beforeEach(async () => {
@@ -98,6 +101,13 @@ describe('ADMIN_ROUTES horarios', () => {
       }),
     );
     accountingApi.listEntries.and.returnValue(of([]));
+    const tasksApi = jasmine.createSpyObj('TasksApiService', [
+      'getTasks',
+      'createTask',
+      'updateTask',
+      'deleteTask',
+    ]);
+    tasksApi.getTasks.and.returnValue(of(MOCK_TASKS));
     statsApi.getStats.and.returnValue(
       of({
         timezone: 'Europe/Madrid',
@@ -158,6 +168,7 @@ describe('ADMIN_ROUTES horarios', () => {
         { provide: CalendarApiService, useValue: calendarApi },
         { provide: StatsApiService, useValue: statsApi },
         { provide: AccountingApiService, useValue: accountingApi },
+        { provide: TasksApiService, useValue: tasksApi },
         ...provideBonaFeedbackTesting().providers,
       ],
     }).compileComponents();
@@ -177,6 +188,14 @@ describe('ADMIN_ROUTES horarios', () => {
     expect(harness.routeNativeElement?.textContent).toContain(STATS_LITERALS.title);
     expect(harness.routeNativeElement?.textContent).toContain(STATS_LITERALS.agendaTitle);
     expect(harness.routeNativeElement?.textContent).toContain(STATS_LITERALS.clientsTitle);
+  });
+
+  it('loads the tasks board at /admin/tareas', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl(AUTH_PATHS.adminTasks);
+    expect(TestBed.inject(Router).url).toBe(AUTH_PATHS.adminTasks);
+    expect(harness.routeNativeElement?.textContent).toContain(TASKS_LITERALS.title);
+    expect(harness.routeNativeElement?.textContent).toContain(TASKS_LITERALS.columnPending);
   });
 
   it('loads the accounting screen at /admin/contabilidad', async () => {

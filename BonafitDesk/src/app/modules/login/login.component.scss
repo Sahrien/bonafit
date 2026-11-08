@@ -86,3 +86,29 @@
   margin: 0 0 var(--bona-space-3);
   color: var(--bona-color-danger, #b42318);
 }
+
+.login__forgot {
+  display: block;
+  margin: var(--bona-space-4) auto 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--bona-color-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+
+.login__success {
+  margin: var(--bona-space-3) 0 0;
+  color: var(--bona-color-text-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}

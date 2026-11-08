@@ -12,6 +12,7 @@ from app.services.catalog import CatalogService
 from app.services.clients import ClientService
 from app.services.forms import FormService
 from app.services.stats import StatsService
+from app.services.tasks import TaskService
 
 
 class Container(containers.DeclarativeContainer):
@@ -25,6 +26,7 @@ class Container(containers.DeclarativeContainer):
             "app.routers.branding",
             "app.routers.stats",
             "app.routers.accounting",
+            "app.routers.tasks",
         ],
         auto_wire=False,
     )
@@ -45,6 +47,7 @@ class Container(containers.DeclarativeContainer):
         AuthService,
         session_factory=db.provided.session,
         security=security,
+        emailer=emailer,
     )
 
     accounting_service = providers.Factory(
@@ -84,5 +87,10 @@ class Container(containers.DeclarativeContainer):
 
     stats_service = providers.Factory(
         StatsService,
+        session_factory=db.provided.session,
+    )
+
+    task_service = providers.Factory(
+        TaskService,
         session_factory=db.provided.session,
     )

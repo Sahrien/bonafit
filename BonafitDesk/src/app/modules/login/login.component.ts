@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { BonaDialog } from '../../components/bona-dialog/bona-dialog.service';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { BonaLanguageSwitcherComponent } from '../../components/bona-language-switcher/bona-language-switcher.component';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
@@ -7,6 +9,11 @@ import { AUTH_PATHS, homeForRole } from '../../core/auth/auth.paths';
 import { injectI18n } from '../../core/i18n/inject-i18n';
 import { AuthApiService } from '../../services/auth-api.service';
 import { BrandThemeService } from '../../core/brand-theme.service';
+import {
+  ForgotPasswordDialogComponent,
+  ForgotPasswordDialogData,
+  ForgotPasswordDialogResult,
+} from './forgot-password-dialog.component';
 
 @Component({
   selector: 'app-login',
@@ -19,6 +26,8 @@ import { BrandThemeService } from '../../core/brand-theme.service';
 export class LoginComponent {
   private readonly auth = inject(AuthApiService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(BonaDialog);
+  private readonly destroyRef = inject(DestroyRef);
   readonly brandTheme = inject(BrandThemeService);
 
   private readonly i18n = injectI18n('login');
@@ -27,6 +36,8 @@ export class LoginComponent {
   }
   readonly submitting = signal(false);
   readonly error = signal('');
+  readonly resetMessage = signal('');
+  readonly resetError = signal('');
   readonly formValue = signal<BonaFormValue>({ email: '', password: '' });
 
   readonly fields = computed<BonaFieldDefinition[]>(() => [
@@ -50,6 +61,30 @@ export class LoginComponent {
     this.formValue.set(value);
   }
 
+  onForgotPassword(): void {
+    const ref = this.dialog.open<
+      ForgotPasswordDialogComponent,
+      ForgotPasswordDialogData,
+      ForgotPasswordDialogResult | null
+    >(ForgotPasswordDialogComponent, {
+      data: { email: this.formValue()['email'] ?? '' },
+    });
+    ref
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (!result) {
+          return;
+        }
+        this.resetMessage.set('');
+        this.resetError.set('');
+        this.auth.requestPasswordReset({ email: result.email }).subscribe({
+          next: () => this.resetMessage.set(this.literals.forgotSent),
+          error: () => this.resetError.set(this.literals.forgotError),
+        });
+      });
+  }
+
   onSubmit(value: BonaFormValue): void {
     const email = (value['email'] ?? '').trim();
     const password = value['password'] ?? '';
@@ -59,6 +94,8 @@ export class LoginComponent {
     }
     this.submitting.set(true);
     this.error.set('');
+    this.resetMessage.set('');
+    this.resetError.set('');
     this.auth.login({ email, password }).subscribe({
       next: (session) => {
         this.submitting.set(false);

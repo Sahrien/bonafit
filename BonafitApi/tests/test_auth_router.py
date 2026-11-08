@@ -69,6 +69,35 @@ def test_me_anonymous() -> None:
     assert response.json() is None
 
 
+def test_forgot_password_ok() -> None:
+    auth_mock = mock.Mock(spec=AuthService)
+    auth_mock.request_password_reset.return_value = {"ok": True}
+
+    with app.container.auth_service.override(auth_mock):
+        response = TestClient(app).post(
+            "/auth/forgot-password",
+            json={"email": "lucia@bonafit.com"},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+    payload = auth_mock.request_password_reset.call_args.args[0]
+    assert payload.email == "lucia@bonafit.com"
+
+
+def test_forgot_password_rejects_invalid_email() -> None:
+    auth_mock = mock.Mock(spec=AuthService)
+
+    with app.container.auth_service.override(auth_mock):
+        response = TestClient(app).post(
+            "/auth/forgot-password",
+            json={"email": "not-an-email"},
+        )
+
+    assert response.status_code == 422
+    auth_mock.request_password_reset.assert_not_called()
+
+
 def test_change_password_ok() -> None:
     auth_mock = mock.Mock(spec=AuthService)
     auth_mock.change_password.return_value = {"ok": True}

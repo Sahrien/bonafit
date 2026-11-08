@@ -3,7 +3,7 @@ import pytest
 from sqlalchemy import select
 
 from app.database import Database
-from app.models import Form, FormAssignment, PublicHoliday, ScheduleAbsence, TrainerSchedule, User
+from app.models import Form, FormAssignment, PublicHoliday, ScheduleAbsence, Task, TrainerSchedule, User
 from app.roles import UserRole
 from scripts.seed import CONFIRM_PHRASE, main, prompt_force_confirmation, seed_database
 
@@ -53,6 +53,9 @@ def test_seed_then_skip() -> None:
         completed = db.get(FormAssignment, "fa-2")
         assert completed is not None
         assert any(answer.value == "Molestia de rodilla" for answer in completed.answers)
+        task = db.get(Task, "task-1")
+        assert task is not None
+        assert task.created_by_name == "Alex Martin"
 
 
 def test_force_aborts_without_confirmation(capsys: pytest.CaptureFixture[str]) -> None:

@@ -13,6 +13,7 @@ from app.services.clients import ClientService
 from app.services.forms import FormService
 from app.services.accounting import AccountingService
 from app.services.stats import StatsService
+from app.services.tasks import TaskService
 
 _PASSWORD = "secret"
 
@@ -43,8 +44,8 @@ def emailer() -> Emailer:
 
 
 @pytest.fixture
-def auth_service(db: Database, security: Security) -> AuthService:
-    return AuthService(session_factory=db.session, security=security)
+def auth_service(db: Database, security: Security, emailer: Emailer) -> AuthService:
+    return AuthService(session_factory=db.session, security=security, emailer=emailer)
 
 
 @pytest.fixture
@@ -87,3 +88,8 @@ def branding_service(db: Database, tmp_path) -> BrandingService:
 @pytest.fixture
 def stats_service(db: Database) -> StatsService:
     return StatsService(session_factory=db.session)
+
+
+@pytest.fixture
+def task_service(db: Database) -> TaskService:
+    return TaskService(session_factory=db.session)

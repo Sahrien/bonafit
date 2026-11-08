@@ -4,7 +4,7 @@ from app.database import Database
 from app.errors import BusinessError, ForbiddenError, UnauthorizedError
 from app.models import User
 from app.roles import UserRole
-from app.schemas import ChangePasswordRequest, LoginRequest
+from app.schemas import ChangePasswordRequest, ForgotPasswordRequest, LoginRequest
 from app.security import Security
 from app.services.auth import AuthService
 
@@ -62,6 +62,57 @@ def test_me_returns_user(auth_service: AuthService, db: Database, security: Secu
 def test_me_without_token(auth_service: AuthService) -> None:
     assert auth_service.me(None) is None
     assert auth_service.me("Bearer not-a-jwt") is None
+
+
+def test_request_password_reset_sends_temporary_password(
+    auth_service: AuthService,
+    db: Database,
+    password_hash: str,
+    emailer,
+) -> None:
+    _add_user(db, password_hash)
+    emailer.send_password_reset.return_value = True
+
+    assert auth_service.request_password_reset(
+        ForgotPasswordRequest(email=ADMIN_EMAIL)
+    ) == {"ok": True}
+
+    emailer.send_password_reset.assert_called_once_with(
+        ADMIN_EMAIL,
+        "Alex",
+        "temp-pass-12",
+        "es",
+    )
+    session = auth_service.login(LoginRequest(email=ADMIN_EMAIL, password="temp-pass-12"))
+    assert session.user.mustChangePassword is True
+
+
+def test_request_password_reset_hides_unknown_email(
+    auth_service: AuthService,
+    emailer,
+) -> None:
+    assert auth_service.request_password_reset(
+        ForgotPasswordRequest(email="nobody@example.com")
+    ) == {"ok": True}
+
+    emailer.send_password_reset.assert_not_called()
+
+
+def test_request_password_reset_keeps_password_when_email_fails(
+    auth_service: AuthService,
+    db: Database,
+    password_hash: str,
+    emailer,
+) -> None:
+    _add_user(db, password_hash)
+    emailer.send_password_reset.return_value = False
+
+    assert auth_service.request_password_reset(
+        ForgotPasswordRequest(email=ADMIN_EMAIL)
+    ) == {"ok": True}
+
+    session = auth_service.login(LoginRequest(email=ADMIN_EMAIL, password=PASSWORD))
+    assert session.user.mustChangePassword is False
 
 
 def test_change_password(auth_service: AuthService, db: Database, security: Security, password_hash: str) -> None:

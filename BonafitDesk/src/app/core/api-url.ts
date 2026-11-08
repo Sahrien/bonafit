@@ -19,6 +19,7 @@ export const API_PATHS = {
   schedulesResolved: 'schedules/resolved',
   schedulesHours: 'schedules/hours',
   forms: 'forms',
+  tasks: 'tasks',
   stats: 'stats',
   accounting: 'accounting',
   accountingEntries: 'accounting/entries',
@@ -35,6 +36,7 @@ export const API_PATHS = {
   authLogout: 'auth/logout',
   authMe: 'auth/me',
   authChangePassword: 'auth/change-password',
+  authForgotPassword: 'auth/forgot-password',
 } as const;
 
 export function apiUrl(...segments: string[]): string {

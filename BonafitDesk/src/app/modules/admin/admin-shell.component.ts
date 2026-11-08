@@ -34,6 +34,7 @@ export class AdminShellComponent {
     { id: 'clients', label: this.literals.clients, link: '/admin/clients', icon: 'groups' },
     { id: 'services', label: this.literals.services, link: '/admin/services', icon: 'spa' },
     { id: 'forms', label: this.literals.forms, link: '/admin/forms', icon: 'assignment' },
+    { id: 'tasks', label: this.literals.tasks, link: AUTH_PATHS.adminTasks, icon: 'checklist' },
     { id: 'stats', label: this.literals.stats, link: AUTH_PATHS.adminStats, icon: 'insights' },
     { id: 'accounting', label: this.literals.accounting, link: AUTH_PATHS.adminAccounting, icon: 'account_balance' },
   ]);

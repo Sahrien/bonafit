@@ -1,6 +1,10 @@
 <div class="bona-board">
   @for (column of columns(); track column.id) {
-    <section class="bona-board__column" [attr.aria-label]="column.label">
+    <section
+      class="bona-board__column"
+      [attr.aria-label]="column.label"
+      (dragover)="onDragOver($event)"
+      (drop)="onDrop($event, column.id)">
       <header class="bona-board__header">
         <h2>{{ column.label }}</h2>
         <span class="bona-board__count">{{ itemsFor(column.id).length }}</span>
@@ -9,10 +13,21 @@
         <p class="bona-board__empty">{{ emptyLabel() }}</p>
       }
       @for (item of itemsFor(column.id); track item.id) {
-        <button type="button" class="bona-board__card" (click)="itemClick.emit(item)">
+        <button
+          type="button"
+          class="bona-board__card"
+          [attr.draggable]="movable() ? 'true' : null"
+          (dragstart)="onDragStart($event, item)"
+          (click)="itemClick.emit(item)">
           <strong>{{ item.title }}</strong>
           @if (item.subtitle) {
             <span>{{ item.subtitle }}</span>
+          }
+          @if (item.meta) {
+            <span class="bona-board__meta">{{ item.meta }}</span>
+          }
+          @if (item.badge) {
+            <span class="bona-board__badge">{{ item.badge }}</span>
           }
         </button>
       }

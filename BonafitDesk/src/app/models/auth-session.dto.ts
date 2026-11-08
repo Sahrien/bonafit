@@ -31,6 +31,14 @@ export interface ChangePasswordRequestDto {
   newPassword: string;
 }
 
+export interface ForgotPasswordRequestDto {
+  email: string;
+}
+
+export interface ForgotPasswordResponseDto {
+  ok: boolean;
+}
+
 export interface AuthMePatchDto {
   language: 'es' | 'en';
 }
