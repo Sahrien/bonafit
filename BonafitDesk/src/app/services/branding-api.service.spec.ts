@@ -33,12 +33,23 @@ describe('BrandingApiService', () => {
       accentHex: '#aabbcc',
       surfaceHex: '#f5f3f0',
       colorScheme: 'dark' as const,
+      headingFont: 'montserrat' as const,
+      bodyFont: 'inter' as const,
     };
     const pending = firstValueFrom(api.updateBranding(payload));
     const req = http.expectOne({ method: 'PUT', url: apiUrl(API_PATHS.branding) });
     expect(req.request.body).toEqual(payload);
     req.flush({ ...MOCK_BRANDING, ...payload });
     expect((await pending).studioName).toBe('Norte');
+  });
+
+  it('PUT /branding/typography', async () => {
+    const payload = { headingFont: 'playfair' as const, bodyFont: 'manrope' as const };
+    const pending = firstValueFrom(api.updateTypography(payload));
+    const req = http.expectOne({ method: 'PUT', url: apiUrl(API_PATHS.brandingTypography) });
+    expect(req.request.body).toEqual(payload);
+    req.flush({ ...MOCK_BRANDING, ...payload });
+    expect((await pending).headingFont).toBe('playfair');
   });
 
   it('POST /branding/logo', async () => {
@@ -54,6 +65,21 @@ describe('BrandingApiService', () => {
     const pending = firstValueFrom(api.deleteLogo());
     http.expectOne({ method: 'DELETE', url: apiUrl(API_PATHS.brandingLogo) }).flush(MOCK_BRANDING);
     expect((await pending).logoUrl).toBeNull();
+  });
+
+  it('POST /branding/logo-dark', async () => {
+    const file = new File(['png'], 'logo-dark.png', { type: 'image/png' });
+    const pending = firstValueFrom(api.uploadLogoDark(file));
+    const req = http.expectOne({ method: 'POST', url: apiUrl(API_PATHS.brandingLogoDark) });
+    expect(req.request.body instanceof FormData).toBeTrue();
+    req.flush({ ...MOCK_BRANDING, logoDarkUrl: '/uploads/branding/logo-dark.png' });
+    expect((await pending).logoDarkUrl).toBe('/uploads/branding/logo-dark.png');
+  });
+
+  it('DELETE /branding/logo-dark', async () => {
+    const pending = firstValueFrom(api.deleteLogoDark());
+    http.expectOne({ method: 'DELETE', url: apiUrl(API_PATHS.brandingLogoDark) }).flush(MOCK_BRANDING);
+    expect((await pending).logoDarkUrl).toBeNull();
   });
 
   it('DELETE /branding/favicon', async () => {

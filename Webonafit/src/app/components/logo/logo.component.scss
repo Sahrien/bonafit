@@ -1,101 +1,93 @@
 :host {
   display: inline-flex;
+  align-items: center;
   color: var(--color-forest);
 }
 
-.logo {
+.logo__img {
+  display: block;
+  width: auto;
+  height: auto;
+}
+
+.logo__img--sm {
+  height: 2.2rem;
+}
+
+.logo__img--md {
+  height: 3.1rem;
+}
+
+.logo__img--lg {
+  width: min(22rem, 78vw);
+  height: auto;
+}
+
+.logo__lockup {
   display: inline-flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.65rem;
   color: inherit;
 }
 
-.logo--inverted {
-  color: var(--color-cream);
+.logo__lockup--stacked {
+  flex-direction: column;
+  gap: 0.9rem;
 }
 
 .logo__mark {
   flex-shrink: 0;
-  height: auto;
+  width: auto;
 }
 
-.logo--sm .logo__mark {
+.logo__mark--sm {
   width: 2.1rem;
 }
 
-.logo--md .logo__mark {
-  width: 2.75rem;
+.logo__mark--md {
+  width: 2.6rem;
 }
 
-.logo--lg {
-  flex-direction: column;
-  text-align: center;
-  gap: 1.1rem;
+.logo__mark--lg {
+  width: clamp(4.5rem, 9vw, 6rem);
 }
 
-.logo--lg .logo__mark {
-  width: 5.75rem;
+.logo__word {
+  display: block;
+  width: auto;
 }
 
-.logo__photo {
-  object-fit: contain;
+.logo__word--sm {
+  height: 0.95rem;
 }
 
-.logo__text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  min-width: 0;
+.logo__word--sm.logo__word--tagline {
+  height: 1.9rem;
 }
 
-.logo--lg .logo__text {
-  align-items: center;
+.logo__word--md {
+  height: 1.2rem;
 }
 
-.logo__wordmark {
-  font-family: var(--font-body);
-  font-weight: 500;
-  letter-spacing: 0.42em;
-  line-height: 1;
-  text-indent: 0.42em;
-  text-transform: uppercase;
+.logo__word--md.logo__word--tagline {
+  height: 2.6rem;
 }
 
-.logo--sm .logo__wordmark {
-  font-size: 0.95rem;
+.logo__word--lg {
+  width: min(22rem, 78vw);
+  height: auto;
 }
 
-.logo--md .logo__wordmark {
-  font-size: 1.15rem;
-}
+@media (max-width: 480px) {
+  .logo__mark--sm {
+    width: 1.9rem;
+  }
 
-.logo--lg .logo__wordmark {
-  font-size: clamp(2rem, 5vw, 3.1rem);
-  letter-spacing: 0.48em;
-  text-indent: 0.48em;
-}
+  .logo__word--sm {
+    height: 0.82rem;
+  }
 
-.logo__a {
-  font-weight: 400;
-  letter-spacing: 0.28em;
-}
-
-.logo__tagline {
-  font-size: 0.62rem;
-  font-weight: 400;
-  letter-spacing: 0.34em;
-  text-indent: 0.34em;
-  text-transform: uppercase;
-  color: var(--color-pine);
-}
-
-.logo--lg .logo__tagline {
-  font-size: 0.78rem;
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
-  margin-top: 0.35rem;
-}
-
-.logo--inverted .logo__tagline {
-  color: color-mix(in srgb, var(--color-cream) 78%, var(--color-sage));
+  .logo__word--sm.logo__word--tagline {
+    height: 1.55rem;
+  }
 }

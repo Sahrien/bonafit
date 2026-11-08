@@ -44,6 +44,36 @@ describe('BonaShellAppComponent', () => {
     expect(text).toContain('Alex Martin');
   });
 
+  it('replaces the brand text with the logo when a logo is configured', () => {
+    fixture.componentRef.setInput('brandLogoUrl', '/uploads/branding/logo.png');
+    fixture.detectChanges();
+
+    const brand = fixture.nativeElement.querySelector('.bona-shell-app__brand') as HTMLElement;
+    const logo = brand.querySelector('.bona-shell-app__brand-logo') as HTMLImageElement;
+
+    expect(logo).toBeTruthy();
+    expect(logo.getAttribute('src')).toBe('/uploads/branding/logo.png');
+    expect(logo.getAttribute('alt')).toBe('Bonafit');
+    expect(brand.querySelector('.bona-shell-app__brand-text')).toBeNull();
+    expect(brand.textContent).not.toContain('Bonafit');
+    expect(brand.textContent).not.toContain('Estudio');
+  });
+
+  it('uses the imagotipo in the header when one is configured', () => {
+    fixture.componentRef.setInput('brandLogoUrl', '/uploads/branding/logo-dark.svg');
+    fixture.componentRef.setInput('brandMarkUrl', '/uploads/branding/favicon.svg');
+    fixture.detectChanges();
+
+    const brand = fixture.nativeElement.querySelector('.bona-shell-app__brand') as HTMLElement;
+    const mark = brand.querySelector('.bona-shell-app__brand-mark') as HTMLImageElement;
+
+    expect(mark).toBeTruthy();
+    expect(mark.getAttribute('src')).toBe('/uploads/branding/favicon.svg');
+    expect(mark.getAttribute('alt')).toBe('Bonafit');
+    expect(brand.querySelector('.bona-shell-app__brand-logo')).toBeNull();
+    expect(brand.querySelector('.bona-shell-app__brand-text')).toBeNull();
+  });
+
   it('emits logout from the profile menu', () => {
     const spy = jasmine.createSpy('logout');
     component.logout.subscribe(spy);

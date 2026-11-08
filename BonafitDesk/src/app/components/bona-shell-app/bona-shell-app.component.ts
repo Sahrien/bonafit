@@ -34,6 +34,7 @@ export interface BonaShellNavItem {
 export class BonaShellAppComponent {
   readonly brand = input('Bonafit');
   readonly brandLogoUrl = input<string | null>(null);
+  readonly brandMarkUrl = input<string | null>(null);
   readonly brandSubtitle = input('');
   readonly userName = input('');
   readonly navItems = input<BonaShellNavItem[]>([]);

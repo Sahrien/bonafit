@@ -303,6 +303,30 @@ class BookingSettingsWrite(BaseModel):
 
 
 ColorScheme = Literal["light", "dark", "system"]
+FontChoice = Literal[
+    "inter",
+    "montserrat",
+    "manrope",
+    "jost",
+    "lato",
+    "poppins",
+    "nunito-sans",
+    "work-sans",
+    "dm-sans",
+    "raleway",
+    "outfit",
+    "josefin-sans",
+    "rubik",
+    "lora",
+    "playfair",
+    "merriweather",
+    "cormorant-garamond",
+    "crimson-pro",
+    "libre-baskerville",
+    "jetbrains-mono",
+    "bebas-neue",
+    "space-mono",
+]
 
 
 class BrandingOut(BaseModel):
@@ -314,7 +338,10 @@ class BrandingOut(BaseModel):
     accentHex: str
     surfaceHex: str
     colorScheme: ColorScheme
+    headingFont: FontChoice
+    bodyFont: FontChoice
     logoUrl: str | None = None
+    logoDarkUrl: str | None = None
     faviconUrl: str | None = None
     updatedAt: IsoDateTime
 
@@ -327,6 +354,14 @@ class BrandingWrite(BaseModel):
     accentHex: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
     surfaceHex: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
     colorScheme: ColorScheme
+    headingFont: FontChoice = "inter"
+    bodyFont: FontChoice = "inter"
+
+
+class BrandingTypographyWrite(BaseModel):
+    model_config = camel_config()
+    headingFont: FontChoice
+    bodyFont: FontChoice
 
 
 class TrainerScheduleOut(BaseModel):

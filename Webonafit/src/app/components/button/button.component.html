@@ -1,8 +1,20 @@
-<button
-  [attr.type]="type()"
-  [disabled]="disabled()"
-  [class]="'btn btn--' + variant()"
-  (click)="onClick()"
->
-  {{ text() }}
-</button>
+@if (href()) {
+  <a
+    [class]="'btn btn--' + variant() + ' btn--' + size()"
+    [href]="href()"
+    [attr.target]="target()"
+    [attr.rel]="target() === '_blank' ? 'noopener noreferrer' : null"
+    (click)="onClick()"
+  >
+    {{ text() }}
+  </a>
+} @else {
+  <button
+    [attr.type]="type()"
+    [disabled]="disabled()"
+    [class]="'btn btn--' + variant() + ' btn--' + size()"
+    (click)="onClick()"
+  >
+    {{ text() }}
+  </button>
+}

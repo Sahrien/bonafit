@@ -247,7 +247,10 @@ class Branding(Base):
     accent_hex: Mapped[str] = mapped_column(String(7), nullable=False)
     surface_hex: Mapped[str] = mapped_column(String(7), nullable=False)
     color_scheme: Mapped[str] = mapped_column(String(20), nullable=False)
+    heading_font: Mapped[str] = mapped_column(String(40), nullable=False, default="inter")
+    body_font: Mapped[str] = mapped_column(String(40), nullable=False, default="inter")
     logo_path: Mapped[str | None] = mapped_column(String(500))
+    logo_dark_path: Mapped[str | None] = mapped_column(String(500))
     favicon_path: Mapped[str | None] = mapped_column(String(500))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

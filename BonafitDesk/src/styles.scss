@@ -1,7 +1,6 @@
+@use './styles/fonts';
 @use './styles/theme';
 @use './styles/sections';
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap');
 
 html,
 body {
@@ -13,6 +12,15 @@ body {
   font-family: var(--bona-font-family);
   background: var(--bona-color-bg);
   color: var(--bona-color-text);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--bona-font-heading);
 }
 
 button:focus-visible,

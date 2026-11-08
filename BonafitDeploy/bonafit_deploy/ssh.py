@@ -15,17 +15,20 @@ def run_remote(
     private_key: Path,
     command: str,
 ) -> None:
-    pkey = _load_private_key(private_key, password=password)
+    pkey = _load_private_key(private_key, password=password) if private_key.is_file() else None
+    if pkey is None and not password:
+        raise FileNotFoundError(f"SSH private key not found and no SSH password configured: {private_key}")
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     connect_kwargs: dict[str, object] = {
         "hostname": host,
         "port": port,
         "username": user,
-        "pkey": pkey,
         "allow_agent": False,
         "look_for_keys": False,
     }
+    if pkey is not None:
+        connect_kwargs["pkey"] = pkey
     if password:
         connect_kwargs["password"] = password
     client.connect(**connect_kwargs)

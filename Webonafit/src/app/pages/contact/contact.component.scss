@@ -43,6 +43,27 @@
   text-decoration: underline;
 }
 
+.contact__phone-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+}
+
+.contact__wa {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-forest) 22%, transparent);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+}
+
+.contact__wa:hover {
+  background: color-mix(in srgb, var(--color-sage) 24%, transparent);
+  text-decoration: none;
+}
+
 .contact__form {
   display: grid;
   gap: 1.15rem;

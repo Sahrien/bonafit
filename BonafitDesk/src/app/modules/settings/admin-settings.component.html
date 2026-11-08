@@ -120,6 +120,29 @@
         </label>
       </div>
       <div class="settings-asset">
+        <span class="settings-asset__label">{{ literals.logoDark }}</span>
+        <div class="settings-asset__tile settings-asset__tile--logo settings-asset__tile--logo-dark">
+          @if (logoDarkHref()) {
+            <img [src]="logoDarkHref()" [alt]="literals.logoDark" />
+            <button
+              type="button"
+              mat-icon-button
+              class="settings-asset__remove"
+              [attr.aria-label]="literals.removeLogoDark"
+              (click)="onRemoveLogoDark()">
+              <mat-icon>close</mat-icon>
+            </button>
+          } @else {
+            <span class="settings-asset__empty">{{ literals.noLogoDark }}</span>
+          }
+        </div>
+        <label class="settings-asset__pick">
+          {{ logoDarkHref() ? literals.changeAsset : literals.chooseAsset }}
+          <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onLogoDarkSelected($event)" />
+        </label>
+        <span class="settings-asset__hint">{{ literals.logoDarkHint }}</span>
+      </div>
+      <div class="settings-asset">
         <span class="settings-asset__label">{{ literals.favicon }}</span>
         <div class="settings-asset__tile settings-asset__tile--favicon">
           @if (faviconHref()) {
@@ -140,6 +163,7 @@
           {{ faviconHref() ? literals.changeAsset : literals.chooseAsset }}
           <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onFaviconSelected($event)" />
         </label>
+        <span class="settings-asset__hint">{{ literals.faviconHint }}</span>
       </div>
     </div>
     <div class="page-section__save">
@@ -149,6 +173,43 @@
         (action)="onSaveBrand(brandForm())" />
       @if (!brandDirty()) {
         <span class="page-section__save__hint">{{ literals.noBrandChanges }}</span>
+      }
+    </div>
+  </section>
+
+  <section class="page-section page-section--save">
+    <h2>{{ literals.typographyTitle }}</h2>
+    <div class="settings-type-preview">
+      <p class="settings-type-preview__heading" [style.font-family]="headingFontStack()">
+        {{ brandForm()['studioName'] || brandTheme.studioName() }}
+      </p>
+      <p class="settings-type-preview__body" [style.font-family]="bodyFontStack()">
+        {{ brandForm()['slogan'] || brandTheme.slogan() }}
+      </p>
+    </div>
+    <div class="settings-fonts">
+      <app-bona-font-picker
+        [label]="literals.headingFont"
+        [placeholder]="literals.fontSearch"
+        [emptyLabel]="literals.fontEmpty"
+        [value]="typographyForm()['headingFont']"
+        [fonts]="brandFonts"
+        (valueChange)="onHeadingFontChange($event)" />
+      <app-bona-font-picker
+        [label]="literals.bodyFont"
+        [placeholder]="literals.fontSearch"
+        [emptyLabel]="literals.fontEmpty"
+        [value]="typographyForm()['bodyFont']"
+        [fonts]="brandFonts"
+        (valueChange)="onBodyFontChange($event)" />
+    </div>
+    <div class="page-section__save">
+      <app-bona-button
+        [text]="literals.saveTypography"
+        [disabled]="!typographyDirty()"
+        (action)="onSaveTypography(typographyForm())" />
+      @if (!typographyDirty()) {
+        <span class="page-section__save__hint">{{ literals.noTypographyChanges }}</span>
       }
     </div>
   </section>

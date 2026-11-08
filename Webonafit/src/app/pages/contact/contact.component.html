@@ -7,11 +7,14 @@
     <ul class="contact__details">
       <li>
         <span>{{ 'contact.phone' | translate }}</span>
-        <a href="tel:+34965123456">+34 965 12 34 56</a>
-      </li>
-      <li>
-        <span>{{ 'contact.whatsapp' | translate }}</span>
-        <a href="https://wa.me/34622184709" target="_blank" rel="noopener noreferrer">+34 622 18 47 09</a>
+        <p class="contact__phone-row">
+          <a href="tel:+34622184709">+34 622 18 47 09</a>
+          <a
+            class="contact__wa"
+            href="https://wa.me/34622184709"
+            target="_blank"
+            rel="noopener noreferrer">{{ 'contact.whatsappCta' | translate }}</a>
+        </p>
       </li>
       <li>
         <span>{{ 'contact.email' | translate }}</span>
@@ -20,10 +23,6 @@
       <li>
         <span>{{ 'contact.address' | translate }}</span>
         <address>{{ 'contact.addressValue' | translate }}</address>
-      </li>
-      <li>
-        <span>{{ 'contact.hours' | translate }}</span>
-        <p>{{ 'contact.hoursValue' | translate }}</p>
       </li>
     </ul>
   </div>

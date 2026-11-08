@@ -216,7 +216,10 @@ export const MOCK_BRANDING: BrandingDto = {
   accentHex: '#c2410c',
   surfaceHex: '#f5f3f0',
   colorScheme: 'light',
+  headingFont: 'inter',
+  bodyFont: 'inter',
   logoUrl: null,
+  logoDarkUrl: null,
   faviconUrl: null,
   updatedAt: '2026-09-18T00:00:00.000Z',
 };

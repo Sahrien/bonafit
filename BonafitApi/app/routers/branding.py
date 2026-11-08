@@ -1,7 +1,7 @@
 from dependency_injector.wiring import inject
 from fastapi import APIRouter, File, UploadFile
 
-from app.schemas import BrandingOut, BrandingWrite
+from app.schemas import BrandingOut, BrandingTypographyWrite, BrandingWrite
 from app.wiring import AuthSvc, AuthorizationHeader, BrandingSvc
 
 router = APIRouter(tags=["branding"])
@@ -25,6 +25,18 @@ def update_branding(
     return branding_service.update_branding(payload)
 
 
+@router.put("/branding/typography", response_model=BrandingOut)
+@inject
+def update_branding_typography(
+    payload: BrandingTypographyWrite,
+    branding_service: BrandingSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> BrandingOut:
+    auth_service.require_admin(authorization)
+    return branding_service.update_typography(payload)
+
+
 @router.post("/branding/logo", response_model=BrandingOut)
 @inject
 def upload_logo(
@@ -46,6 +58,29 @@ def delete_logo(
 ) -> BrandingOut:
     auth_service.require_admin(authorization)
     return branding_service.delete_asset("logo")
+
+
+@router.post("/branding/logo-dark", response_model=BrandingOut)
+@inject
+def upload_logo_dark(
+    branding_service: BrandingSvc,
+    auth_service: AuthSvc,
+    file: UploadFile = File(...),
+    authorization: AuthorizationHeader = None,
+) -> BrandingOut:
+    auth_service.require_admin(authorization)
+    return branding_service.save_asset("logoDark", file)
+
+
+@router.delete("/branding/logo-dark", response_model=BrandingOut)
+@inject
+def delete_logo_dark(
+    branding_service: BrandingSvc,
+    auth_service: AuthSvc,
+    authorization: AuthorizationHeader = None,
+) -> BrandingOut:
+    auth_service.require_admin(authorization)
+    return branding_service.delete_asset("logoDark")
 
 
 @router.post("/branding/favicon", response_model=BrandingOut)

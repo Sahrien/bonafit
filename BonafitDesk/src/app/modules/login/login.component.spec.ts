@@ -7,9 +7,10 @@ import { BonaDialog } from '../../components/bona-dialog/bona-dialog.service';
 import { AUTH_PATHS } from '../../core/auth/auth.paths';
 import { LanguageService } from '../../core/i18n/language.service';
 import { provideDeskTranslate } from '../../core/i18n/provide-desk-translate';
+import { BrandThemeService, apiAssetUrl } from '../../core/brand-theme.service';
 import { LOGIN_LITERALS } from '../../i18n/es';
 import { AuthApiService } from '../../services/auth-api.service';
-import { MOCK_ACCOUNTS, createMockSession } from '../../testing/fixtures';
+import { MOCK_ACCOUNTS, MOCK_BRANDING, createMockSession } from '../../testing/fixtures';
 import { ForgotPasswordDialogComponent } from './forgot-password-dialog.component';
 import { LoginComponent } from './login.component';
 
@@ -20,6 +21,7 @@ describe('LoginComponent', () => {
   let router: Router;
 
   beforeEach(async () => {
+    localStorage.clear();
     auth = jasmine.createSpyObj('AuthApiService', ['login', 'requestPasswordReset']);
     dialog = jasmine.createSpyObj<BonaDialog>('BonaDialog', ['open']);
     dialog.open.and.returnValue({ afterClosed: () => of(null) } as never);
@@ -39,6 +41,10 @@ describe('LoginComponent', () => {
     spyOn(router, 'navigateByUrl');
     fixture = TestBed.createComponent(LoginComponent);
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
   });
 
   it('submits email and password typed in the fields', () => {
@@ -147,5 +153,22 @@ describe('LoginComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text.indexOf(LOGIN_LITERALS.slogan)).toBeGreaterThanOrEqual(0);
     expect(text.indexOf(LOGIN_LITERALS.slogan)).toBeLessThan(text.indexOf(LOGIN_LITERALS.title));
+  });
+
+  it('replaces the name and slogan with the logo when one is configured', () => {
+    TestBed.inject(BrandThemeService).apply({
+      ...MOCK_BRANDING,
+      logoUrl: '/uploads/branding/logo-day.svg',
+    });
+    fixture.detectChanges();
+
+    const intro = fixture.nativeElement.querySelector('.login__intro') as HTMLElement;
+    const logo = intro.querySelector('.login__logo') as HTMLImageElement;
+
+    expect(logo).toBeTruthy();
+    expect(logo.getAttribute('src')).toBe(apiAssetUrl('/uploads/branding/logo-day.svg'));
+    expect(logo.getAttribute('alt')).toBe(MOCK_BRANDING.studioName);
+    expect(intro.querySelector('.login__slogan')).toBeNull();
+    expect(intro.querySelector('.login__brand')).toBeNull();
   });
 });

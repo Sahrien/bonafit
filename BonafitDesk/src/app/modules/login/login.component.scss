@@ -51,6 +51,7 @@
 
 .login__brand {
   margin: var(--bona-space-2) 0 0;
+  font-family: var(--bona-font-heading);
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -59,8 +60,9 @@
 }
 
 .login__logo {
-  width: 4.5rem;
+  width: auto;
   height: 4.5rem;
+  max-width: 12rem;
   margin-top: var(--bona-space-3);
   object-fit: contain;
 }

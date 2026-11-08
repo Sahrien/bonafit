@@ -1,0 +1,29 @@
+<mat-form-field appearance="outline" subscriptSizing="dynamic" class="bona-font-picker">
+  <mat-label>{{ label() }}</mat-label>
+  <input
+    matInput
+    type="text"
+    autocomplete="off"
+    [formControl]="control"
+    [matAutocomplete]="fontAuto"
+    [placeholder]="placeholder()"
+    [style.font-family]="selectedStack()"
+    (input)="onInput()"
+    (focus)="open()"
+    (blur)="onBlur()" />
+  <mat-autocomplete
+    #fontAuto="matAutocomplete"
+    [displayWith]="displayFont"
+    (optionSelected)="onSelected($event)">
+    @for (font of filtered(); track font.id) {
+      <mat-option [value]="font.id">
+        <span class="bona-font-picker__option" [style.font-family]="font.stack">
+          {{ font.label }}
+        </span>
+      </mat-option>
+    }
+    @if (filtered().length === 0) {
+      <mat-option disabled>{{ emptyLabel() }}</mat-option>
+    }
+  </mat-autocomplete>
+</mat-form-field>

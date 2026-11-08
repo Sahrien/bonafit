@@ -185,7 +185,10 @@ def branding_out(row: Branding) -> BrandingOut:
         accentHex=row.accent_hex,
         surfaceHex=row.surface_hex,
         colorScheme=row.color_scheme,  # type: ignore[arg-type]
+        headingFont=row.heading_font,  # type: ignore[arg-type]
+        bodyFont=row.body_font,  # type: ignore[arg-type]
         logoUrl=_public_upload_url(row.logo_path),
+        logoDarkUrl=_public_upload_url(row.logo_dark_path),
         faviconUrl=_public_upload_url(row.favicon_path),
         updatedAt=row.updated_at,
     )

@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { BrandingDto, ColorScheme, DEFAULT_BRANDING } from '../models/branding.dto';
 import { BrandingApiService } from '../services/branding-api.service';
+import { brandFontStack } from './font-catalog';
 import { contrastOn } from './brand-contrast';
 
 const BRANDING_CACHE_KEY = 'bona.branding';
@@ -20,7 +21,10 @@ export class BrandThemeService {
   readonly branding = this.brandingState.asReadonly();
   readonly studioName = computed(() => this.brandingState().studioName);
   readonly slogan = computed(() => this.brandingState().slogan);
-  readonly logoHref = computed(() => apiAssetUrl(this.brandingState().logoUrl));
+  readonly logoHref = computed(() =>
+    apiAssetUrl(logoForScheme(this.brandingState(), this.resolvedScheme())),
+  );
+  readonly markHref = computed(() => apiAssetUrl(this.brandingState().faviconUrl));
   readonly faviconHref = computed(() => apiAssetUrl(this.brandingState().faviconUrl));
   readonly preferredScheme = computed(
     () => this.schemeOverride() ?? this.brandingState().colorScheme,
@@ -73,6 +77,9 @@ export class BrandThemeService {
     const onAccent = contrastOn(accent);
     const scheme = resolveScheme(this.schemeOverride() ?? row.colorScheme);
 
+    root.style.setProperty('--bona-font-body', brandFontStack(row.bodyFont));
+    root.style.setProperty('--bona-font-heading', brandFontStack(row.headingFont));
+    root.style.setProperty('--bona-font-family', brandFontStack(row.bodyFont));
     root.style.setProperty('--bona-color-primary', primary);
     root.style.setProperty('--bona-color-primary-contrast', onPrimary);
     root.style.setProperty('--bona-color-rail', primary);
@@ -92,6 +99,10 @@ export class BrandThemeService {
     this.title.setTitle(row.studioName);
     setFavicon(apiAssetUrl(row.faviconUrl));
   }
+}
+
+function logoForScheme(row: BrandingDto, scheme: 'light' | 'dark'): string | null {
+  return scheme === 'dark' ? row.logoDarkUrl ?? row.logoUrl : row.logoUrl;
 }
 
 export function apiAssetUrl(path: string | null | undefined): string | null {

@@ -28,8 +28,11 @@ describe('AdminSettingsComponent', () => {
     brandingApi = jasmine.createSpyObj('BrandingApiService', [
       'getBranding',
       'updateBranding',
+      'updateTypography',
       'uploadLogo',
       'deleteLogo',
+      'uploadLogoDark',
+      'deleteLogoDark',
       'uploadFavicon',
       'deleteFavicon',
     ]);
@@ -62,14 +65,17 @@ describe('AdminSettingsComponent', () => {
     expect(text).toContain(SETTINGS_LITERALS.title);
     expect(text).toContain(SETTINGS_LITERALS.bookingTitle);
     expect(text).toContain(SETTINGS_LITERALS.brandTitle);
+    expect(text).toContain(SETTINGS_LITERALS.typographyTitle);
     expect(text).toContain(SETTINGS_LITERALS.cutoffTime);
     expect(text).not.toContain(SCHEDULES_LITERALS.capacityTitle);
     expect(text).toContain(SETTINGS_LITERALS.passwordTitle);
     expect(text).toContain(SETTINGS_LITERALS.saveBrand);
     expect(fixture.nativeElement.querySelectorAll('app-bona-language-switcher').length).toBe(1);
     expect(text).toContain(SETTINGS_LITERALS.noLogo);
+    expect(text).toContain(SETTINGS_LITERALS.noLogoDark);
     expect(text).toContain(SETTINGS_LITERALS.noFavicon);
     expect(text).not.toContain(SETTINGS_LITERALS.removeLogo);
+    expect(text).not.toContain(SETTINGS_LITERALS.removeLogoDark);
     expect(saveBrandButton(fixture.nativeElement)?.disabled).toBeTrue();
   });
 
@@ -138,6 +144,74 @@ describe('AdminSettingsComponent', () => {
 
     expect(brandingApi.updateBranding).toHaveBeenCalled();
     expect(brandingApi.uploadLogo).toHaveBeenCalledWith(file);
+  });
+
+  it('stages and saves a night logo', () => {
+    const file = new File(['logo-dark'], 'logo-dark.png', { type: 'image/png' });
+    brandingApi.uploadLogoDark.and.returnValue(
+      of({ ...MOCK_BRANDING, logoDarkUrl: '/uploads/branding/logo-dark.png' }),
+    );
+    const fixture = TestBed.createComponent(AdminSettingsComponent);
+    fixture.detectChanges();
+
+    pickFile(fixture.nativeElement, 'logoDark', file);
+    fixture.detectChanges();
+
+    expect(brandingApi.uploadLogoDark).not.toHaveBeenCalled();
+    expect(saveBrandButton(fixture.nativeElement)?.disabled).toBeFalse();
+
+    saveBrandButton(fixture.nativeElement)?.click();
+    fixture.detectChanges();
+
+    expect(brandingApi.uploadLogoDark).toHaveBeenCalledWith(file);
+  });
+
+  it('stages night logo removal until brand save', () => {
+    brandingApi.getBranding.and.returnValue(
+      of({ ...MOCK_BRANDING, logoDarkUrl: '/uploads/branding/logo-dark.png' }),
+    );
+    brandingApi.deleteLogoDark.and.returnValue(of({ ...MOCK_BRANDING, logoDarkUrl: null }));
+    const fixture = TestBed.createComponent(AdminSettingsComponent);
+    fixture.detectChanges();
+
+    fixture.nativeElement
+      .querySelector(`button[aria-label="${SETTINGS_LITERALS.removeLogoDark}"]`)
+      .click();
+    fixture.detectChanges();
+
+    expect(brandingApi.deleteLogoDark).not.toHaveBeenCalled();
+    expect(
+      fixture.nativeElement.querySelector(`button[aria-label="${SETTINGS_LITERALS.removeLogoDark}"]`),
+    ).toBeFalsy();
+    expect(saveBrandButton(fixture.nativeElement)?.disabled).toBeFalse();
+
+    saveBrandButton(fixture.nativeElement)?.click();
+    fixture.detectChanges();
+
+    expect(brandingApi.deleteLogoDark).toHaveBeenCalled();
+  });
+
+  it('saves typography from the typography section', () => {
+    brandingApi.updateTypography.and.returnValue(
+      of({ ...MOCK_BRANDING, headingFont: 'playfair', bodyFont: 'manrope' }),
+    );
+    const fixture = TestBed.createComponent(AdminSettingsComponent);
+    fixture.detectChanges();
+
+    expect(typographySaveButton(fixture.nativeElement)?.disabled).toBeTrue();
+
+    fixture.componentInstance.onHeadingFontChange('playfair');
+    fixture.componentInstance.onBodyFontChange('manrope');
+    fixture.detectChanges();
+
+    expect(typographySaveButton(fixture.nativeElement)?.disabled).toBeFalse();
+    typographySaveButton(fixture.nativeElement)?.click();
+    fixture.detectChanges();
+
+    expect(brandingApi.updateTypography).toHaveBeenCalledWith({
+      headingFont: 'playfair',
+      bodyFont: 'manrope',
+    });
   });
 
   it('saves brand colors from the brand save bar', () => {
@@ -231,10 +305,20 @@ function saveBrandButton(root: HTMLElement): HTMLButtonElement | undefined {
   );
 }
 
-function pickFile(root: HTMLElement, kind: 'logo' | 'favicon', file: File): void {
-  const tile = root.querySelector(
-    kind === 'logo' ? '.settings-asset__tile--logo' : '.settings-asset__tile--favicon',
-  )?.parentElement;
+function typographySaveButton(root: HTMLElement): HTMLButtonElement | undefined {
+  return Array.from(root.querySelectorAll('app-bona-button button') as NodeListOf<HTMLButtonElement>).find(
+    (button) => button.textContent?.includes(SETTINGS_LITERALS.saveTypography),
+  );
+}
+
+function pickFile(root: HTMLElement, kind: 'logo' | 'logoDark' | 'favicon', file: File): void {
+  const selector =
+    kind === 'favicon'
+      ? '.settings-asset__tile--favicon'
+      : kind === 'logoDark'
+        ? '.settings-asset__tile--logo-dark'
+        : '.settings-asset__tile--logo:not(.settings-asset__tile--logo-dark)';
+  const tile = root.querySelector(selector)?.parentElement;
   const input = tile?.querySelector('input[type="file"]') as HTMLInputElement;
   const transfer = new DataTransfer();
   transfer.items.add(file);

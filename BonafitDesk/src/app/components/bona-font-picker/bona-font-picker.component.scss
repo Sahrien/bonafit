@@ -1,0 +1,14 @@
+:host {
+  display: block;
+}
+
+.bona-font-picker {
+  width: 100%;
+  font-family: var(--bona-font-family);
+}
+
+.bona-font-picker__option {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.5;
+}

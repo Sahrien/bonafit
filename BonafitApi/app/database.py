@@ -174,6 +174,29 @@ def _ensure_user_language(engine: Engine) -> None:
         connection.execute(text("ALTER TABLE users ADD COLUMN language VARCHAR(8) NOT NULL DEFAULT 'es'"))
 
 
+def _ensure_branding_schema(engine: Engine) -> None:
+    inspector = inspect(engine)
+    if "branding" not in inspector.get_table_names():
+        return
+    columns = {column["name"] for column in inspector.get_columns("branding")}
+    statements: list[str] = []
+    if "logo_dark_path" not in columns:
+        statements.append("ALTER TABLE branding ADD COLUMN logo_dark_path VARCHAR(500)")
+    if "heading_font" not in columns:
+        statements.append(
+            "ALTER TABLE branding ADD COLUMN heading_font VARCHAR(40) NOT NULL DEFAULT 'inter'"
+        )
+    if "body_font" not in columns:
+        statements.append(
+            "ALTER TABLE branding ADD COLUMN body_font VARCHAR(40) NOT NULL DEFAULT 'inter'"
+        )
+    if not statements:
+        return
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+
+
 def _ensure_catalog_i18n(engine: Engine) -> None:
     inspector = inspect(engine)
     tables = inspector.get_table_names()
@@ -211,6 +234,7 @@ def _ensure_runtime_schema(engine: Engine) -> None:
     _ensure_appointment_notes(engine)
     _ensure_trainer_concurrent_capacity(engine)
     _ensure_user_language(engine)
+    _ensure_branding_schema(engine)
     _ensure_catalog_i18n(engine)
     _ensure_service_sale(engine)
     _ensure_client_bono_pricing(engine)

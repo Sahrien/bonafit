@@ -16,12 +16,26 @@
   font-weight: 500;
   letter-spacing: 0.04em;
   line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease,
     transform 0.2s ease;
+}
+
+.btn--sm {
+  min-height: 2.55rem;
+  padding: 0.5rem 1.05rem;
+  font-size: 0.9rem;
+}
+
+.btn--lg {
+  min-height: 3.35rem;
+  padding: 0.9rem 1.85rem;
+  font-size: 1.05rem;
 }
 
 .btn:focus-visible {
@@ -57,9 +71,44 @@
 .btn--ghost {
   background: transparent;
   color: var(--color-forest);
-  padding-inline: 0.9rem;
+  padding-inline: 1.1rem;
 }
 
 .btn--ghost:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-sage) 22%, transparent);
+}
+
+.btn--ghost.btn--lg {
+  padding-inline: 1.15rem;
+}
+
+.btn--light {
+  background: var(--color-cream);
+  color: var(--color-forest);
+}
+
+.btn--light:hover:not(:disabled) {
+  background: var(--color-sage-soft);
+}
+
+.btn--outline-light {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--color-cream) 42%, transparent);
+  color: var(--color-cream);
+}
+
+.btn--outline-light:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-cream) 12%, transparent);
+  border-color: var(--color-cream);
+}
+
+.btn--light:focus-visible,
+.btn--outline-light:focus-visible {
+  outline-color: var(--color-cream);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
 }

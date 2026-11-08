@@ -3,7 +3,7 @@ from io import BytesIO
 from fastapi import UploadFile
 
 from app.errors import BusinessError
-from app.schemas import BrandingWrite
+from app.schemas import BrandingTypographyWrite, BrandingWrite
 from app.services.branding import BrandingService
 
 
@@ -14,6 +14,7 @@ def test_get_creates_default_branding(branding_service: BrandingService) -> None
     assert branding.slogan == "Wellness & Longevity"
     assert branding.primaryHex == "#0f766e"
     assert branding.logoUrl is None
+    assert branding.logoDarkUrl is None
 
 
 def test_update_branding(branding_service: BrandingService) -> None:
@@ -25,11 +26,15 @@ def test_update_branding(branding_service: BrandingService) -> None:
             accentHex="#AABBCC",
             surfaceHex="#F5F3F0",
             colorScheme="dark",
+            headingFont="playfair",
+            bodyFont="manrope",
         )
     )
     assert updated.studioName == "Studio Norte"
     assert updated.primaryHex == "#112233"
     assert updated.colorScheme == "dark"
+    assert updated.headingFont == "playfair"
+    assert updated.bodyFont == "manrope"
     assert branding_service.get_branding().studioName == "Studio Norte"
 
 
@@ -48,6 +53,34 @@ def test_delete_logo(branding_service: BrandingService) -> None:
     assert updated.logoUrl is None
     assert not logo.exists()
     assert branding_service.get_branding().logoUrl is None
+
+
+def test_update_typography(branding_service: BrandingService) -> None:
+    updated = branding_service.update_typography(
+        BrandingTypographyWrite(headingFont="playfair", bodyFont="manrope")
+    )
+    assert updated.headingFont == "playfair"
+    assert updated.bodyFont == "manrope"
+    reloaded = branding_service.get_branding()
+    assert reloaded.headingFont == "playfair"
+    assert reloaded.bodyFont == "manrope"
+
+
+def test_save_and_delete_dark_logo(branding_service: BrandingService) -> None:
+    upload = UploadFile(
+        filename="mark-dark.png",
+        file=BytesIO(b"\x89PNG"),
+        headers={"content-type": "image/png"},
+    )
+    updated = branding_service.save_asset("logoDark", upload)
+    assert updated.logoDarkUrl == "/uploads/branding/logo-dark.png"
+    dark_logo = branding_service._uploads_dir / "branding" / "logo-dark.png"
+    assert dark_logo.is_file()
+
+    updated = branding_service.delete_asset("logoDark")
+    assert updated.logoDarkUrl is None
+    assert not dark_logo.exists()
+    assert branding_service.get_branding().logoDarkUrl is None
 
 
 def test_rejects_large_and_unknown_files(branding_service: BrandingService) -> None:

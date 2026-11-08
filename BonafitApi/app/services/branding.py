@@ -6,7 +6,7 @@ from app.database import SessionFactory
 from app.errors import BusinessError
 from app.identity import utcnow
 from app.models import Branding
-from app.schemas import BrandingOut, BrandingWrite
+from app.schemas import BrandingOut, BrandingTypographyWrite, BrandingWrite
 from app.serializers import branding_out
 
 BRANDING_ID = "branding"
@@ -16,6 +16,7 @@ DEFAULT_PRIMARY_HEX = "#0f766e"
 DEFAULT_ACCENT_HEX = "#c2410c"
 DEFAULT_SURFACE_HEX = "#f5f3f0"
 DEFAULT_COLOR_SCHEME = "light"
+DEFAULT_FONT = "inter"
 MAX_ASSET_BYTES = 512 * 1024
 ALLOWED_ASSET_TYPES = {
     "image/png": ".png",
@@ -23,7 +24,8 @@ ALLOWED_ASSET_TYPES = {
     "image/webp": ".webp",
     "image/svg+xml": ".svg",
 }
-ASSET_KINDS = frozenset({"logo", "favicon"})
+ASSET_KINDS = frozenset({"logo", "logoDark", "favicon"})
+ASSET_FILENAMES = {"logo": "logo", "logoDark": "logo-dark", "favicon": "favicon"}
 
 
 class BrandingService:
@@ -44,9 +46,19 @@ class BrandingService:
             row.accent_hex = payload.accentHex.lower()
             row.surface_hex = payload.surfaceHex.lower()
             row.color_scheme = payload.colorScheme
+            row.heading_font = payload.headingFont
+            row.body_font = payload.bodyFont
             row.updated_at = utcnow()
             if not row.studio_name:
                 raise BusinessError("branding.invalidName")
+            return branding_out(row)
+
+    def update_typography(self, payload: BrandingTypographyWrite) -> BrandingOut:
+        with self._session_factory() as db:
+            row = _branding(db)
+            row.heading_font = payload.headingFont
+            row.body_font = payload.bodyFont
+            row.updated_at = utcnow()
             return branding_out(row)
 
     def save_asset(self, kind: str, upload: UploadFile) -> BrandingOut:
@@ -61,22 +73,19 @@ class BrandingService:
         if not data:
             raise BusinessError("branding.invalidFileType", 400)
 
-        relative = f"branding/{kind}{extension}"
+        relative = f"branding/{ASSET_FILENAMES[kind]}{extension}"
         destination = self._uploads_dir / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
 
         with self._session_factory() as db:
             row = _branding(db)
-            previous = row.logo_path if kind == "logo" else row.favicon_path
+            previous = _asset_path(row, kind)
             destination.write_bytes(data)
             if previous and previous != relative:
                 old = self._uploads_dir / previous
                 if old.is_file():
                     old.unlink()
-            if kind == "logo":
-                row.logo_path = relative
-            else:
-                row.favicon_path = relative
+            _set_asset_path(row, kind, relative)
             row.updated_at = utcnow()
             return branding_out(row)
 
@@ -85,17 +94,31 @@ class BrandingService:
             raise BusinessError("branding.invalidAsset", 400)
         with self._session_factory() as db:
             row = _branding(db)
-            previous = row.logo_path if kind == "logo" else row.favicon_path
+            previous = _asset_path(row, kind)
             if previous:
                 old = self._uploads_dir / previous
                 if old.is_file():
                     old.unlink()
-            if kind == "logo":
-                row.logo_path = None
-            else:
-                row.favicon_path = None
+            _set_asset_path(row, kind, None)
             row.updated_at = utcnow()
             return branding_out(row)
+
+
+def _asset_path(row: Branding, kind: str) -> str | None:
+    if kind == "logo":
+        return row.logo_path
+    if kind == "logoDark":
+        return row.logo_dark_path
+    return row.favicon_path
+
+
+def _set_asset_path(row: Branding, kind: str, path: str | None) -> None:
+    if kind == "logo":
+        row.logo_path = path
+    elif kind == "logoDark":
+        row.logo_dark_path = path
+    else:
+        row.favicon_path = path
 
 
 def default_branding() -> Branding:
@@ -107,7 +130,10 @@ def default_branding() -> Branding:
         accent_hex=DEFAULT_ACCENT_HEX,
         surface_hex=DEFAULT_SURFACE_HEX,
         color_scheme=DEFAULT_COLOR_SCHEME,
+        heading_font=DEFAULT_FONT,
+        body_font=DEFAULT_FONT,
         logo_path=None,
+        logo_dark_path=None,
         favicon_path=None,
         updated_at=utcnow(),
     )

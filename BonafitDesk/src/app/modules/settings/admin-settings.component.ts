@@ -6,15 +6,22 @@ import { Observable, concat, forkJoin, last } from 'rxjs';
 import { BonaButtonComponent } from '../../components/bona-button/bona-button.component';
 import { BonaConfirm } from '../../components/bona-confirm/bona-confirm.service';
 import { BonaFieldDefinition } from '../../components/bona-field/bona-field.definition';
+import { BonaFontPickerComponent } from '../../components/bona-font-picker/bona-font-picker.component';
 import { BonaFormComponent, BonaFormValue } from '../../components/bona-form/bona-form.component';
 import { BonaLanguageSwitcherComponent } from '../../components/bona-language-switcher/bona-language-switcher.component';
 import { BonaPageComponent } from '../../components/bona-page/bona-page.component';
 import { BonaToast } from '../../components/bona-toast/bona-toast.service';
 import { BrandThemeService, apiAssetUrl } from '../../core/brand-theme.service';
 import { contrastOn } from '../../core/brand-contrast';
+import { BRAND_FONTS, brandFontStack, isBrandFontId } from '../../core/font-catalog';
 import { injectAuthSession } from '../../core/auth/inject-auth-session';
 import { injectI18n } from '../../core/i18n/inject-i18n';
-import { BrandingDto, BrandingWriteDto, ColorScheme } from '../../models/branding.dto';
+import {
+  BrandingDto,
+  BrandingTypographyDto,
+  BrandingWriteDto,
+  ColorScheme,
+} from '../../models/branding.dto';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { BrandingApiService } from '../../services/branding-api.service';
 import { PasswordChangeFormComponent } from './password-change-form.component';
@@ -27,6 +34,7 @@ const HEX = /^#[0-9A-Fa-f]{6}$/;
   imports: [
     BonaPageComponent,
     BonaFormComponent,
+    BonaFontPickerComponent,
     BonaButtonComponent,
     PasswordChangeFormComponent,
     BonaLanguageSwitcherComponent,
@@ -65,14 +73,23 @@ export class AdminSettingsComponent {
     slogan: '',
     colorScheme: 'light',
   });
+  readonly brandFonts = BRAND_FONTS;
+  readonly typographyForm = signal<BonaFormValue>({
+    headingFont: 'inter',
+    bodyFont: 'inter',
+  });
   readonly primaryHex = signal('#0f766e');
   readonly accentHex = signal('#c2410c');
   readonly surfaceHex = signal('#f5f3f0');
   private readonly savedLogoHref = signal<string | null>(null);
+  private readonly savedLogoDarkHref = signal<string | null>(null);
   private readonly savedFaviconHref = signal<string | null>(null);
   private readonly pendingLogoFile = signal<File | null>(null);
   private readonly pendingLogoUrl = signal<string | null>(null);
   private readonly pendingLogoRemove = signal(false);
+  private readonly pendingLogoDarkFile = signal<File | null>(null);
+  private readonly pendingLogoDarkUrl = signal<string | null>(null);
+  private readonly pendingLogoDarkRemove = signal(false);
   private readonly pendingFaviconFile = signal<File | null>(null);
   private readonly pendingFaviconUrl = signal<string | null>(null);
   private readonly pendingFaviconRemove = signal(false);
@@ -82,6 +99,13 @@ export class AdminSettingsComponent {
       return pending;
     }
     return this.pendingLogoRemove() ? null : this.savedLogoHref();
+  });
+  readonly logoDarkHref = computed(() => {
+    const pending = this.pendingLogoDarkUrl();
+    if (pending) {
+      return pending;
+    }
+    return this.pendingLogoDarkRemove() ? null : this.savedLogoDarkHref();
   });
   readonly faviconHref = computed(() => {
     const pending = this.pendingFaviconUrl();
@@ -100,10 +124,23 @@ export class AdminSettingsComponent {
       accentHex: this.accentHex().trim().toLowerCase(),
       surfaceHex: this.surfaceHex().trim().toLowerCase(),
       logo: this.assetToken(this.pendingLogoFile(), this.pendingLogoRemove()),
+      logoDark: this.assetToken(this.pendingLogoDarkFile(), this.pendingLogoDarkRemove()),
       favicon: this.assetToken(this.pendingFaviconFile(), this.pendingFaviconRemove()),
     }),
   );
   readonly brandDirty = computed(() => this.brandFingerprint() !== this.brandSnapshot());
+  private readonly typographySnapshot = signal('');
+  readonly typographyFingerprint = computed(() =>
+    JSON.stringify({
+      headingFont: this.typographyForm()['headingFont'] ?? 'inter',
+      bodyFont: this.typographyForm()['bodyFont'] ?? 'inter',
+    }),
+  );
+  readonly typographyDirty = computed(
+    () => this.typographyFingerprint() !== this.typographySnapshot(),
+  );
+  readonly headingFontStack = computed(() => brandFontStack(this.typographyForm()['headingFont']));
+  readonly bodyFontStack = computed(() => brandFontStack(this.typographyForm()['bodyFont']));
   readonly previewDark = computed(() => this.brandTheme.resolvedScheme() === 'dark');
 
   readonly bookingFields = computed<BonaFieldDefinition[]>(() => [
@@ -142,6 +179,7 @@ export class AdminSettingsComponent {
           this.applyBrandFields(branding);
           this.brandTheme.apply(branding);
           this.captureBrandSnapshot();
+          this.captureTypographySnapshot();
           this.loading.set(false);
         },
         error: () => {
@@ -157,6 +195,14 @@ export class AdminSettingsComponent {
 
   onBrandChange(value: BonaFormValue): void {
     this.brandForm.set(value);
+  }
+
+  onHeadingFontChange(font: string): void {
+    this.typographyForm.update((value) => ({ ...value, headingFont: font }));
+  }
+
+  onBodyFontChange(font: string): void {
+    this.typographyForm.update((value) => ({ ...value, bodyFont: font }));
   }
 
   onPrimaryColor(event: Event): void {
@@ -230,6 +276,29 @@ export class AdminSettingsComponent {
           this.clearPendingAssets();
           this.brandTheme.apply(branding);
           this.captureBrandSnapshot();
+          this.captureTypographySnapshot();
+          this.toast.success(this.literals.saved);
+        },
+        error: () => this.toast.error(this.literals.errorSave),
+      });
+  }
+
+  onSaveTypography(value: BonaFormValue): void {
+    const headingFont = String(value['headingFont'] ?? '');
+    const bodyFont = String(value['bodyFont'] ?? '');
+    if (!isBrandFontId(headingFont) || !isBrandFontId(bodyFont)) {
+      this.toast.error(this.literals.errorFont);
+      return;
+    }
+    const payload: BrandingTypographyDto = { headingFont, bodyFont };
+    this.brandingApi
+      .updateTypography(payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (branding) => {
+          this.applyTypographyFields(branding);
+          this.brandTheme.apply(branding);
+          this.captureTypographySnapshot();
           this.toast.success(this.literals.saved);
         },
         error: () => this.toast.error(this.literals.errorSave),
@@ -242,6 +311,14 @@ export class AdminSettingsComponent {
 
   onRemoveLogo(): void {
     this.stageRemove('logo');
+  }
+
+  onLogoDarkSelected(event: Event): void {
+    this.stageAsset(event, 'logoDark');
+  }
+
+  onRemoveLogoDark(): void {
+    this.stageRemove('logoDark');
   }
 
   onFaviconSelected(event: Event): void {
@@ -257,7 +334,7 @@ export class AdminSettingsComponent {
   }
 
   confirmLeaveIfDirty(): boolean | Observable<boolean> {
-    if (!this.brandDirty()) {
+    if (!this.brandDirty() && !this.typographyDirty()) {
       return true;
     }
     return this.confirm.open({
@@ -268,7 +345,7 @@ export class AdminSettingsComponent {
   }
 
   onBeforeUnload(event: BeforeUnloadEvent): void {
-    if (!this.brandDirty()) {
+    if (!this.brandDirty() && !this.typographyDirty()) {
       return;
     }
     event.preventDefault();
@@ -282,6 +359,12 @@ export class AdminSettingsComponent {
       ops.push(this.brandingApi.uploadLogo(logoFile));
     } else if (this.pendingLogoRemove()) {
       ops.push(this.brandingApi.deleteLogo());
+    }
+    const logoDarkFile = this.pendingLogoDarkFile();
+    if (logoDarkFile) {
+      ops.push(this.brandingApi.uploadLogoDark(logoDarkFile));
+    } else if (this.pendingLogoDarkRemove()) {
+      ops.push(this.brandingApi.deleteLogoDark());
     }
     const faviconFile = this.pendingFaviconFile();
     if (faviconFile) {
@@ -299,11 +382,26 @@ export class AdminSettingsComponent {
     const primaryHex = this.normalizeHex(this.primaryHex());
     const accentHex = this.normalizeHex(this.accentHex());
     const surfaceHex = this.normalizeHex(this.surfaceHex());
+    const headingFont = String(this.typographyForm()['headingFont'] ?? '');
+    const bodyFont = String(this.typographyForm()['bodyFont'] ?? '');
+    if (!headingFont || !bodyFont || !isBrandFontId(headingFont) || !isBrandFontId(bodyFont)) {
+      this.toast.error(this.literals.errorFont);
+      return null;
+    }
     if (!studioName || !primaryHex || !accentHex || !surfaceHex) {
       this.toast.error(!studioName ? this.literals.errorRequired : this.literals.errorColor);
       return null;
     }
-    return { studioName, slogan, primaryHex, accentHex, surfaceHex, colorScheme };
+    return {
+      studioName,
+      slogan,
+      primaryHex,
+      accentHex,
+      surfaceHex,
+      colorScheme,
+      headingFont,
+      bodyFont,
+    };
   }
 
   private applyBrandFields(branding: BrandingDto): void {
@@ -316,11 +414,24 @@ export class AdminSettingsComponent {
     this.accentHex.set(branding.accentHex);
     this.surfaceHex.set(branding.surfaceHex);
     this.savedLogoHref.set(apiAssetUrl(branding.logoUrl));
+    this.savedLogoDarkHref.set(apiAssetUrl(branding.logoDarkUrl));
     this.savedFaviconHref.set(apiAssetUrl(branding.faviconUrl));
+    this.applyTypographyFields(branding);
+  }
+
+  private applyTypographyFields(branding: BrandingDto): void {
+    this.typographyForm.set({
+      headingFont: branding.headingFont,
+      bodyFont: branding.bodyFont,
+    });
   }
 
   private captureBrandSnapshot(): void {
     this.brandSnapshot.set(this.brandFingerprint());
+  }
+
+  private captureTypographySnapshot(): void {
+    this.typographySnapshot.set(this.typographyFingerprint());
   }
 
   private normalizeHex(value: string): string | null {
@@ -335,7 +446,7 @@ export class AdminSettingsComponent {
     return remove ? 'remove' : 'keep';
   }
 
-  private stageAsset(event: Event, kind: 'logo' | 'favicon'): void {
+  private stageAsset(event: Event, kind: 'logo' | 'logoDark' | 'favicon'): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
@@ -349,13 +460,20 @@ export class AdminSettingsComponent {
       this.pendingLogoRemove.set(false);
       return;
     }
+    if (kind === 'logoDark') {
+      this.revokeUrl(this.pendingLogoDarkUrl());
+      this.pendingLogoDarkFile.set(file);
+      this.pendingLogoDarkUrl.set(URL.createObjectURL(file));
+      this.pendingLogoDarkRemove.set(false);
+      return;
+    }
     this.revokeUrl(this.pendingFaviconUrl());
     this.pendingFaviconFile.set(file);
     this.pendingFaviconUrl.set(URL.createObjectURL(file));
     this.pendingFaviconRemove.set(false);
   }
 
-  private stageRemove(kind: 'logo' | 'favicon'): void {
+  private stageRemove(kind: 'logo' | 'logoDark' | 'favicon'): void {
     if (kind === 'logo') {
       if (this.pendingLogoFile() || this.pendingLogoUrl()) {
         this.revokeUrl(this.pendingLogoUrl());
@@ -365,6 +483,18 @@ export class AdminSettingsComponent {
       }
       if (this.savedLogoHref()) {
         this.pendingLogoRemove.set(true);
+      }
+      return;
+    }
+    if (kind === 'logoDark') {
+      if (this.pendingLogoDarkFile() || this.pendingLogoDarkUrl()) {
+        this.revokeUrl(this.pendingLogoDarkUrl());
+        this.pendingLogoDarkFile.set(null);
+        this.pendingLogoDarkUrl.set(null);
+        return;
+      }
+      if (this.savedLogoDarkHref()) {
+        this.pendingLogoDarkRemove.set(true);
       }
       return;
     }
@@ -384,6 +514,9 @@ export class AdminSettingsComponent {
     this.pendingLogoFile.set(null);
     this.pendingLogoUrl.set(null);
     this.pendingLogoRemove.set(false);
+    this.pendingLogoDarkFile.set(null);
+    this.pendingLogoDarkUrl.set(null);
+    this.pendingLogoDarkRemove.set(false);
     this.pendingFaviconFile.set(null);
     this.pendingFaviconUrl.set(null);
     this.pendingFaviconRemove.set(false);
@@ -391,6 +524,7 @@ export class AdminSettingsComponent {
 
   private revokePendingUrls(): void {
     this.revokeUrl(this.pendingLogoUrl());
+    this.revokeUrl(this.pendingLogoDarkUrl());
     this.revokeUrl(this.pendingFaviconUrl());
   }
 

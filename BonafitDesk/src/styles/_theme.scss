@@ -31,7 +31,24 @@ html {
 }
 
 :root {
-  --bona-font-family: Inter, 'Segoe UI', Roboto, sans-serif;
+  --bona-font-body: Inter, 'Segoe UI', Roboto, sans-serif;
+  --bona-font-heading: Inter, 'Segoe UI', Roboto, sans-serif;
+  --bona-font-family: var(--bona-font-body);
+  --mat-sys-body-large-font: var(--bona-font-body);
+  --mat-sys-body-medium-font: var(--bona-font-body);
+  --mat-sys-body-small-font: var(--bona-font-body);
+  --mat-sys-label-large-font: var(--bona-font-body);
+  --mat-sys-label-medium-font: var(--bona-font-body);
+  --mat-sys-label-small-font: var(--bona-font-body);
+  --mat-sys-title-large-font: var(--bona-font-heading);
+  --mat-sys-title-medium-font: var(--bona-font-heading);
+  --mat-sys-title-small-font: var(--bona-font-heading);
+  --mat-sys-headline-large-font: var(--bona-font-heading);
+  --mat-sys-headline-medium-font: var(--bona-font-heading);
+  --mat-sys-headline-small-font: var(--bona-font-heading);
+  --mat-sys-display-large-font: var(--bona-font-heading);
+  --mat-sys-display-medium-font: var(--bona-font-heading);
+  --mat-sys-display-small-font: var(--bona-font-heading);
   --bona-color-bg: var(--mat-sys-surface-container);
   --bona-color-surface: var(--mat-sys-surface-container-lowest);
   --bona-color-header: var(--mat-sys-surface-container-high);

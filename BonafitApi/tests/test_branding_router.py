@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from unittest import mock
 
-from app.schemas import BrandingOut, BrandingWrite
+from app.schemas import BrandingOut, BrandingTypographyWrite, BrandingWrite
 from app.services.branding import BrandingService
 from tests.api import AUTH, api
 
@@ -13,7 +13,10 @@ BRANDING = BrandingOut(
     accentHex="#c2410c",
     surfaceHex="#f5f3f0",
     colorScheme="light",
+    headingFont="inter",
+    bodyFont="inter",
     logoUrl=None,
+    logoDarkUrl=None,
     faviconUrl=None,
     updatedAt=datetime(2026, 9, 18, tzinfo=UTC),
 )
@@ -42,6 +45,8 @@ def test_put_branding_requires_admin() -> None:
                 "accentHex": "#aabbcc",
                 "surfaceHex": "#f5f3f0",
                 "colorScheme": "system",
+                "headingFont": "playfair",
+                "bodyFont": "manrope",
             },
             headers=AUTH,
         )
@@ -50,6 +55,25 @@ def test_put_branding_requires_admin() -> None:
     payload = branding.update_branding.call_args.args[0]
     assert isinstance(payload, BrandingWrite)
     assert payload.studioName == "Norte"
+
+
+def test_put_typography_requires_admin() -> None:
+    branding = mock.Mock(spec=BrandingService)
+    branding.update_typography.return_value = BRANDING.model_copy(
+        update={"headingFont": "playfair", "bodyFont": "manrope"}
+    )
+    with api(branding=branding) as http:
+        response = http.put(
+            "/branding/typography",
+            json={"headingFont": "playfair", "bodyFont": "manrope"},
+            headers=AUTH,
+        )
+    assert response.status_code == 200
+    assert response.json()["headingFont"] == "playfair"
+    branding.update_typography.assert_called_once()
+    payload = branding.update_typography.call_args.args[0]
+    assert isinstance(payload, BrandingTypographyWrite)
+    assert payload.bodyFont == "manrope"
 
 
 def test_upload_logo() -> None:
@@ -75,6 +99,33 @@ def test_delete_logo() -> None:
     assert response.status_code == 200
     assert response.json()["logoUrl"] is None
     branding.delete_asset.assert_called_once_with("logo")
+
+
+def test_upload_dark_logo() -> None:
+    branding = mock.Mock(spec=BrandingService)
+    branding.save_asset.return_value = BRANDING.model_copy(
+        update={"logoDarkUrl": "/uploads/branding/logo-dark.png"}
+    )
+    with api(branding=branding) as http:
+        response = http.post(
+            "/branding/logo-dark",
+            files={"file": ("logo-dark.png", b"png-bytes", "image/png")},
+            headers=AUTH,
+        )
+    assert response.status_code == 200
+    assert response.json()["logoDarkUrl"] == "/uploads/branding/logo-dark.png"
+    branding.save_asset.assert_called_once()
+    assert branding.save_asset.call_args.args[0] == "logoDark"
+
+
+def test_delete_dark_logo() -> None:
+    branding = mock.Mock(spec=BrandingService)
+    branding.delete_asset.return_value = BRANDING
+    with api(branding=branding) as http:
+        response = http.delete("/branding/logo-dark", headers=AUTH)
+    assert response.status_code == 200
+    assert response.json()["logoDarkUrl"] is None
+    branding.delete_asset.assert_called_once_with("logoDark")
 
 
 def test_delete_favicon() -> None:

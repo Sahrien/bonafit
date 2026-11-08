@@ -9,8 +9,11 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 })
 export class ButtonComponent {
   text = input<string>('');
-  variant = input<'primary' | 'outline' | 'ghost'>('primary');
+  variant = input<'primary' | 'outline' | 'ghost' | 'light' | 'outline-light'>('primary');
+  size = input<'sm' | 'md' | 'lg'>('md');
   type = input<'button' | 'submit'>('button');
+  href = input<string | null>(null);
+  target = input<string | null>(null);
   disabled = input(false);
   clicked = output<void>();
 

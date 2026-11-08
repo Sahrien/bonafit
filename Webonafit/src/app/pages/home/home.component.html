@@ -1,31 +1,101 @@
 <section class="hero">
   <div class="hero__glow" aria-hidden="true"></div>
-  <div class="wrap hero__inner">
+  <div class="hero__mark" aria-hidden="true">
+    <img src="brand/imagotipo-white.svg" alt="" />
+  </div>
+
+  <div class="wrap hero__inner" appReveal>
     <app-logo
       size="lg"
+      [showMark]="false"
+      [inverted]="true"
       [studioName]="branding.studioName()"
       [slogan]="branding.slogan()"
       [imageUrl]="branding.logoHref()" />
+
+    <div class="hero__divider" aria-hidden="true">
+      <svg viewBox="0 0 16 20" fill="none">
+        <path d="M8 1.6c3.7 3.4 5.5 6.5 5.5 9.3 0 3.1-2.5 5.5-5.5 5.5s-5.5-2.4-5.5-5.5c0-2.8 1.8-5.9 5.5-9.3Z" stroke="currentColor" stroke-width="1" />
+        <path d="M8 5v10" stroke="currentColor" stroke-width="0.8" />
+      </svg>
+    </div>
+
+    <p class="hero__kicker">{{ 'home.heroKicker' | translate }}</p>
+
     <h1>{{ 'home.heroTitle' | translate }}</h1>
     <p class="hero__claim">{{ 'home.heroClaim' | translate }}</p>
-    <app-button [text]="'home.heroCta' | translate" (clicked)="goToContact()" />
+
+    <div class="hero__actions">
+      <app-button
+        variant="light"
+        size="lg"
+        [text]="'home.heroCta' | translate"
+        (clicked)="goToContact()" />
+      <app-button
+        variant="outline-light"
+        size="lg"
+        [text]="'home.heroSecondary' | translate"
+        [href]="whatsappHref"
+        target="_blank" />
+    </div>
+
+    <ul class="hero__proof">
+      @for (item of heroProof(); track item) {
+        <li>
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="m3.2 8.4 3 3.1 6.6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          {{ item }}
+        </li>
+      }
+    </ul>
+  </div>
+
+  <div class="wrap hero__band" appReveal [appRevealDelay]="120">
+    <figure class="hero__figure">
+      <img
+        src="images/hero-training-wide.jpg"
+        [alt]="'home.heroImageAlt' | translate"
+        width="1400"
+        height="875"
+        fetchpriority="high" />
+      <figcaption class="hero__badge">
+        <svg class="hero__badge-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="m3.2 8.4 3 3.1 6.6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>{{ 'home.heroBadge' | translate }}</span>
+      </figcaption>
+      <span class="hero__chip">Bonalba · Mutxamel</span>
+    </figure>
   </div>
 </section>
 
 <section class="section section--sage" id="quienes-somos">
   <div class="wrap about">
-    <div>
+    <div class="about__media" appReveal>
+      <figure>
+        <img
+          src="images/about-training.jpg"
+          [alt]="'home.aboutImageAlt' | translate"
+          width="1000"
+          height="1250"
+          loading="lazy" />
+      </figure>
+      <p class="about__note">{{ 'home.aboutNote' | translate }}</p>
+    </div>
+
+    <div class="about__copy" appReveal [appRevealDelay]="100">
       <p class="eyebrow">{{ 'home.aboutEyebrow' | translate }}</p>
       <h2>{{ 'home.aboutTitle' | translate }}</h2>
-    </div>
-    <div class="about__copy">
       <p>{{ 'home.aboutP1' | translate }}</p>
       <p>{{ 'home.aboutP2' | translate }}</p>
+
       <ul class="territories">
         @for (item of territories(); track item) {
           <li>{{ item }}</li>
         }
       </ul>
+
       <blockquote>{{ 'home.quote' | translate }}</blockquote>
       <p class="slogan">{{ 'home.slogan' | translate }}</p>
     </div>
@@ -34,67 +104,164 @@
 
 <section class="section section--cream" id="que-ofrecemos">
   <div class="wrap">
-    <p class="eyebrow">{{ 'home.offerEyebrow' | translate }}</p>
-    <h2>{{ 'home.offerTitle' | translate }}</h2>
-    <p class="lede">{{ 'home.offerLede' | translate }}</p>
+    <div class="section-head" appReveal>
+      <p class="eyebrow">{{ 'home.offerEyebrow' | translate }}</p>
+      <div class="section-head__row">
+        <h2>{{ 'home.offerTitle' | translate }}</h2>
+        <p class="lede">{{ 'home.offerLede' | translate }}</p>
+      </div>
+    </div>
 
     <div class="cards">
-      @for (offer of offers(); track offer.title) {
-        <article class="card">
-          <h3>{{ offer.title }}</h3>
-          <p>{{ offer.text }}</p>
+      @for (offer of offers(); track offer.title; let i = $index) {
+        <article class="card" appReveal [appRevealDelay]="i * 90">
+          <div class="card__media">
+            <img
+              [src]="offer.image"
+              [alt]="offer.alt"
+              width="960"
+              height="640"
+              loading="lazy" />
+            <span class="card__index" aria-hidden="true">0{{ i + 1 }}</span>
+          </div>
+          <div class="card__body">
+            <h3>{{ offer.title }}</h3>
+            <p>{{ offer.text }}</p>
+          </div>
         </article>
       }
     </div>
 
-    <div class="complements">
-      <h3>{{ 'home.complementsTitle' | translate }}</h3>
-      <p>{{ 'home.complementsText' | translate }}</p>
-      <ul>
-        @for (item of complements(); track item) {
-          <li>{{ item }}</li>
+    <div class="steps">
+      <div class="steps__intro" appReveal>
+        <p class="eyebrow">{{ 'home.stepsEyebrow' | translate }}</p>
+        <h3>{{ 'home.stepsTitle' | translate }}</h3>
+        <p>{{ 'home.stepsLede' | translate }}</p>
+      </div>
+
+      <ol class="steps__list">
+        @for (step of steps(); track step.title; let i = $index) {
+          <li appReveal [appRevealDelay]="i * 90">
+            <span class="steps__num" aria-hidden="true">0{{ i + 1 }}</span>
+            <h4>{{ step.title }}</h4>
+            <p>{{ step.text }}</p>
+          </li>
         }
-      </ul>
+      </ol>
+    </div>
+
+    <div class="complements" appReveal>
+      <img
+        class="complements__img"
+        src="images/massage.jpg"
+        [alt]="'home.complementsImageAlt' | translate"
+        width="960"
+        height="640"
+        loading="lazy" />
+      <div class="complements__body">
+        <h3>{{ 'home.complementsTitle' | translate }}</h3>
+        <p>{{ 'home.complementsText' | translate }}</p>
+        <ul>
+          @for (item of complements(); track item) {
+            <li>{{ item }}</li>
+          }
+        </ul>
+      </div>
     </div>
   </div>
 </section>
 
 <section class="section section--forest" id="longevidad">
+  <div class="longevity__mark" aria-hidden="true">
+    <img src="brand/imagotipo-white.svg" alt="" loading="lazy" />
+  </div>
+
   <div class="wrap longevity">
-    <p class="eyebrow">{{ 'home.longevityEyebrow' | translate }}</p>
-    <h2>{{ 'home.longevityTitle' | translate }}</h2>
-    <p>{{ 'home.longevityText' | translate }}</p>
-    <ul class="outcomes">
-      @for (item of outcomes(); track item) {
-        <li>{{ item }}</li>
-      }
-    </ul>
-    <p class="slogan slogan--light">{{ 'home.longevitySlogan' | translate }}</p>
+    <div class="longevity__copy" appReveal>
+      <p class="eyebrow">{{ 'home.longevityEyebrow' | translate }}</p>
+      <h2>{{ 'home.longevityTitle' | translate }}</h2>
+      <p class="longevity__text">{{ 'home.longevityText' | translate }}</p>
+
+      <ul class="outcomes">
+        @for (item of outcomes(); track item) {
+          <li>
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="m3.2 8.4 3 3.1 6.6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            {{ item }}
+          </li>
+        }
+      </ul>
+
+      <p class="slogan slogan--light">{{ 'home.longevitySlogan' | translate }}</p>
+    </div>
   </div>
 </section>
 
 <section class="section section--sage" id="zona">
   <div class="wrap area">
-    <p class="eyebrow">{{ 'home.areaEyebrow' | translate }}</p>
-    <h2>{{ 'home.areaTitle' | translate }}</h2>
-    <p class="lede">{{ 'home.areaLede' | translate }}</p>
-    <div class="area__groups">
-      <div>
-        <h3>{{ 'home.primaryTitle' | translate }}</h3>
-        <ul>
-          @for (item of primaryAreas(); track item) {
-            <li>{{ item }}</li>
-          }
-        </ul>
+    <div class="area__copy" appReveal>
+      <p class="eyebrow">{{ 'home.areaEyebrow' | translate }}</p>
+      <h2>{{ 'home.areaTitle' | translate }}</h2>
+      <p class="lede">{{ 'home.areaLede' | translate }}</p>
+
+      <div class="area__groups">
+        <div>
+          <h3>{{ 'home.primaryTitle' | translate }}</h3>
+          <ul>
+            @for (item of primaryAreas(); track item) {
+              <li>{{ item }}</li>
+            }
+          </ul>
+        </div>
+        <div>
+          <h3>{{ 'home.nearbyTitle' | translate }}</h3>
+          <ul>
+            @for (item of nearbyAreas(); track item) {
+              <li>{{ item }}</li>
+            }
+          </ul>
+        </div>
       </div>
-      <div>
-        <h3>{{ 'home.nearbyTitle' | translate }}</h3>
-        <ul>
-          @for (item of nearbyAreas(); track item) {
-            <li>{{ item }}</li>
-          }
-        </ul>
-      </div>
+
+      <p class="area__note">{{ 'home.areaNote' | translate }}</p>
+    </div>
+
+    <figure class="area__media" appReveal [appRevealDelay]="120">
+      <img
+        src="images/area-coast.jpg"
+        [alt]="'home.areaImageAlt' | translate"
+        width="1200"
+        height="800"
+        loading="lazy" />
+      <figcaption class="area__tag">
+        <svg viewBox="0 0 16 20" aria-hidden="true" focusable="false">
+          <path d="M8 1.4a6.3 6.3 0 0 0-6.3 6.3c0 4.6 6.3 10.9 6.3 10.9s6.3-6.3 6.3-10.9A6.3 6.3 0 0 0 8 1.4Z" fill="none" stroke="currentColor" stroke-width="1.3" />
+          <circle cx="8" cy="7.6" r="2.1" fill="currentColor" />
+        </svg>
+        Bonalba Golf · Mutxamel
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="section section--cream" id="preguntas">
+  <div class="wrap faq">
+    <div class="faq__intro" appReveal>
+      <p class="eyebrow">{{ 'home.faqEyebrow' | translate }}</p>
+      <h2>{{ 'home.faqTitle' | translate }}</h2>
+      <button class="faq__link" type="button" (click)="goToContact()">
+        {{ 'home.heroCta' | translate }}
+      </button>
+    </div>
+
+    <div class="faq__list" appReveal [appRevealDelay]="80">
+      @for (item of faqItems(); track item.question) {
+        <details class="faq__item">
+          <summary>{{ item.question }}</summary>
+          <p>{{ item.answer }}</p>
+        </details>
+      }
     </div>
   </div>
 </section>

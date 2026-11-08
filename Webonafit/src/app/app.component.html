@@ -1,11 +1,15 @@
 <a class="skip-link" href="#contenido">{{ 'chrome.skip' | translate }}</a>
 
-<header class="site-header">
+<header class="site-header" [class.site-header--scrolled]="scrolled()">
   <div class="wrap header-bar">
-    <a routerLink="/" class="brand" [attr.aria-label]="branding.studioName() + ', ' + ('chrome.homeAria' | translate)" (click)="closeMenu()">
+    <a
+      routerLink="/"
+      class="brand"
+      [attr.aria-label]="branding.studioName() + ', ' + ('chrome.homeAria' | translate)">
       <app-logo
         size="sm"
         [showTagline]="false"
+        [inverted]="!scrolled()"
         [studioName]="branding.studioName()"
         [slogan]="branding.slogan()"
         [imageUrl]="branding.logoHref()" />
@@ -14,36 +18,16 @@
     <div class="header-actions">
       <div class="lang" role="group" [attr.aria-label]="'chrome.language' | translate">
         <button type="button" class="lang__btn" [class.is-active]="language.language() === 'es'" (click)="language.setLanguage('es')">ES</button>
+        <span class="lang__sep" aria-hidden="true">/</span>
         <button type="button" class="lang__btn" [class.is-active]="language.language() === 'en'" (click)="language.setLanguage('en')">EN</button>
       </div>
-      <button
-        class="menu-toggle"
-        type="button"
-        [attr.aria-expanded]="menuOpen()"
-        aria-controls="site-nav"
-        (click)="toggleMenu()"
-      >
-        {{ menuOpen() ? ('chrome.close' | translate) : ('chrome.menu' | translate) }}
-      </button>
-    </div>
 
-    <nav
-      id="site-nav"
-      class="nav"
-      [class.nav--open]="menuOpen()"
-      [attr.aria-label]="'chrome.navAria' | translate"
-    >
-      @for (item of nav(); track item.fragment) {
-        <a
-          routerLink="/"
-          [fragment]="item.fragment"
-          (click)="closeMenu()"
-        >
-          {{ item.label }}
-        </a>
-      }
-      <app-button [text]="'chrome.book' | translate" (clicked)="goToContact()" />
-    </nav>
+      <app-button
+        size="sm"
+        [variant]="scrolled() ? 'primary' : 'outline-light'"
+        [text]="'chrome.book' | translate"
+        (clicked)="goToContact()" />
+    </div>
   </div>
 </header>
 
@@ -53,9 +37,10 @@
 
 <footer class="site-footer">
   <div class="wrap footer-grid">
-    <div>
+    <div class="footer-brand">
       <app-logo
-        size="sm"
+        size="lg"
+        [showMark]="false"
         [showTagline]="true"
         [inverted]="true"
         [studioName]="branding.studioName()"
@@ -63,16 +48,23 @@
         [imageUrl]="branding.logoHref()" />
       <p class="footer-claim">{{ 'footer.claim' | translate }}</p>
     </div>
-    <div>
+
+    <div class="footer-contact">
       <p class="eyebrow">{{ 'footer.contact' | translate }}</p>
-      <p><a href="tel:+34965123456">+34 965 12 34 56</a></p>
-      <p>
-        <a href="https://wa.me/34622184709" target="_blank" rel="noopener noreferrer">WhatsApp +34 622 18 47 09</a>
+      <p class="footer-phone">
+        <a href="tel:+34622184709">+34 622 18 47 09</a>
+        <a
+          class="footer-wa"
+          href="https://wa.me/34622184709"
+          target="_blank"
+          rel="noopener noreferrer"
+          [attr.aria-label]="'contact.whatsappCta' | translate">WhatsApp</a>
       </p>
       <p><a [href]="'mailto:' + email">{{ email }}</a></p>
       <p>{{ 'footer.address' | translate }}</p>
-      <p>{{ 'footer.hours' | translate }}</p>
     </div>
   </div>
+
   <p class="legal">© 2026 {{ branding.studioName() }} {{ branding.slogan() }}. {{ 'footer.legal' | translate }}</p>
+  <p class="credits">{{ 'footer.credits' | translate }}</p>
 </footer>
