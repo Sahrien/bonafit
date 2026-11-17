@@ -3,6 +3,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonComponent } from '../../components/button/button.component';
 import { ModalComponent } from '../../components/modal/modal.component';
 import { TextFieldComponent } from '../../components/text-field/text-field.component';
+import { STUDIO_CONTACT } from '../../studio-contact';
 
 @Component({
   selector: 'app-contact',
@@ -13,6 +14,7 @@ import { TextFieldComponent } from '../../components/text-field/text-field.compo
 })
 export class ContactComponent {
   private readonly translate = inject(TranslateService);
+  protected readonly contact = STUDIO_CONTACT;
   protected readonly name = signal('');
   protected readonly email = signal('');
   protected readonly phone = signal('');

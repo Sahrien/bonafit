@@ -16,11 +16,12 @@
     "contact": "Contacto"
   },
   "footer": {
-    "claim": "Wellness & Longevity",
     "contact": "Contacto",
-    "hours": "Lunes a viernes 8:00–20:00 · Sábados 9:00–13:00",
-    "address": "Urbanización Bonalba Golf, 03110 Mutxamel, Alicante",
     "legal": "Todos los derechos reservados."
+  },
+  "studio": {
+    "address": "Urbanización Bonalba Golf, 03110 Mutxamel, Alicante",
+    "hours": "Lunes a viernes 8:00–20:00 · Sábados 9:00–13:00"
   },
   "home": {
     "heroTitle": "Entrena para la vida que quieres seguir viviendo",
@@ -101,8 +102,6 @@
     "email": "Email",
     "address": "Dirección",
     "hours": "Horario",
-    "hoursValue": "Lunes a viernes 8:00–20:00 · Sábados 9:00–13:00",
-    "addressValue": "Urbanización Bonalba Golf, 03110 Mutxamel, Alicante",
     "name": "Nombre",
     "namePlaceholder": "Tu nombre",
     "emailPlaceholder": "tu@email.com",

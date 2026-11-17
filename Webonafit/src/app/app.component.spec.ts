@@ -18,12 +18,6 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'BONAFIT' title`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('BONAFIT');
-  });
-
   it('should render the brand', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();

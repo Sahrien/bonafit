@@ -2,18 +2,22 @@ import { EnvironmentProviders, inject, makeEnvironmentProviders, provideAppIniti
 import { TranslateLoader, TranslateService, provideTranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { BundledTranslateLoader } from './bundled-translate.loader';
+import { DEFAULT_LANGUAGE } from './language.service';
 
+/**
+ * Loads the bundled copy before bootstrap. This is the only place the default
+ * bundle is requested; `LanguageService` only switches language afterwards.
+ */
 export function provideWebTranslate(): EnvironmentProviders {
   return makeEnvironmentProviders([
     provideTranslateService({
-      defaultLanguage: 'es',
+      defaultLanguage: DEFAULT_LANGUAGE,
       useDefaultLang: true,
       loader: { provide: TranslateLoader, useClass: BundledTranslateLoader },
     }),
     provideAppInitializer(() => {
       const translate = inject(TranslateService);
-      translate.setDefaultLang('es');
-      return firstValueFrom(translate.use('es'));
+      return firstValueFrom(translate.use(DEFAULT_LANGUAGE));
     }),
   ]);
 }

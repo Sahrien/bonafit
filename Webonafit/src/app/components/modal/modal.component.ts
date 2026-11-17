@@ -11,6 +11,8 @@ import {
 } from '@angular/core';
 import { ButtonComponent } from '../button/button.component';
 
+let nextModalId = 0;
+
 @Component({
   selector: 'app-modal',
   imports: [ButtonComponent],
@@ -21,7 +23,7 @@ import { ButtonComponent } from '../button/button.component';
 export class ModalComponent {
   private readonly document = inject(DOCUMENT);
 
-  readonly titleId = `bona-modal-title-${Math.random().toString(36).slice(2, 9)}`;
+  readonly titleId = `bona-modal-title-${++nextModalId}`;
   open = model(false);
   title = input('Confirmación');
   confirmText = input('Cerrar');

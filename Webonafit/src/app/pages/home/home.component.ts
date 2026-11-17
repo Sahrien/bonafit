@@ -1,10 +1,13 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { PlatformLocation } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Router, Scroll } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { filter } from 'rxjs';
 import { BrandingService } from '../../branding/branding.service';
 import { ButtonComponent } from '../../components/button/button.component';
 import { LogoComponent } from '../../components/logo/logo.component';
+import { ContactNavigationService } from '../../navigation/contact-navigation.service';
 import { ContactComponent } from '../contact/contact.component';
 
 @Component({
@@ -16,7 +19,9 @@ import { ContactComponent } from '../contact/contact.component';
 })
 export class HomeComponent {
   private readonly router = inject(Router);
+  private readonly platformLocation = inject(PlatformLocation);
   private readonly translate = inject(TranslateService);
+  private readonly contactNavigation = inject(ContactNavigationService);
   readonly branding = inject(BrandingService);
 
   protected readonly territories = toSignal(this.translate.stream('home.territories'), {
@@ -39,16 +44,25 @@ export class HomeComponent {
   });
 
   constructor() {
-    afterNextRender(() => {
-      if (this.router.url.startsWith('/contacto')) {
-        document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' });
-      }
-    });
+    // `/contacto` is the same landing page; scroll to its contact section once
+    // the router has finished its own post-render scroll handling. The router
+    // emits `Scroll` after change detection and, because its own listener is
+    // registered first, resets to the top in the same dispatch. Deferring one
+    // macrotask keeps this scroll last, so it also works during hydration.
+    this.router.events
+      .pipe(
+        filter((event): event is Scroll => event instanceof Scroll),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => {
+        if (this.platformLocation.pathname.startsWith('/contacto')) {
+          // Jump on arrival; a long smooth animation from the hero is noise.
+          setTimeout(() => this.contactNavigation.scrollToContact('instant'));
+        }
+      });
   }
 
   goToContact() {
-    void this.router.navigate(['/'], { fragment: 'contacto' }).then(() => {
-      document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' });
-    });
+    this.contactNavigation.goToContact();
   }
 }

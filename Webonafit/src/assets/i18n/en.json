@@ -16,11 +16,12 @@
     "contact": "Contact"
   },
   "footer": {
-    "claim": "Wellness & Longevity",
     "contact": "Contact",
-    "hours": "Monday to Friday 8:00–20:00 · Saturdays 9:00–13:00",
-    "address": "Urbanización Bonalba Golf, 03110 Mutxamel, Alicante",
     "legal": "All rights reserved."
+  },
+  "studio": {
+    "address": "Urbanización Bonalba Golf, 03110 Mutxamel, Alicante",
+    "hours": "Monday to Friday 8:00–20:00 · Saturdays 9:00–13:00"
   },
   "home": {
     "heroTitle": "Train for the life you want to keep living",
@@ -101,8 +102,6 @@
     "email": "Email",
     "address": "Address",
     "hours": "Hours",
-    "hoursValue": "Monday to Friday 8:00–20:00 · Saturdays 9:00–13:00",
-    "addressValue": "Urbanización Bonalba Golf, 03110 Mutxamel, Alicante",
     "name": "Name",
     "namePlaceholder": "Your name",
     "emailPlaceholder": "you@email.com",

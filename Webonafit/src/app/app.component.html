@@ -101,17 +101,17 @@
         [inverted]="true"
         [studioName]="branding.studioName()"
         [slogan]="branding.slogan()" />
-      <p class="footer-claim">{{ 'footer.claim' | translate }}</p>
+      <p class="footer-claim">{{ branding.slogan() }}</p>
     </div>
     <div>
       <p class="eyebrow">{{ 'footer.contact' | translate }}</p>
-      <p><a href="tel:+34965123456">+34 965 12 34 56</a></p>
+      <p><a [href]="contact.phoneHref">{{ contact.phone }}</a></p>
       <p>
-        <a href="https://wa.me/34622184709" target="_blank" rel="noopener noreferrer">WhatsApp +34 622 18 47 09</a>
+        <a [href]="contact.whatsappHref" target="_blank" rel="noopener noreferrer">WhatsApp {{ contact.whatsapp }}</a>
       </p>
-      <p><a [href]="'mailto:' + email">{{ email }}</a></p>
-      <p>{{ 'footer.address' | translate }}</p>
-      <p>{{ 'footer.hours' | translate }}</p>
+      <p><a [href]="'mailto:' + contact.email">{{ contact.email }}</a></p>
+      <p>{{ 'studio.address' | translate }}</p>
+      <p>{{ 'studio.hours' | translate }}</p>
     </div>
   </div>
   <p class="legal">© 2026 {{ branding.studioName() }} {{ branding.slogan() }}. {{ 'footer.legal' | translate }}</p>

@@ -1,7 +1,8 @@
+import { DOCUMENT } from '@angular/common';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { BrandingDto, ColorScheme, DEFAULT_BRANDING } from './branding.dto';
 
@@ -9,6 +10,7 @@ import { BrandingDto, ColorScheme, DEFAULT_BRANDING } from './branding.dto';
 export class BrandingService {
   private readonly http = inject(HttpClient);
   private readonly title = inject(Title);
+  private readonly document = inject(DOCUMENT);
   private readonly brandingState = signal<BrandingDto>(DEFAULT_BRANDING);
 
   readonly branding = this.brandingState.asReadonly();
@@ -21,11 +23,13 @@ export class BrandingService {
   }
 
   load(): Promise<void> {
-    const base = environment.apiUrl.replace(/\/+$/, '');
+    const base = apiBase();
     if (!base) {
       return Promise.resolve();
     }
-    return firstValueFrom(this.http.get<BrandingDto>(`${base}/branding`))
+    return firstValueFrom(
+      this.http.get<BrandingDto>(`${base}/branding`).pipe(timeout({ first: 3000 })),
+    )
       .then((row) => {
         this.brandingState.set(row);
         this.paint(row);
@@ -34,10 +38,7 @@ export class BrandingService {
   }
 
   private paint(row: BrandingDto): void {
-    if (typeof document === 'undefined') {
-      return;
-    }
-    const root = document.documentElement;
+    const root = this.document.documentElement;
     const scheme = resolveScheme(row.colorScheme);
     const primary = row.primaryHex;
     const accent = row.accentHex;
@@ -62,24 +63,30 @@ export class BrandingService {
       root.style.setProperty('--color-muted', `color-mix(in srgb, ${primary} 55%, ${accent})`);
       root.style.setProperty('--color-line', `color-mix(in srgb, ${primary} 12%, transparent)`);
     }
-    root.style.colorScheme = scheme;
-    root.dataset['colorScheme'] = scheme;
+    root.style.setProperty('color-scheme', scheme);
+    root.setAttribute('data-color-scheme', scheme);
     this.title.setTitle(`${row.studioName} | ${row.slogan}`);
-    const description = document.querySelector('meta[name="description"]');
+    const description = this.document.querySelector('meta[name="description"]');
     if (description) {
       description.setAttribute('content', `${row.studioName}. ${row.slogan}`);
     }
-    setFavicon(assetUrl(row.faviconUrl));
+    setFavicon(this.document, assetUrl(row.faviconUrl));
   }
 }
 
 function resolveScheme(scheme: ColorScheme): 'light' | 'dark' {
-  if (scheme === 'system') {
-    return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
+  if (scheme !== 'system') {
+    return scheme;
   }
-  return scheme;
+  const prefersDark =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return prefersDark ? 'dark' : 'light';
+}
+
+function apiBase(): string {
+  return environment.apiUrl.replace(/\/+$/, '');
 }
 
 function assetUrl(path: string | null | undefined): string | null {
@@ -89,12 +96,11 @@ function assetUrl(path: string | null | undefined): string | null {
   if (/^https?:\/\//i.test(path)) {
     return path;
   }
-  const base = environment.apiUrl.replace(/\/+$/, '');
   const relative = path.startsWith('/') ? path : `/${path}`;
-  return `${base}${relative}`;
+  return `${apiBase()}${relative}`;
 }
 
-function setFavicon(href: string | null): void {
+function setFavicon(document: Document, href: string | null): void {
   if (!href) {
     return;
   }

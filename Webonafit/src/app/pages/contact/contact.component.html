@@ -7,23 +7,23 @@
     <ul class="contact__details">
       <li>
         <span>{{ 'contact.phone' | translate }}</span>
-        <a href="tel:+34965123456">+34 965 12 34 56</a>
+        <a [href]="contact.phoneHref">{{ contact.phone }}</a>
       </li>
       <li>
         <span>{{ 'contact.whatsapp' | translate }}</span>
-        <a href="https://wa.me/34622184709" target="_blank" rel="noopener noreferrer">+34 622 18 47 09</a>
+        <a [href]="contact.whatsappHref" target="_blank" rel="noopener noreferrer">{{ contact.whatsapp }}</a>
       </li>
       <li>
         <span>{{ 'contact.email' | translate }}</span>
-        <a href="mailto:hola&#64;bonafit.es">hola&#64;bonafit.es</a>
+        <a [href]="'mailto:' + contact.email">{{ contact.email }}</a>
       </li>
       <li>
         <span>{{ 'contact.address' | translate }}</span>
-        <address>{{ 'contact.addressValue' | translate }}</address>
+        <address>{{ 'studio.address' | translate }}</address>
       </li>
       <li>
         <span>{{ 'contact.hours' | translate }}</span>
-        <p>{{ 'contact.hoursValue' | translate }}</p>
+        <p>{{ 'studio.hours' | translate }}</p>
       </li>
     </ul>
   </div>
