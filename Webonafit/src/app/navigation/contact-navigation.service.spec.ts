@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 
+import { provideWebTranslate } from '../i18n/provide-web-translate';
 import { ContactNavigationService } from './contact-navigation.service';
 
 describe('ContactNavigationService', () => {
@@ -9,7 +10,9 @@ describe('ContactNavigationService', () => {
   let section: HTMLElement;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), provideWebTranslate()],
+    });
     service = TestBed.inject(ContactNavigationService);
     router = TestBed.inject(Router);
 

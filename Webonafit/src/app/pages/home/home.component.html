@@ -7,11 +7,7 @@
     </svg>
   </div>
   <div class="wrap hero__inner">
-    <app-logo
-      size="lg"
-      [studioName]="branding.studioName()"
-      [slogan]="branding.slogan()"
-      [imageUrl]="branding.logoHref()" />
+    <app-logo size="lg" />
     <h1>{{ 'home.heroTitle' | translate }}</h1>
     <p class="hero__claim">{{ 'home.heroClaim' | translate }}</p>
     <app-button variant="cream" [text]="'home.heroCta' | translate" (clicked)="goToContact()" />
@@ -105,7 +101,7 @@
   </div>
 </section>
 
-<section class="section section--cream" id="contacto">
+<section class="section section--cream" [id]="language.contactFragment()">
   <div class="wrap">
     <app-contact />
   </div>

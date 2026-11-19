@@ -23,6 +23,16 @@
     "address": "Urbanización Bonalba Golf, 03110 Mutxamel, Alicante",
     "hours": "Monday to Friday 8:00–20:00 · Saturdays 9:00–13:00"
   },
+  "seo": {
+    "title": "BonaFIT · Personal training in Bonalba and Mutxamel",
+    "description": "Personal training with a longevity mindset in Bonalba and Mutxamel (Alicante). Strength, mobility and calm guidance."
+  },
+  "notFound": {
+    "code": "404",
+    "title": "This page doesn’t exist",
+    "text": "The link may have changed, or the page is no longer available. Let’s head back somewhere familiar.",
+    "cta": "Back to home"
+  },
   "home": {
     "heroTitle": "Train for the life you want to keep living",
     "heroClaim": "Strength, mobility and calm guidance, so everyday movement feels lighter.",

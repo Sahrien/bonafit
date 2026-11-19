@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bona-fit.es/sitemap.xml

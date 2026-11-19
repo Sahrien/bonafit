@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { SITE } from '../../site';
 
 @Component({
   selector: 'app-logo',
@@ -13,24 +14,16 @@ export class LogoComponent {
   size = input<'sm' | 'md' | 'lg'>('md');
   /** Use dark (cream/white) brand assets for dark backgrounds. */
   inverted = input(false);
-  studioName = input('BonaFIT');
-  slogan = input('Wellness & Longevity');
-  /** API override (photo). When null, static brand assets are used. */
-  imageUrl = input<string | null>(null);
+  studioName = input(SITE.name);
+  slogan = input(SITE.slogan);
   /** Full wordmark vs icon-only mark (favicon/avatar/header). */
   mark = input<'logo' | 'mark'>('logo');
 
   protected readonly src = computed(() => {
-    const api = this.imageUrl();
-    if (api) {
-      return api;
-    }
     const scheme = this.inverted() ? 'dark' : 'light';
     const file = this.mark() === 'mark' ? 'mark.svg' : 'logo.svg';
     return `/brand/${scheme}/${file}`;
   });
-
-  protected readonly isPhoto = computed(() => !!this.imageUrl());
 
   protected readonly ariaLabel = computed(() => {
     if (this.mark() === 'mark' || !this.showTagline()) {

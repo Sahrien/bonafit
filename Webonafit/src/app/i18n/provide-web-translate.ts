@@ -1,12 +1,13 @@
 import { EnvironmentProviders, inject, makeEnvironmentProviders, provideAppInitializer } from '@angular/core';
 import { TranslateLoader, TranslateService, provideTranslateService } from '@ngx-translate/core';
-import { firstValueFrom } from 'rxjs';
+import { DEFAULT_LANGUAGE } from '../site';
 import { BundledTranslateLoader } from './bundled-translate.loader';
-import { DEFAULT_LANGUAGE } from './language.service';
+import { LanguageService } from './language.service';
 
 /**
- * Loads the bundled copy before bootstrap. This is the only place the default
- * bundle is requested; `LanguageService` only switches language afterwards.
+ * Registers the bundled copy and loads the bundle for the URL being rendered.
+ * Running this before bootstrap keeps SSR/prerender and hydration in the same
+ * language.
  */
 export function provideWebTranslate(): EnvironmentProviders {
   return makeEnvironmentProviders([
@@ -15,9 +16,6 @@ export function provideWebTranslate(): EnvironmentProviders {
       useDefaultLang: true,
       loader: { provide: TranslateLoader, useClass: BundledTranslateLoader },
     }),
-    provideAppInitializer(() => {
-      const translate = inject(TranslateService);
-      return firstValueFrom(translate.use(DEFAULT_LANGUAGE));
-    }),
+    provideAppInitializer(() => inject(LanguageService).init()),
   ]);
 }

@@ -1,0 +1,8 @@
+<section class="not-found" aria-labelledby="not-found-title">
+  <div class="wrap not-found__inner">
+    <p class="not-found__code" aria-hidden="true">{{ 'notFound.code' | translate }}</p>
+    <h1 id="not-found-title">{{ 'notFound.title' | translate }}</h1>
+    <p class="not-found__text">{{ 'notFound.text' | translate }}</p>
+    <app-button [text]="'notFound.cta' | translate" (clicked)="goHome()" />
+  </div>
+</section>

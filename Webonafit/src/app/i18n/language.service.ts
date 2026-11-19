@@ -1,61 +1,48 @@
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { DOCUMENT, PlatformLocation } from '@angular/common';
+import { Injectable, inject, signal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
+import { firstValueFrom } from 'rxjs';
+import {
+  CONTACT_FRAGMENT,
+  DEFAULT_LANGUAGE,
+  HOME_PATH,
+  UiLanguage,
+} from '../site';
 
-export type UiLanguage = 'es' | 'en';
-export const DEFAULT_LANGUAGE: UiLanguage = 'es';
-
-const STORAGE_KEY = 'bonafit.language';
+/** Maps a URL pathname to its UI language (`/` is Spanish, `/en` is English). */
+export function languageFromPath(pathname: string): UiLanguage {
+  return pathname === '/en' || pathname.startsWith('/en/') ? 'en' : DEFAULT_LANGUAGE;
+}
 
 @Injectable({ providedIn: 'root' })
 export class LanguageService {
   private readonly translate = inject(TranslateService);
   private readonly document = inject(DOCUMENT);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly platformLocation = inject(PlatformLocation);
   readonly language = signal<UiLanguage>(DEFAULT_LANGUAGE);
 
-  /**
-   * Applies the visitor's stored choice after hydration. The server always
-   * renders `DEFAULT_LANGUAGE`; switching earlier would mismatch the HTML that
-   * Angular is hydrating.
-   */
-  restoreStoredLanguage(): void {
-    if (!this.isBrowser) {
-      return;
-    }
-    const stored = this.readStored();
-    if (stored !== this.language()) {
-      this.setLanguage(stored);
-    }
+  /** Pre-bootstrap: load the bundle for the URL being rendered or hydrated. */
+  init(): Promise<void> {
+    return this.load(languageFromPath(this.platformLocation.pathname));
   }
 
-  setLanguage(language: UiLanguage): void {
-    void this.translate.use(language);
-    this.apply(language, true);
-  }
-
-  private apply(language: UiLanguage, persist: boolean): void {
+  load(language: UiLanguage): Promise<void> {
     this.language.set(language);
     this.document.documentElement.lang = language;
-    if (!persist || !this.isBrowser) {
-      return;
-    }
-    try {
-      localStorage.setItem(STORAGE_KEY, language);
-    } catch {
-      /* Storage can be unavailable (private mode, blocked cookies). */
-    }
+    return firstValueFrom(this.translate.use(language)).then(() => undefined);
   }
 
-  private readStored(): UiLanguage {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === 'en' || stored === 'es') {
-        return stored;
-      }
-    } catch {
-      return DEFAULT_LANGUAGE;
-    }
-    return DEFAULT_LANGUAGE;
+  /** Keeps the UI language in sync with client-side navigation. */
+  setFromPath(pathname: string): Promise<void> {
+    const language = languageFromPath(pathname);
+    return language === this.language() ? Promise.resolve() : this.load(language);
+  }
+
+  homePath(): string {
+    return HOME_PATH[this.language()];
+  }
+
+  contactFragment(): string {
+    return CONTACT_FRAGMENT[this.language()];
   }
 }

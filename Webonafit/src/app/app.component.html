@@ -2,13 +2,11 @@
 
 <header class="site-header">
   <div class="wrap header-bar">
-    <a routerLink="/" class="brand" [attr.aria-label]="branding.studioName() + ', ' + ('chrome.homeAria' | translate)" (click)="closeMenu()">
+    <a [routerLink]="language.homePath()" class="brand" [attr.aria-label]="site.name + ', ' + ('chrome.homeAria' | translate)" (click)="closeMenu()">
       <app-logo
         size="sm"
         mark="mark"
-        [showTagline]="false"
-        [studioName]="branding.studioName()"
-        [slogan]="branding.slogan()" />
+        [showTagline]="false" />
     </a>
 
     <nav
@@ -19,7 +17,7 @@
     >
       @for (item of nav(); track item.fragment) {
         <a
-          routerLink="/"
+          [routerLink]="language.homePath()"
           [fragment]="item.fragment"
           (click)="closeMenu()"
         >
@@ -98,10 +96,8 @@
       <app-logo
         size="sm"
         [showTagline]="true"
-        [inverted]="true"
-        [studioName]="branding.studioName()"
-        [slogan]="branding.slogan()" />
-      <p class="footer-claim">{{ branding.slogan() }}</p>
+        [inverted]="true" />
+      <p class="footer-claim">{{ site.slogan }}</p>
     </div>
     <div>
       <p class="eyebrow">{{ 'footer.contact' | translate }}</p>
@@ -114,5 +110,5 @@
       <p>{{ 'studio.hours' | translate }}</p>
     </div>
   </div>
-  <p class="legal">© 2026 {{ branding.studioName() }} {{ branding.slogan() }}. {{ 'footer.legal' | translate }}</p>
+  <p class="legal">© 2026 {{ site.name }} {{ site.slogan }}. {{ 'footer.legal' | translate }}</p>
 </footer>

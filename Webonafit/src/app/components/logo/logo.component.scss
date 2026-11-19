@@ -19,15 +19,15 @@
 }
 
 /* Commercial logo: respect digital min width with descriptor (160px). */
-.logo--sm:not(.logo--mark):not(.logo--photo) .logo__img {
+.logo--sm:not(.logo--mark) .logo__img {
   width: clamp(var(--logo-min), 42vw, 11.5rem);
 }
 
-.logo--md:not(.logo--mark):not(.logo--photo) .logo__img {
+.logo--md:not(.logo--mark) .logo__img {
   width: clamp(11.5rem, 48vw, 16rem);
 }
 
-.logo--lg:not(.logo--mark):not(.logo--photo) .logo__img {
+.logo--lg:not(.logo--mark) .logo__img {
   width: clamp(14rem, 72vw, 22rem);
 }
 
@@ -42,16 +42,4 @@
 
 .logo--lg.logo--mark .logo__img {
   width: 5.5rem;
-}
-
-/* API photo override — keep reasonable bounds */
-.logo--sm.logo--photo .logo__img {
-  width: clamp(2.5rem, 20vw, 3.25rem);
-  height: clamp(2.5rem, 20vw, 3.25rem);
-}
-
-.logo--md.logo--photo .logo__img,
-.logo--lg.logo--photo .logo__img {
-  width: clamp(3rem, 24vw, 5.5rem);
-  height: auto;
 }

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { provideWebTranslate } from '../../i18n/provide-web-translate';
 import { ContactComponent } from './contact.component';
@@ -10,7 +11,7 @@ describe('ContactComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ContactComponent],
-      providers: [provideWebTranslate()],
+      providers: [provideRouter([]), provideWebTranslate()],
     })
     .compileComponents();
 

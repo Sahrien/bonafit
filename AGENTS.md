@@ -6,7 +6,7 @@ Three independent apps for a personal-training studio, plus a deploy CLI. There 
 | --- | --- | --- |
 | [BonafitDesk](BonafitDesk/AGENTS.md) | Authenticated product: admin studio + client portal | Angular 19 |
 | [BonafitApi](BonafitApi/AGENTS.md) | JSON API + PostgreSQL for Desk | FastAPI |
-| [Webonafit](Webonafit/AGENTS.md) | Public marketing site | Angular 19 |
+| [Webonafit](Webonafit/AGENTS.md) | Public marketing site | Angular 19 (prerendered) |
 | [BonafitDeploy](BonafitDeploy/AGENTS.md) | Local build + FTP deploy CLI | Python / uv |
 
 `docs/TARIFA.ods` is commercial pricing reference, not runtime config.
@@ -14,7 +14,7 @@ Three independent apps for a personal-training studio, plus a deploy CLI. There 
 ## Which package
 
 - Admin calendar, clients, services/bonos, forms, or client portal → **BonafitDesk**, and **BonafitApi** if the contract or persistence changes.
-- Public landing, brand, or contact page → **Webonafit** only. Do not import Desk `bona-*` components. Webonafit may `GET /branding` from BonafitApi for studio colors, name, slogan, and logo.
+- Public landing, brand, or contact page → **Webonafit** only. Do not import Desk `bona-*` components. Webonafit is a static, API-free site: brand settings in `site.ts`, colors in `styles.scss`, copy in i18n.
 - Database, auth tokens, booking rules on the server, SMTP → **BonafitApi**.
 - FTP/SSH deploy of Desk, API, or Webonafit → **BonafitDeploy**.
 
