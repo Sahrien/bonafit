@@ -9,7 +9,7 @@ import { ContactComponent } from '../contact/contact.component';
 
 @Component({
   selector: 'app-home',
-  imports: [ButtonComponent, LogoComponent, ContactComponent, TranslatePipe],
+  imports: [ButtonComponent, ContactComponent, LogoComponent, TranslatePipe],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
